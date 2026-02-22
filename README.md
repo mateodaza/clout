@@ -47,12 +47,6 @@ Out of scope:
 - automated game API resolution
 - x402 convenience layer
 
-## Terminology
-
-- Use **conviction market** in core framing.
-- Use **Challenge Pools** (not "Creator Challenges").
-- Use **stake pools** (not "prediction pools").
-
 ## Next Step
 
 If you are reviewing this project for demo readiness, start with:
