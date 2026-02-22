@@ -4,6 +4,17 @@ Clout is a conviction market protocol: users make public, stake-backed claims, o
 
 Gaming is the wedge.
 
+## Vision
+
+Clout starts with gaming because the behavior already exists and outcomes are often verifiable.  
+The larger idea is broader than gaming:
+
+- **Rail A (duels)** captures direct self-commitment
+- **Rail B (challenge pools)** captures social conviction loops
+- **Rail C (open markets)** expands into larger event markets without losing conviction principles
+
+The long-term thesis is that reputation-calibrated conviction becomes reusable infrastructure across individual, community, and event-driven domains.
+
 ## Current Scope
 
 This repo currently contains strategy and pitch documentation for Avalanche Build Games (2026).
@@ -46,6 +57,18 @@ Out of scope:
 - Rail C open markets
 - automated game API resolution
 - x402 convenience layer
+
+## After MVP (Stage 3+)
+
+After Stage 2 ships cleanly, focus shifts from core proof to scale and integration:
+
+- **Challenge Pools expansion**: uncapped pools, better discovery, stronger abuse controls
+- **Rail C exploration**: open markets as an extension layer with conviction guardrails
+- **Agent support clarity**:
+  - **Agent-compatible now**: any wallet (human or AI) can use core contracts
+  - **Agent integration later**: x402 adds HTTP-native payment flow and smoother agent UX
+
+This keeps product identity anchored in conviction while expanding distribution and automation.
 
 ## Next Step
 
