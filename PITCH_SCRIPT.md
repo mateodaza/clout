@@ -34,7 +34,7 @@
 
 *(Narrow to gaming — the specific version of this problem.)*
 
-> In gaming this plays out constantly. People make calls in chats, on streams, and in communities — and none of it is on the record. Meanwhile there's a $5 billion skin gambling economy and hundreds of millions in PvP wagers, much of it still running through middlemen and centralized platforms. No escrow, no accountability, no record.
+> In gaming this plays out constantly. You trash talk in Discord, make calls on stream, argue about outcomes — and none of it is on the record. Meanwhile there's a $5 billion skin gambling economy and hundreds of millions in PvP wagers, much of it still running through middlemen and centralized platforms. No escrow, no accountability, no record.
 
 *(Causal transition — "so we built." No need to announce the product name with a drumroll.)*
 
@@ -44,11 +44,11 @@
 
 *(Cut to flow animation or mockup. Voiceover. Let the visuals breathe.)*
 
-> You create a challenge, set the stake. Your opponent accepts and both sides lock USDC into the contract. Play the match, submit the result, winner claims the pot. One contract, on-chain escrow.
+> You create a challenge, set the stake. Your opponent accepts and both sides lock USDC into the contract. Play the match, submit the result, winner claims the pot. One contract, on-chain escrow. Adults only, non-custodial — no house, no odds, no custody.
 
 *(Back to camera. Build momentum — this is why Avalanche, not a generic chain pitch.)*
 
-> We're building on Avalanche because it has one of the biggest gaming ecosystems in Web3 but no way to stake on outcomes. Sub-two-second finality, native USDC, and the contract works for any wallet, human or AI. The infrastructure is ready. Nobody's built this layer.
+> We're building on Avalanche because it has one of the biggest gaming ecosystems in Web3 — Off The Grid, MapleStory, Shrapnel — but no way to stake on outcomes. Sub-two-second finality, native USDC, and the contract works for any wallet, human or AI. The infrastructure is ready. Nobody's built this layer.
 
 *(Slow down. This is the vision beat — expand back out from gaming to the bigger picture.)*
 
