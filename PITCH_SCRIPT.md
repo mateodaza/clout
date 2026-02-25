@@ -10,9 +10,10 @@
 ## Format
 
 - **Face to camera** for most of it — shows builder energy, authenticity
-- **Text overlays** when data lands ($5B, "no escrow, no accountability, no record") — let numbers hit visually
+- **Text overlays** when data lands ($5B, "no escrow, no accountability, no record", "Adults only" during flow animation) — let numbers hit visually
 - **Simple flow animation or mockup** for the "how it works" beat — even a diagram works
-- **Logo + domain on screen** for the last 10 seconds
+- **Logo + domain on screen** starting with the closing line (not after) — judges should see where to go at the moment of maximum impact
+- **2-second silence** after the closing line before cutting to logo card — let the line land, don't rush
 - Don't overthink production. A confident person explaining clearly beats polished slides at the idea stage.
 
 ---
@@ -26,38 +27,37 @@
 
 ---
 
-## Script (~260 words / ~150 WPM / ~1:50)
+## Script (~249 words / ~1:35–1:45 depending on pace)
 
-*(Face to camera. Conversational, not performative. You're explaining something you built to someone who gets it.)*
+_(Face to camera. Conversational, not performative. You're explaining something you built to someone who gets it.)_
 
 > Every opinion online is free. You can call any outcome, predict any result, and if you're wrong — nothing happens.
 
-*(Narrow to gaming — the specific version of this problem.)*
+_(Narrow to gaming — the specific version of this problem.)_
 
-> In gaming this plays out constantly. You trash talk in Discord, make calls on stream, argue about outcomes — and none of it is on the record. Meanwhile there's a $5 billion skin gambling economy and hundreds of millions in PvP wagers, much of it still running through middlemen and centralized platforms. No escrow, no accountability, no record.
+> In gaming this plays out constantly. You trash talk in Discord, make calls on stream — and none of it is on the record. Meanwhile there's a $5 billion skin gambling economy and hundreds of millions in PvP wagers running through middlemen. No escrow, no accountability.
 
-*(Causal transition — "so we built." No need to announce the product name with a drumroll.)*
+_(Causal transition — "so we built." No need to announce the product name with a drumroll.)_
 
-> So we built Clout — a conviction market. You stake USDC on your match, on your call. That stake is public, your track record is permanent, and your reputation builds over time.
+> I am Mateo and I'm building Clout — a conviction market where you stake USDT on your match or on your call. That stake is public, your track record is permanent, and your reputation compounds over time.
 
-> Head-to-head match stakes, challenge pools, audience predictions — all on-chain, all on Avalanche.
+_(Cut to flow animation or mockup. Voiceover. Let the visuals breathe.)_
 
-*(Cut to flow animation or mockup. Voiceover. Let the visuals breathe.)*
+> You set a stake, your opponent matches it, and both lock USDT into a smart contract. After you play the match you submit the result and the winner claims the pot. The contract settles it — nobody else touches the money.
 
-> You create a challenge, set the stake. Your opponent accepts and both sides lock USDC into the contract. Play the match, submit the result, winner claims the pot. One contract, on-chain escrow. Adults only, non-custodial — no house, no odds, no custody.
+_(Back to camera. Build momentum — this is why Avalanche, not a generic chain pitch.)_
 
-*(Back to camera. Build momentum — this is why Avalanche, not a generic chain pitch.)*
+> We're building Clout on Avalanche because it has one of the biggest gaming ecosystems in Web3 — Off The Grid, MapleStory, Shrapnel — and no wagering infrastructure yet. Transactions settle in about two seconds with native USDT already there, and any wallet can interact — human or AI. Nobody has built this layer yet.
 
-> We're building on Avalanche because it has one of the biggest gaming ecosystems in Web3 — Off The Grid, MapleStory, Shrapnel — but no way to stake on outcomes. Sub-two-second finality, native USDC, and the contract works for any wallet, human or AI. The infrastructure is ready. Nobody's built this layer.
+_(Slow down. This is the vision beat — expand back out from gaming to the bigger picture.)_
 
-*(Slow down. This is the vision beat — expand back out from gaming to the bigger picture.)*
+> Gaming is where we start — because gamers already back their calls and outcomes are verifiable. But this will work for any voice, any audience, any outcome that is worth staking on.
 
-> Gaming is where we start — because gamers already back their calls and outcomes are verifiable. But this works for any creator, any audience, any outcome worth staking on.
+_(Logo + domain on screen. Echo the opener. Land it.)_
 
-*(Logo + domain on screen. Echo the opener. Land it.)*
+> Every opinion is free — until you stake on it.
 
-> Right now opinions are free and conviction is cheap. We're building the place where that changes.
->
+> Thanks and Welcome to Clout
 > clout.ac
 
 ---
@@ -75,6 +75,7 @@
 ## Checklists
 
 ### Key Phrases
+
 - [x] **"Conviction market"** — introduced naturally as what we built, not a definition lecture
 - [x] **"Every opinion online is free"** — the thesis, stated as the open and echoed in the close
 - [x] **"Gaming is where we start"** — signals bigger thinking without scope creep
@@ -83,6 +84,7 @@
 - [x] **"Nobody's built this layer"** — Avalanche whitespace
 
 ### Avoid
+
 - [x] Never say "prediction market" — gets lumped with generic market clones
 - [x] No inflated TAM numbers — honest data only
 - [x] Don't lead with tech stack — lead with the insight

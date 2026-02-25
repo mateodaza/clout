@@ -185,37 +185,76 @@ No competitor offers more than 2 of these 5 elements together:
 ### Rail A: PvP Escrow (MVP)
 
 **Flow**:
-1. Player A creates challenge (game, match type, stake amount in USDC)
+1. Player A creates challenge (game, match type, stake amount in USDC, optional designated resolver)
 2. Player B accepts challenge (locks matching USDC)
-3. Both play the match
-4. Result submitted (mutual agreement primary, game API secondary)
-5. If disputed: dispute mechanism resolves (manual settlement v1, commit-reveal voting v2)
-6. Winner claims pot (minus protocol fee)
+3. Both play the match off-chain
+4. Either party submits result on-chain (CREATOR_WIN, OPPONENT_WIN, DRAW)
+5. Counterparty confirms (instant settlement), disputes (goes to resolver/admin), or does nothing for 24h (submitted result auto-accepts)
+6. Winner claims pot (minus protocol fee). DRAW splits 50/50 minus fee. INVALID/VOIDED refunds both.
 
 **State Machine**:
 ```
-CREATED → ACCEPTED → PLAYING → SUBMITTED → FINALIZED
-                                    ↓
-                               DISPUTED → RESOLVED → FINALIZED
-                                    ↓
-                               VOIDED (refund both)
+CREATED ──→ ACCEPTED ──→ SUBMITTED ──→ FINALIZED (mutual agreement)
+  ↓ 48h       ↓ 48h         ↓ dispute
+VOIDED      VOIDED      DISPUTED ──→ RESOLVED (resolver/admin decides)
+                           ↓ 24h no action    ↓ 24h appeal window
+                     FINALIZED (auto-accept)  FINALIZED (no appeal)
+                                               ↓ appeal filed
+                                             admin reviews → FINALIZED
+                                               ↓ admin timeout (48h)
+                                             VOIDED
 ```
+
+**Submit/confirm flow**: One party submits an outcome. The other has 24h to confirm (same outcome = instant settlement) or dispute. Only the non-submitting party can dispute — prevents contradictory submissions. **If the counterparty does nothing for 24h, the submitted result auto-accepts.** This prevents grief-to-refund attacks where a losing player refuses to confirm/dispute to force a void.
+
+**Appeal flow**: After a resolver decision (DISPUTED → RESOLVED), either player has 24h to appeal to admin. If no appeal within 24h, the resolver's decision auto-finalizes. If appealed, admin has 48h to review and decide — their decision is final. This prevents resolver collusion from being uncontestable.
 
 ### Rail B: Challenge Pools (MVP-Lite)
 
 **Flow (MVP-lite constraints)**:
-1. Host creates one YES/NO challenge with fixed close time and event window (`eventStart`, `eventEnd`, `resolveBy`)
-2. Audience stakes into a pooled market with per-wallet and pool caps
-3. Host attempts challenge on stream
-4. Result submitted (host confirms + evidence)
-5. If disputed: manual resolution (same v1 dispute path)
-6. Winners split losing pool, host takes commission
+1. Host creates YES/NO challenge pool with fixed close time, event window (`eventStart`, `eventEnd`, `resolveBy`), and designated resolver
+2. Audience stakes YES or NO into the pool (per-wallet cap, total pool cap)
+3. Staking closes at `eventStart`
+4. Host attempts challenge (on stream, in game, etc.)
+5. Designated resolver submits result (YES or NO) — **host cannot be their own resolver** (conflict of interest, enforced on-chain)
+6. 24h dispute window: if >20% of losing-side stakers flag dispute → admin review
+7. Winners split losing pool. Host takes commission from winning pool. Protocol takes fee.
+
+**State Machine**:
+```
+OPEN ──(eventStart)──→ CLOSED ──(resolver submits)──→ SUBMITTED
+  ↓ (no stakers by eventStart)      ↓ (resolveBy timeout)       ↓ confirm (24h no dispute)
+VOIDED                              VOIDED                    FINALIZED
+                                                               ↓ dispute threshold met
+                                                             DISPUTED → admin resolves → FINALIZED
+                                                               ↓ timeout
+                                                             VOIDED
+```
+
+**Who can dispute in Rail B?** Any staker on the losing side can flag a dispute. To prevent frivolous disputes from freezing the pool, a **threshold** is required: >20% of losing-side stakers (by count, not by stake) must flag within 24h. Below threshold → result stands.
+
+**Host conflict of interest**: The host creates the challenge AND participates in the outcome. To prevent self-dealing:
+- Host **cannot** be the designated resolver for their own pool
+- Host **must** stake on the YES side (skin in the game — they're betting they can do it)
+- A separate trusted resolver (co-host, moderator, community figure) submits the result
+
+**Payout logic (Rail B)**:
+
+| Outcome | YES Stakers | NO Stakers | Host Commission | Protocol Fee |
+|---------|-------------|-----------|----------------|-------------|
+| YES wins | Split NO pool proportionally | 0 | % of winning pool | % of total pool |
+| NO wins | 0 | Split YES pool proportionally | 0 (host lost) | % of total pool |
+| INVALID | Full refund | Full refund | No commission | No fee |
+| VOIDED | Full refund | Full refund | No commission | No fee |
+
+**Host commission**: Only paid when the challenge succeeds (YES wins). This aligns incentives — the host earns commission by actually completing the challenge, not by manipulating the result.
 
 **Scope guard for March 9**:
-- No AMM/odds engine
-- No open market discovery
-- No algorithmic resolution
-- One pool type, one clear payout rule
+- No AMM/odds engine — payout is proportional split of losing pool
+- No open market discovery — pools are shared via link
+- No algorithmic resolution — designated resolver + admin fallback
+- One pool type (YES/NO), one clear payout rule
+- Per-wallet cap and total pool cap prevent whale manipulation
 - Event constraints are validation-only (manual evidence + manual settlement), not oracle automation
 
 ### Rail C: Open Markets (v2)
@@ -254,64 +293,86 @@ The team has prior experience building prediction market protocols on EVM. Key b
 - **Formal invariants**: Protocol correctness properties (solvency, state consistency)
 - **Pre-deploy checklist**: 40+ items before mainnet deployment
 
-### Single Contract Architecture (Clout v1 MVP)
+### Contract Architecture (Clout v1 MVP)
 
-MVP is a single `CloutEscrow.sol` contract (~400-500 lines with proper validation). No proxy, no facets, no upgradeability complexity.
+MVP uses minimal, purpose-built contracts — no proxy, no facets, no upgradeability complexity:
+- **`CloutEscrow.sol`** (~500-600 lines): Rail A PvP escrow — challenges, stakes, resolution, payouts
+- **`CloutPool.sol`** (~300-400 lines): Rail B challenge pools — pooled stakes, host commission, resolver flow
+
+Two contracts because the mechanics differ: escrow is 1v1 symmetric, pools are 1-to-many asymmetric. Both share the same stablecoin integration, admin roles, and fee routing.
 
 **Dependencies**: OpenZeppelin `IERC20`, `ReentrancyGuard`, `Ownable`.
-**USDC addresses**:
-- Mainnet (C-Chain): `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` (native, 6 decimals). Supports EIP-2612 `permit()`.
-- Fuji testnet: Deploy mock ERC-20 with 6 decimals (Circle testnet faucet or custom `MockUSDC.sol`). MVP develops against Fuji.
+**Supported stablecoins** (both natively issued on Avalanche, both 6 decimals):
+- **USDT**: `0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7` (native, 6 decimals). No EIP-2612 permit() on legacy contract. Tether is a Build Games partner (mentor: Raquel Raigal). Tether WDK provides wallet infrastructure.
+- **USDC**: `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` (native, 6 decimals). Supports EIP-2612 `permit()`. Higher DeFi liquidity on Avalanche (~$572M).
+- Fuji testnet: Deploy mock ERC-20 with 6 decimals (`MockStablecoin.sol`). MVP develops against Fuji.
+- Contract accepts any `IERC20` address — stablecoin is a parameter, not hardcoded.
 
 **Core functions**:
 
 | Function | Purpose |
 |----------|---------|
-| `createChallenge()` | Creator sets game, stake, terms, locks USDC |
-| `acceptChallenge()` | Opponent locks matching USDC |
-| `submitResult()` | Either party submits outcome |
-| `confirmResult()` | Counterparty confirms (mutual agreement path) |
-| `disputeResult()` | Counterparty disputes (triggers admin resolution) |
-| `resolveDispute()` | Admin resolves disputed challenge |
-| `claimWinnings()` | Winner withdraws pot minus protocol fee |
-| `voidChallenge()` | Refund both sides (timeout, cancellation) |
+| `createChallenge(opponent, stakeAmount, token, gameId, designatedResolver)` | Creator sets game, stake, stablecoin, optional resolver, locks funds |
+| `acceptChallenge(challengeId)` | Opponent locks matching USDC. State → ACCEPTED |
+| `submitResult(challengeId, outcome)` | Either party submits outcome. State → SUBMITTED. Starts 24h confirmation window |
+| `confirmResult(challengeId)` | Counterparty confirms same outcome → State → FINALIZED (mutual agreement) |
+| `disputeResult(challengeId)` | Counterparty disagrees → State → DISPUTED. Only callable by party who did NOT submit |
+| `resolveDispute(challengeId, outcome)` | Designated resolver or admin submits decision. State → RESOLVED. Starts 24h appeal window |
+| `appealResolution(challengeId)` | Either player appeals resolver decision within 24h. Escalates to admin |
+| `finalizeResolution(challengeId)` | Admin finalizes after appeal, or anyone calls after 24h appeal window expires with no appeal |
+| `claimWinnings(challengeId)` | Winner withdraws pot minus protocol fee |
+| `voidChallenge(challengeId)` | Refund both sides (timeout, cancellation). Callable after relevant timeout expires |
 
 **State machine**:
 ```
-CREATED → ACCEPTED → PLAYING → SUBMITTED → FINALIZED
-                                    ↓
-                               DISPUTED → RESOLVED → FINALIZED
-                                    ↓
-                               VOIDED (refund both)
+CREATED ──(acceptChallenge)──→ ACCEPTED ──(submitResult)──→ SUBMITTED
+   ↓ (48h timeout)                ↓ (48h timeout)              ↓
+  VOIDED                        VOIDED                    confirmResult() → FINALIZED
+                                                          disputeResult() → DISPUTED
+                                                          24h timeout     → FINALIZED (auto-accept)
+                                                               ↓
+                                                          resolveDispute() → RESOLVED
+                                                          48h resolver timeout → admin fallback → RESOLVED
+                                                               ↓
+                                                          24h no appeal → FINALIZED
+                                                          appealResolution() → admin reviews → FINALIZED
+                                                          48h admin timeout → VOIDED
 ```
+
+**Note**: No explicit PLAYING state in the contract. The match happens off-chain between ACCEPTED and SUBMITTED. The contract only tracks escrow state — it doesn't know when the game starts or ends. Either party calls `submitResult()` when the match is done.
 
 **Storage structs**:
 ```solidity
 struct Challenge {
     address creator;
     address opponent;
-    uint256 stakeAmount;      // USDC (6 decimals)
+    address designatedResolver;  // optional third-party resolver (zero = admin-only)
+    address token;               // whitelisted stablecoin (USDT or USDC, 6 decimals)
+    uint256 stakeAmount;         // amount in token units (6 decimals)
     ChallengeState state;
-    bytes32 gameId;           // game type identifier
-    bytes32 matchId;          // external match reference
+    bytes32 gameId;              // game type identifier
+    bytes32 matchId;             // external match reference
     Outcome submittedResult;
     address submittedBy;
     uint256 createdAt;
     uint256 acceptedAt;
-    uint256 disputeDeadline;
+    uint256 submittedAt;         // when result was submitted (starts confirmation deadline)
+    uint256 disputedAt;          // when dispute was triggered (starts resolver deadline)
 }
 
-enum ChallengeState { CREATED, ACCEPTED, PLAYING, SUBMITTED, DISPUTED, RESOLVED, FINALIZED, VOIDED }
+enum ChallengeState { CREATED, ACCEPTED, SUBMITTED, DISPUTED, RESOLVED, FINALIZED, VOIDED }
 enum Outcome { NONE, CREATOR_WIN, OPPONENT_WIN, DRAW, INVALID }
 ```
 
 ### Key Design Decisions
-- **Single contract, not Diamond proxy**: MVP is ~400-500 lines of Solidity with proper validation. No proxy complexity. Ship fast.
-- **USDC only**: Single collateral, no token complexity
-- **Manual settlement v1**: Mutual agreement primary, admin fallback (fast to ship)
+- **Minimal contracts, not Diamond proxy**: Two purpose-built contracts (CloutEscrow ~500-600 lines, CloutPool ~300-400 lines). No proxy complexity. Ship fast.
+- **Stablecoins only (USDT + USDC)**: No governance token, no volatile collateral. Token address is a parameter per challenge — contract accepts any whitelisted IERC20. Tether WDK integration for wallet layer.
+- **Submit → confirm/dispute flow**: One party submits the outcome, the other confirms or disputes. Only the non-submitting party can dispute. This prevents both parties submitting contradictory results.
+- **Manual settlement + designated resolver v1**: Mutual agreement primary, optional third-party resolver, admin fallback (fast to ship, flexible)
 - **Commit-reveal v2**: Community voting for decentralized dispute resolution
 - **UMA OOv3 v3**: Optional integration when Avalanche support matures
 - **No governance token**: No DAO, no voting token, no DeFi complexity
+- **No PLAYING state in contract**: Match happens off-chain. Contract tracks escrow state only (ACCEPTED → SUBMITTED).
 
 ### Conviction Score v1 (On-Chain Reputation Primitive)
 
@@ -389,37 +450,98 @@ Four components:
 
 ---
 
-## 8. Game API Integration
+## 8. Game Integration & Publisher ToS Compliance
 
-### Recommendation: Best First Games
+### Publisher ToS Reality
 
-| Rank | Game | API Quality | Auth Complexity | Data Latency | Difficulty |
-|------|------|-------------|----------------|-------------|------------|
-| 1 | **League of Legends** | Excellent (Riot Match v5) | API key + RSO | 1-5 min | EASY |
-| 2 | **Dota 2** | Excellent (Steam + OpenDota) | Simple API key | 1-3 min | EASY |
-| 3 | **CS2 (FACEIT)** | Good (FACEIT Data API) | API key | Seconds | MEDIUM |
-| 4 | **Valorant** | Good (Riot) but gated | Prod key + OAuth | 1-10 min | MEDIUM-HARD |
-| 5 | **Fortnite** | Poor | N/A | N/A | HARD |
-| 6 | **Call of Duty** | No official API | Scraped SSO | Unreliable | HARD |
+Game publisher Terms of Service constrain which games can be supported and how. This is a structural constraint, not a blocker — CMG has processed $211M+ by operating within these boundaries.
 
-### Strategy
-1. **Start with LoL** — best API, largest esports audience, `win` is a simple boolean
-2. **Add Dota 2 second** — near-zero marginal effort, Steam API key is instant
-3. **Add CS2 via FACEIT third** — FACEIT API is solid for competitive matches
-4. **Carlos's game** — friend building a game for same hackathon, can provide custom API for pilot testing (ideal for demo)
+**Key findings (Feb 2026):**
 
-### Verification Flow
+| Game | Wagering in ToS | Blockchain Ban | API for Wagering | Enforcement | Risk |
+|------|----------------|---------------|-----------------|-------------|------|
+| **Off The Grid** | Game IS blockchain. Cash tournaments (paused). | NO — Avalanche subnet | No public API. No match data on-chain. | None | **LOW** (ToS) / **HIGH** (integration — battle royale, not 1v1) |
+| **CS2** | Steam ToS prohibits gambling | Not explicit | Limited API | 40+ C&D letters (skin gambling, not cash) | MODERATE |
+| **League of Legends** | Not explicit in player ToS | **YES — absolute** ("no crypto/blockchain/NFTs whatsoever") | **Prohibited** for gambling | No action on external platforms yet | HIGH |
+| **Valorant** | Same as LoL | **YES — same policy** | **Prohibited** | Same as LoL | HIGH |
+| **Fortnite** | **Explicit ban** (Community Rules + Dev Rules 1.11) | Not explicit | No public API | **Player bans + platform shutdowns** | VERY HIGH |
+
+### Critical Riot Developer API Policy (Affects LoL + Valorant)
+
+Riot's developer portal contains two independent blockers:
+1. *"Your product cannot feature betting or gambling functionality."*
+2. *"No cryptocurrencies, blockchain, or NFTs whatsoever. Even if these elements only apply to non-Riot games on a third party platform, we still don't allow our IP or data to be associated with this space."*
+
+**Implication**: Clout cannot use the Riot API for match verification. Period. Both the gambling prohibition and the blockchain prohibition independently block it.
+
+### How CMG Operates Without Publisher Licenses
+
+CMG has no disclosed publisher partnerships. They operate by:
+1. Framing as "skill-based competition with entry fees" (not "wagering")
+2. Using manual screenshot dispute resolution — **never touching publisher APIs**
+3. Operating entirely outside the game ecosystem
+4. Excluding 7 US states: Arizona, Hawaii, Iowa, Mississippi, Montana, Nevada, South Dakota
+5. 18+ hard gate
+
+This is the proven model for non-blockchain-native games.
+
+### Off The Grid: Why It's Not a Launch Title
+
+Off The Grid is the most prominent Avalanche-native game, but it's **incompatible with Clout's PvP escrow design**:
+- **Battle royale** (150 players, 3-player squads) — not head-to-head 1v1
+- **No public API** for match data or results. GUNZ blockchain tracks NFT/asset extraction, not match outcomes.
+- **"Clash for Cash" paused** since April 10, 2025 — leaderboard tournament, not PvP escrow
+- **Player count declining**: ~7,300 concurrent Steam (52% drop from Dec 2025 peak)
+
+OTG remains valid **ecosystem evidence** (proves Avalanche has gaming) but is not a game Clout can launch on. Would require a custom matching layer for squad-based challenges — months of work, not weeks.
+
+### Game Priority (Updated)
+
+The protocol is **game-agnostic** — the smart contract is just escrow. It doesn't know or care what game is being played. Any 1v1 competitive game works with manual resolution.
+
+| Priority | Game | Why | Resolution Model |
+|----------|------|-----|-----------------|
+| 1 | **Carlos's game** | Custom game for same hackathon, can provide direct API. Ideal for demo. | Custom API integration |
+| 2 | **Any 1v1 PvP game** | Protocol is game-agnostic. Manual resolution works for any game. | Manual (CMG model) |
+| 3 | **Dota 2** | OpenDota API (community-run), Valve doesn't restrict 3P wagering | Manual v1, API v2 (lower ToS risk) |
+| 4 | **CS2 (via FACEIT)** | FACEIT Data API, moderate ToS risk for cash-based | Manual v1, FACEIT API v2 (moderate risk) |
+| 5 | **League of Legends** | Largest esports audience, proven demand (CMG model) | Manual only. **Riot API permanently blocked.** |
+
+### Verification Flow (v1 MVP)
+```
+Players complete match → Both submit result manually →
+Mutual agreement = instant settlement → Disputed = admin review
+```
+
+For v1 MVP: **Manual submission + mutual agreement** is the primary path. This is both the fastest to ship AND the legally safest approach — it avoids publisher API policies entirely.
+
+### Game API Auto-Resolution (v2+, Per-Game)
+
+API-based auto-resolution is a v2 enhancement that works **only for games where the publisher permits it**:
+- **Custom/partner games** (Carlos's game, future blockchain-native titles): Direct API integration
+- **Open API games** (Dota 2 via OpenDota): Lower risk, community-run API
+- **Riot/Epic games**: **Blocked by developer policy.** Manual resolution only, indefinitely.
+
 ```
 Match completes → Game API returns result → Keeper submits on-chain →
 Challenge window (if disputed) → Settlement
 ```
 
-For v1 MVP: **Manual submission + mutual agreement** is the primary path. Game API auto-verification is a v2 enhancement.
-
 ### Multi-Game Aggregation APIs
 - **GRID Esports**: Best for betting use cases, official publisher partnerships
 - **PandaScore**: 13+ titles but explicitly prohibits betting on standard plans
 - **Abios**: 60K+ matches/year, REST + Push APIs
+
+### Legal Framework: "Skill-Based Competition" vs "Gambling"
+
+Gambling requires three elements: (1) prize, (2) consideration (paid entry), (3) chance. Removing element (3) — because competitive gaming outcomes are determined by skill — exempts the activity under most state laws.
+
+States use different tests:
+- **Predominance Test** (majority of states): Is skill the dominant factor?
+- **Material Element Test** (~8 states): Does chance play a material role?
+- **Any Chance Test** (strictest): Does chance play ANY role?
+
+Clout's PvP escrow is pure skill-based competition. Challenge Pools with audience predictions are closer to the edge and require legal counsel before mainnet.
 
 ---
 
@@ -462,12 +584,63 @@ Grok 5 vs T1 (League of Legends) is the most anticipated human-vs-AI gaming even
 
 ## 10. Resolution Strategy
 
-### V1: Manual Settlement (Build Games MVP)
-- **Primary path**: Mutual agreement (both players confirm result → instant settlement)
-- **Fallback**: Admin resolution (team reviews evidence, resolves dispute)
-- **Safety**: VOID/refund if no agreement within timeout period
+### V1: Manual Settlement + Designated Resolver (Build Games MVP)
 
-**Why**: Fastest to ship. Mutual agreement resolves the vast majority of PvP wagers (CMG model confirms this). UMA OOv3 on Avalanche is "unmonitored" (multi-sig relay, not full DVM). Manual is honest and functional for testnet.
+**Three resolution paths** (in order of priority):
+
+| Path | When | Who Decides | Deadline |
+|------|------|-------------|----------|
+| **Path 1: Mutual agreement** | Both players confirm same result | Players themselves | Instant |
+| **Path 2: Designated resolver** | Dispute triggered, resolver specified at challenge creation | Trusted third party (tournament organizer, streamer, community figure) | 48h to decide → 24h appeal window → FINALIZED |
+| **Path 3: Admin fallback** | No resolver specified, resolver times out, or appeal filed | Clout team | 48h after dispute/appeal (decision is final, no further appeal) |
+
+**Designated Resolver** (optional, ~80 lines of Solidity):
+- Challenge creator specifies `address designatedResolver` when creating challenge (or leaves as zero = admin-only)
+- Both players implicitly accept the resolver by accepting the challenge
+- Resolver can submit `CREATOR_WIN`, `OPPONENT_WIN`, `DRAW`, or `INVALID`
+- If resolver doesn't act within 48h → auto-fallback to Clout admin
+- Unlocks tournament organizer and streamer use cases without decentralized governance
+
+**Timeout Specifications**:
+
+| State Transition | Timeout | What Happens |
+|-----------------|---------|-------------|
+| CREATED → not accepted | 48h | Creator can void, gets refund |
+| ACCEPTED → no result submitted | 48h | Either party can void, both refunded |
+| SUBMITTED → not confirmed or disputed | 24h | Submitted result auto-accepted (submitter wins by default) |
+| DISPUTED → resolver doesn't act | 48h | Fallback to admin |
+| DISPUTED → admin doesn't act (as fallback) | 48h after fallback | Auto-void, both refunded |
+| RESOLVED → no appeal filed | 24h | Resolver decision auto-finalizes |
+| RESOLVED → appeal filed, admin doesn't act | 48h after appeal | Auto-void, both refunded |
+
+**Payout Logic**:
+
+| Outcome | Winner Payout | Loser Payout | Protocol Fee |
+|---------|--------------|-------------|-------------|
+| CREATOR_WIN or OPPONENT_WIN | Full pot minus fee | 0 | Yes (from pot) |
+| DRAW | 50% of pot minus fee | 50% of pot minus fee | Yes (players chose to play) |
+| INVALID | Full refund | Full refund | No (not players' fault) |
+| VOIDED (timeout) | Full refund | Full refund | No |
+
+**Why this model**: Mutual agreement resolves 85%+ of PvP wagers (CMG data). Designated resolver adds flexibility for organized play. Admin fallback is the safety net. CMG has processed $211M+ with a simpler version of this. UMA OOv3 on Avalanche is "unmonitored" (multi-sig relay, not full DVM). This is honest and functional for testnet.
+
+### Common Dispute Scenarios
+
+| Scenario | Frequency | Resolution |
+|----------|-----------|-----------|
+| Both agree on outcome | 85%+ | Instant settlement (Path 1) |
+| One claims win, other disagrees | ~10% | Resolver/admin reviews evidence (screenshots, match logs) |
+| Player disconnects mid-match | 3-5% | Resolver/admin decides forfeit rules |
+| One player never submits result | ~2% | Timeout → auto-void, both refunded |
+| Server crash / match invalid | <1% | Resolver/admin marks INVALID, both refunded |
+| Resolver colludes with one player | Rare | Public history shows pattern, admin appeal available |
+
+### Collusion Mitigations
+
+- **Resolver bias tracking**: On-chain `resolvedChallenges` mapping — anyone can query resolver history and detect anomalous win rates
+- **Zero-sum defense**: Both players colluding is impossible (one wins, one loses). Collusion risk is resolver + one player vs. the other
+- **Admin appeal**: After resolver decision (RESOLVED state), either player can call `appealResolution()` within 24h to escalate to admin. If no appeal, resolver decision auto-finalizes
+- **Reputation cost**: Resolvers with high dispute rates or one-sided patterns get flagged in the frontend
 
 ### V2: Commit-Reveal Voting (Post-Build Games)
 - Commit-reveal voting pattern
@@ -482,17 +655,18 @@ Grok 5 vs T1 (League of Legends) is the most anticipated human-vs-AI gaming even
 - Optimistic assertion → challenge window → DVM fallback
 - Better for open markets (Rail C) than PvP escrow
 
-### V4: Game API Auto-Resolution (Enhancement)
+### V4: Game API Auto-Resolution (Enhancement — Per-Game, ToS-Dependent)
 - Keeper watches game API → submits result on-chain
 - Challenge window for disputes
 - Auto-finalize if no dispute within window
 - Per-game adapter (ResolutionAdapter pattern)
+- **Only available for games whose publisher ToS permits API use for wagering/competition platforms** — custom/partner games (Carlos's game) and open APIs (OpenDota) are viable. Riot/Epic APIs are blocked. See Section 8.
 
 ### Resolution Adapter Interface
 ```solidity
 interface IResolutionAdapter {
-    function source() external view returns (string memory);      // "riot-lol-api"
-    function fallbackSource() external view returns (string memory); // "opgg-scraper"
+    function source() external view returns (string memory);      // "otg-api"
+    function fallbackSource() external view returns (string memory); // "manual"
     function canAutoResolve(bytes32 challengeId) external view returns (bool);
     function fetchResult(bytes32 challengeId) external returns (Outcome);
     function disputeWindow() external view returns (uint256);     // seconds
@@ -509,7 +683,7 @@ interface IResolutionAdapter {
 | # | Risk | Severity | Mitigation |
 |---|------|----------|-----------|
 | 1 | **Regulatory** — gaming + wagering + Gen-Z = legal magnet | Critical | 18+ hard gate with real verification. USDC-only (reduces but does not eliminate regulatory exposure — legal counsel required). "Skill-based wagering" framing. Geo-restrictions. Legal review before mainnet. |
-| 2 | **Game publisher hostility** — C&Ds from Valve/Riot/Epic | High | Don't use game IP in marketing. Use public APIs (same as stats sites). Frame as "player-created challenges." Pursue partnerships long-term. |
+| 2 | **Game publisher hostility** — C&Ds from Valve/Riot/Epic | High | **Riot/Epic**: API integration blocked by policy (gambling + blockchain bans). CMG-model only (manual resolution, no API, no game IP). **Valve**: Skin gambling enforced, cash-based less targeted. **Mitigation**: Protocol is game-agnostic — launch with Carlos's game (custom API) and manual resolution for any other game. Frame as "skill-based competition." See Section 8. |
 | 3 | **Dispute volume overwhelms system** — UMA bonds exceed wager amounts for small stakes | High | Mutual agreement is primary path (no oracle needed). Manual fallback. Minimum wager threshold. Reputation system for repeat disputers. |
 | 4 | **Abuse/collusion** — smurf accounts, match throwing, creator self-dealing | High | No volume-based rewards. Stake-to-create. Per-wallet caps. Public match history. Skill-based matchmaking. Identity signals (Discord/game ID). |
 | 5 | **Nobody comes** — Forkast built gaming prediction market, got zero users | High | Ship INTO existing communities (Discord wager servers). Challenge link sharing = viral loop. Kill metric: 50 active wagers in week 1 or pivot. |
@@ -518,6 +692,7 @@ interface IResolutionAdapter {
 | 8 | **Streamer match-fixing** — intentional failure for friends on NO side | Medium | Public challenge history. Stake limits. Anomaly detection. Creator must lock own USDC too. UMA dispute path. |
 | 9 | **Addiction backlash** — real money in entertainment = controversy | Medium | Loss limits. Cool-down periods. Transparent odds. Responsible gambling disclosures. Don't market to minor audiences. |
 | 10 | **UMA unmonitored on Avalanche** — multi-sig relay, not full DVM | Medium | Use manual settlement for v1. Commit-reveal voting for v2. UMA integration when support matures. |
+| 11 | **Designated resolver collusion** — resolver + one player steal from the other | Medium | Public on-chain resolver history (anyone can audit win rates). Admin appeal within 24h. Anomaly detection flags resolvers with >70% one-sided outcomes. Reputation cost. See Section 10. |
 
 ---
 
@@ -538,11 +713,14 @@ interface IResolutionAdapter {
 
 ### MVP Scope (For Stage 2: March 9)
 **In scope**:
-- PvP Escrow contract (single contract: create, accept, submit, dispute, claim)
+- PvP Escrow contract (`CloutEscrow.sol`: create, accept, submit, confirm, dispute, resolve, appeal, claim)
+- Designated resolver option (optional third-party resolver per challenge, ~80 lines)
+- Timeout specifications (acceptance 48h, submission 48h, confirmation 24h, resolver 48h, admin 48h)
+- Payout logic: DRAW (split minus fee), INVALID (full refund, no fee), VOIDED (full refund)
 - Challenge Pools MVP-lite (YES/NO stake pool with fixed close time, event window constraints, capped participation, manual resolution)
-- USDC collateral on Avalanche Fuji testnet
+- USDT + USDC collateral on Avalanche Fuji testnet (whitelisted stablecoins, token as parameter)
 - Basic web app (duels + challenge pools: create, join, submit result, claim winnings)
-- Manual dispute resolution
+- Manual dispute resolution + designated resolver fallback
 - One complete lifecycle demo for each in-scope rail
 - Carlos's game integration for pilot demo
 
