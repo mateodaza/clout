@@ -6,12 +6,13 @@
 Phase 1: Foundation (Day 1)
 
 ## Overall Status
-- **Nightcrawler tasks:** 0 / 22
-- **Manual tasks:** 0 / 3 (Mateo-only)
+- **Nightcrawler tasks:** 0 / 19 (NC-001→NC-016B + NC-G1 + NC-G2)
+- **Manual tasks:** 0 / 3 (NC-020, NC-021, NC-022 — Mateo-only)
 - **Tasks blocked:** 0
 - **Tasks locked:** 0
 - **Last session:** None yet
 - **Last commit:** None yet
+- **Audit status:** All 15 Codex findings patched (3 CRITICAL, 7 HIGH, 4 MEDIUM, 1 LOW)
 
 ## Phase Progress
 
@@ -35,16 +36,16 @@ Phase 1: Foundation (Day 1)
 - [ ] NC-G1: Gate 1 validation (CloutEscrow complete)
 
 ### Phase 4: Challenge Pools (Day 5) — NOT STARTED
-- [ ] NC-011: CloutPool core (create, stake, close)
+- [ ] NC-011: CloutPool core (create, stake, close) — depends on NC-G1
 - [ ] NC-012A: CloutPool resolution + dispute
 - [ ] NC-012B: CloutPool payouts
-- [ ] NC-012C: CloutPool test suite + invariant checks
+- [ ] NC-012C: CloutPool test suite + invariant checks (I-8 through I-14)
 
 ### GATE 2 — NOT REACHED
 - [ ] NC-G2: Gate 2 validation (both contracts pass tests)
 
 ### Phase 5: Deployment Script (Day 6) — NOT STARTED
-- [ ] NC-013: Anvil-verified deployment script
+- [ ] NC-013: Anvil-verified deployment script — depends on NC-G2
 
 ### Phase 6: Frontend (Days 7-8) — NOT STARTED
 - [ ] NC-014: Next.js + wallet connection
