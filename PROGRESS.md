@@ -1,0 +1,64 @@
+# Progress — Clout
+
+> Updated by Nightcrawler after each completed task. Verified by Mateo during day sessions.
+
+## Current Phase
+Phase 1: Foundation (Day 1)
+
+## Overall Status
+- **Nightcrawler tasks:** 0 / 22
+- **Manual tasks:** 0 / 3 (Mateo-only)
+- **Tasks blocked:** 0
+- **Tasks locked:** 0
+- **Last session:** None yet
+- **Last commit:** None yet
+
+## Phase Progress
+
+### Phase 1: Foundation (Day 1) — NOT STARTED
+- [ ] NC-001: Initialize Foundry project
+- [ ] NC-002: MockStablecoin.sol
+- [ ] NC-003: CloutEscrow core structs + createChallenge
+- [ ] NC-004: acceptChallenge + voidChallenge
+
+### Phase 2: Resolution Pipeline (Days 2-3) — NOT STARTED
+- [ ] NC-005: submitResult + confirmResult
+- [ ] NC-006: disputeResult + resolveDispute
+- [ ] NC-007: appealResolution + finalizeResolution
+
+### Phase 3: Payouts + Hardening (Day 4) — NOT STARTED
+- [ ] NC-008: claimWinnings + fee routing
+- [ ] NC-009: WalletRecord view + integration hardening
+- [ ] NC-010: Comprehensive test suite + invariant checks
+
+### GATE 1 — NOT REACHED
+- [ ] NC-G1: Gate 1 validation (CloutEscrow complete)
+
+### Phase 4: Challenge Pools (Day 5) — NOT STARTED
+- [ ] NC-011: CloutPool core (create, stake, close)
+- [ ] NC-012A: CloutPool resolution + dispute
+- [ ] NC-012B: CloutPool payouts
+- [ ] NC-012C: CloutPool test suite + invariant checks
+
+### GATE 2 — NOT REACHED
+- [ ] NC-G2: Gate 2 validation (both contracts pass tests)
+
+### Phase 5: Deployment Script (Day 6) — NOT STARTED
+- [ ] NC-013: Anvil-verified deployment script
+
+### Phase 6: Frontend (Days 7-8) — NOT STARTED
+- [ ] NC-014: Next.js + wallet connection
+- [ ] NC-015A: PvP challenge list + create pages
+- [ ] NC-015B: PvP challenge detail page
+- [ ] NC-016A: Pool list + create pages
+- [ ] NC-016B: Pool detail page
+
+### Phase 7: Manual Integration + Demo (Day 9) — MATEO-ONLY
+- [🚧] NC-020: Deploy to Fuji + verify (MANUAL)
+- [🚧] NC-021: E2E integration testing on Fuji (MANUAL)
+- [🚧] NC-022: Bug fixes + demo prep + submission (MANUAL)
+
+## Gate Status
+- **Gate 1 (End of Day 4):** NOT REACHED
+- **Gate 2 (End of Day 5):** NOT REACHED
+- **Gate 3 (End of Day 9):** NOT REACHED (manual)
