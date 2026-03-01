@@ -28,7 +28,7 @@
 - **Dependencies:** None
 - **Constraints:** Use `forge install` for OpenZeppelin, not npm. Remappings in remappings.txt.
 
-#### NC-002 [ ] Implement MockStablecoin.sol
+#### NC-002 [~] Implement MockStablecoin.sol
 - **What:** ERC-20 token with 6 decimals for testnet use. Public `mint(address to, uint256 amount)` function (anyone can mint on testnet). Name: "Mock USDC", symbol: "mUSDC".
 - **Acceptance criteria:**
   - Contract compiles
