@@ -19,7 +19,7 @@
 
 ## Phase 1: Foundation (Day 1)
 
-#### NC-001 [ ] Initialize Foundry project with OpenZeppelin dependencies
+#### NC-001 [x] Initialize Foundry project with OpenZeppelin dependencies
 - **What:** Create Foundry project structure. Install OpenZeppelin contracts (IERC20, ReentrancyGuard, Ownable). Configure foundry.toml: Solidity 0.8.20, optimizer 200 runs, evm_version cancun. Create folder structure: `src/`, `test/`, `script/`.
 - **Acceptance criteria:**
   - `forge build` compiles with zero errors and zero warnings
