@@ -6,7 +6,7 @@
 
 ## Status Legend
 - [ ] Queued
-- [~] In Progress (session: {session-id})
+- [ ] In Progress (session: {session-id})
 - [x] Completed (session: {session-id}, commit: {hash})
 - [!] Blocked
 - [?] Needs Clarification
