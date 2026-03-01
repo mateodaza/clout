@@ -82,3 +82,4 @@ Phase 1: Foundation (Day 1)
 **Next session:**
 Start with NC-003 (CloutEscrow core structs + createChallenge). This is a large task requiring ~500 lines of code. Recommend breaking into smaller substeps or planning multiple sessions.
 
+- **NC-003** — 2026-03-01 — `bf43e88` — Session: 20260301-225514-clout — ⚠ Committed after 3 soft review rejections; local verification passed.
