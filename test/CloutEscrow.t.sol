@@ -241,10 +241,11 @@ contract CloutEscrowTest is Test {
     // Test 13: firstChallengeAt only set once; lastChallengeAt updates
     // -------------------------------------------------------------------------
     function test_walletRecord_firstChallengeAtOnlySetOnce() public {
-        uint256 firstTs = block.timestamp;
-
         vm.prank(alice);
         escrow.createChallenge(bob, STAKE, address(token), GAME_ID, address(0));
+
+        // Read firstChallengeAt from storage (avoids via_ir block.timestamp CSE issue)
+        (, , , , , uint256 firstTs, ) = escrow.walletRecords(alice);
 
         vm.warp(block.timestamp + 1 days);
         uint256 secondTs = block.timestamp;
@@ -254,8 +255,8 @@ contract CloutEscrowTest is Test {
 
         (, , , , , uint256 firstChallengeAt, uint256 lastChallengeAt) = escrow.walletRecords(alice);
 
-        assertEq(firstChallengeAt, firstTs);
-        assertEq(lastChallengeAt, secondTs);
+        assertEq(firstChallengeAt, firstTs);    // unchanged from first create
+        assertEq(lastChallengeAt, secondTs);    // updated to second create ts
     }
 
     // -------------------------------------------------------------------------
