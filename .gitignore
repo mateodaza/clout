@@ -1,2 +1,7 @@
+# Foundry build artifacts
+out/
+cache/
+
+# IDE / OS
 .claude/
 .DS_Store
