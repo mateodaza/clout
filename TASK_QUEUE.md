@@ -39,7 +39,7 @@
 - **Dependencies:** NC-001
 - **Constraints:** Keep it minimal. ~30 lines. Inherits OpenZeppelin ERC20.
 
-#### NC-003 [~] Implement CloutEscrow.sol core structs and createChallenge
+#### NC-003 [ ] Implement CloutEscrow.sol core structs and createChallenge
 - **What:** Define Challenge struct, ChallengeState enum (CREATED, ACCEPTED, SUBMITTED, DISPUTED, RESOLVED, FINALIZED, VOIDED), Outcome enum (NONE, CREATOR_WIN, OPPONENT_WIN, DRAW, INVALID), and WalletRecord struct per RESEARCH.md §7. Implement `createChallenge()` function: validates inputs (non-zero stake, valid token, opponent != creator, designatedResolver != creator, designatedResolver != opponent), transfers stake from creator via `transferFrom`, stores challenge, emits `ChallengeCreated` event. Implement stablecoin whitelist: `addWhitelistedToken()`, `removeWhitelistedToken()`, `isWhitelisted()` (admin only). Update WalletRecord entry stats on create: increment `challengesEntered`, accumulate `totalStaked`, set `firstChallengeAt` if zero, update `lastChallengeAt`.
 - **Acceptance criteria:**
   - All structs and enums match RESEARCH.md §7 exactly
