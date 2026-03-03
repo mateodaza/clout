@@ -2,8 +2,10 @@
 # Sourced by nightcrawler.sh at startup. Override any default variable.
 
 PROJECT_DESC="Turborepo monorepo: Solidity/Foundry + Next.js 16 + shared types"
+INSTALL_CMD="pnpm install"
 BUILD_CMD="pnpm turbo build"
 TEST_CMD="pnpm turbo build && cd packages/contracts && forge test -v"
+WORKDIR=""  # root of repo (turborepo runs from root)
 BUILD_WALL=180
 BUILD_IDLE=90
 TEST_WALL=360
