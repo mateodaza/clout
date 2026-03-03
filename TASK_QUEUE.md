@@ -202,7 +202,7 @@
 
 ## Phase 4: Challenge Pools (Day 5)
 
-#### NC-011 [ ] Implement CloutPool.sol core (create, stake, close)
+#### NC-011 [x] Implement CloutPool.sol core (create, stake, close)
 - **What:** New contract. Pool struct with: host, resolver, token, event timestamps (eventStart, eventEnd, resolveBy), per-wallet cap, total pool cap, host commission bps, state (OPEN, CLOSED, SUBMITTED, DISPUTED, FINALIZED, VOIDED). `createPool()`: host creates pool, must stake YES side, cannot be own resolver (invariant I-9), validates timestamps (eventStart > block.timestamp, eventStart < eventEnd, eventEnd < resolveBy). `stakePool()`: anyone stakes YES or NO, per-wallet cap (I-10) and total cap (I-11) enforced. `closePool()`: permissionless, transitions OPEN → CLOSED after eventStart. Stablecoin whitelist (same pattern as CloutEscrow — admin only). Pool counter for IDs.
 - **Acceptance criteria:**
   - createPool: host stakes YES (I-8), cannot set self as resolver (I-9), validates all timestamps
