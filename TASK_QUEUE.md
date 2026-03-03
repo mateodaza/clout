@@ -257,7 +257,7 @@
 - **Dependencies:** NC-012A
 - **Constraints:** Use mulDiv pattern for proportional math: `(myStake * netLosingPool) / totalWinningSide`. Commission bps set at pool creation time and immutable.
 
-#### NC-012C [ ] CloutPool comprehensive test suite + invariant checks
+#### NC-012C [x] CloutPool comprehensive test suite + invariant checks
 - **What:** Full integration tests covering every CloutPool path. Pool lifecycle: create → stake (multiple wallets YES/NO) → close → resolve → finalize → claim. Dispute path. Void paths (timeout, no stakers). Named invariant tests for I-8 through I-14. Target: 10+ individual test functions.
 - **Acceptance criteria:**
   - 10+ test functions, all passing
