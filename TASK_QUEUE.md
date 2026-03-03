@@ -235,7 +235,7 @@
 - **Dependencies:** NC-011
 - **Constraints:** Use `mapping(uint256 => mapping(address => bool))` for per-wallet dispute flags. Snapshot losing staker count at resolution time (store as field on Pool struct).
 
-#### NC-012B [ ] Implement CloutPool payouts
+#### NC-012B [x] Implement CloutPool payouts
 - **What:** `claimPoolWinnings(uint256 poolId)`: callable by any staker when pool is FINALIZED. Settlement per staker: winners receive original stake PLUS pro-rata share of net losing pool. Fee deduction order: 1) `protocolFee = (totalYes + totalNo) * feeBps / 10000` → treasury. 2) If YES wins: `hostCommission = totalYes * hostBps / 10000` → host (I-12: commission only on YES). 3) `netLosingPool = totalLosingSide - protocolFee_share - hostCommission_share`. 4) `payout = myStake + (myStake * netLosingPool) / totalWinningSide`. Track `claimed` per staker. Last claimer absorbs rounding dust.
   Void paths: implement `voidPool(uint256 poolId)`: permissionless, callable when resolveBy timeout passes with no resolution from CLOSED state, OR when OPEN and eventStart passes with no stakers besides host. Refunds all stakers pro-rata. No fee, no commission on void.
 - **Acceptance criteria:**

@@ -28,6 +28,8 @@ contract CloutPoolTest is Test {
     event PoolDisputeFlagged(uint256 indexed poolId, address indexed flagger, uint256 flagCount);
     event PoolDisputeTriggered(uint256 indexed poolId);
     event PoolFinalized(uint256 indexed poolId, bool yesWins);
+    event WinningsClaimed(uint256 indexed poolId, address indexed staker, uint256 amount);
+    event PoolVoided(uint256 indexed poolId);
 
     CloutPool pool;
     MockStablecoin token;
@@ -749,5 +751,486 @@ contract CloutPoolTest is Test {
 
         vm.expectRevert(CloutPool.WrongState.selector);
         pool.adminResolvePool(poolId, false);
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers for NC-012B tests
+    // -------------------------------------------------------------------------
+
+    /// Setup: host YES=STAKE, staker1 NO=STAKE, closed, resolver submits YES, finalized.
+    /// Pool: yesWins=true, state=FINALIZED, totalYes=STAKE, totalNo=STAKE.
+    function _createFinalizedPool_yesWins() internal returns (uint256 poolId) {
+        poolId = _defaultCreatePool();
+        vm.prank(staker1);
+        pool.stakePool(poolId, false, STAKE);
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        vm.warp(p2.resolvedAt + 86400 + 1);
+        pool.finalizePool(poolId);
+    }
+
+    /// Setup: host YES=STAKE, staker1 YES=STAKE, staker2 NO=STAKE, closed, NO wins, finalized.
+    /// Pool: yesWins=false, state=FINALIZED, totalYes=2*STAKE, totalNo=STAKE.
+    function _createFinalizedPool_noWins() internal returns (uint256 poolId) {
+        poolId = _defaultCreatePool();
+        vm.prank(staker1);
+        pool.stakePool(poolId, true, STAKE);
+        vm.prank(staker2);
+        pool.stakePool(poolId, false, STAKE);
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+        vm.prank(resolver);
+        pool.resolvePool(poolId, false);
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        vm.warp(p2.resolvedAt + 86400 + 1);
+        pool.finalizePool(poolId);
+    }
+
+    /// Setup: host YES=STAKE, staker1 NO=STAKE, closed. Does NOT resolve.
+    /// Pool: state=CLOSED.
+    function _createClosedPool_notResolved() internal returns (uint256 poolId) {
+        poolId = _defaultCreatePool();
+        vm.prank(staker1);
+        pool.stakePool(poolId, false, STAKE);
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 31 (NC-012B #1) — claimPoolWinnings: YES wins, fee order and payout
+    // -------------------------------------------------------------------------
+
+    function test_claimPoolWinnings_yesWins_feeOrderAndPayout() public {
+        uint256 poolId = _createFinalizedPool_yesWins();
+        // totalYes=100e6, totalNo=100e6, totalPool=200e6
+        // protocolFee = 200e6 * 250 / 10000 = 5e6
+        // hostCommission = 100e6 * 500 / 10000 = 5e6  (hostCommissionBps=500)
+        // netLosingPool = 100e6 - 5e6 - 5e6 = 90e6
+        // host is last YES winner (yesStakerCount=1): winShare = 90e6
+        // payout = 100e6 + 90e6 = 190e6
+
+        uint256 treasuryBefore = token.balanceOf(treasury);
+        uint256 hostBefore     = token.balanceOf(host);
+
+        vm.expectEmit(true, true, false, true);
+        emit WinningsClaimed(poolId, host, 190 * 1e6);
+        vm.prank(host);
+        pool.claimPoolWinnings(poolId);
+
+        assertEq(token.balanceOf(treasury), treasuryBefore + 5 * 1e6);
+        // host receives commission (5e6) + payout (190e6) = 195e6
+        assertEq(token.balanceOf(host), hostBefore + 195 * 1e6);
+        assertTrue(pool.feesPaid(poolId));
+        assertEq(pool.snapshotProtocolFee(poolId), 5 * 1e6);
+        assertEq(pool.snapshotHostCommission(poolId), 5 * 1e6);
+
+        // staker1 (NO loser) cannot claim
+        vm.prank(staker1);
+        vm.expectRevert(CloutPool.NotWinningStaker.selector);
+        pool.claimPoolWinnings(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 31B (NC-012B) — claimPoolWinnings: zero-loser pool, no fee
+    // -------------------------------------------------------------------------
+
+    function test_claimPoolWinnings_zeroLoserPool_noFee() public {
+        // Pool with only host YES stake; no NO stakers → immediate FINALIZED on resolve
+        uint256 poolId = _defaultCreatePool();
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true); // losingCount=0 → immediate FINALIZED
+
+        uint256 hostBefore     = token.balanceOf(host);
+        uint256 treasuryBefore = token.balanceOf(treasury);
+
+        vm.expectEmit(true, true, false, true);
+        emit WinningsClaimed(poolId, host, STAKE);
+        vm.prank(host);
+        pool.claimPoolWinnings(poolId);
+
+        assertEq(token.balanceOf(host), hostBefore + STAKE);
+        assertEq(token.balanceOf(treasury), treasuryBefore); // no fee taken
+        assertEq(token.balanceOf(address(pool)), 0);          // contract fully drained
+        assertEq(pool.snapshotProtocolFee(poolId), 0);
+        assertEq(pool.snapshotHostCommission(poolId), 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 32 (NC-012B #2) — claimPoolWinnings: NO wins, no commission (I-12)
+    // -------------------------------------------------------------------------
+
+    function test_claimPoolWinnings_noWins_noCommission() public {
+        uint256 poolId = _createFinalizedPool_noWins();
+        // totalYes=200e6, totalNo=100e6, totalPool=300e6
+        // protocolFee = 300e6 * 250 / 10000 = 7500000
+        // hostCommission = 0 (NO wins, I-12)
+        // netLosingPool = 200e6 - 7500000 = 192500000
+        // staker2 (only NO staker, last): winShare = 192500000
+        // payout = 100e6 + 192500000 = 292500000
+
+        uint256 treasuryBefore = token.balanceOf(treasury);
+        uint256 staker2Before  = token.balanceOf(staker2);
+
+        vm.prank(staker2);
+        pool.claimPoolWinnings(poolId);
+
+        assertEq(token.balanceOf(treasury), treasuryBefore + 7500000);
+        assertEq(token.balanceOf(staker2), staker2Before + 292500000);
+        assertEq(pool.snapshotHostCommission(poolId), 0);
+
+        // host (YES loser) cannot claim
+        vm.prank(host);
+        vm.expectRevert(CloutPool.NotWinningStaker.selector);
+        pool.claimPoolWinnings(poolId);
+
+        // staker1 (YES loser) cannot claim
+        vm.prank(staker1);
+        vm.expectRevert(CloutPool.NotWinningStaker.selector);
+        pool.claimPoolWinnings(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 33 (NC-012B #3) — claimPoolWinnings: proportional payout, 3 YES stakers (I-14)
+    // -------------------------------------------------------------------------
+
+    function test_claimPoolWinnings_proportional_threeStakers() public {
+        uint256 poolId = _defaultCreatePool(); // host YES=100e6
+        vm.prank(staker1);
+        pool.stakePool(poolId, true, 200 * 1e6);  // staker1 YES=200e6
+        vm.prank(staker2);
+        pool.stakePool(poolId, true, 300 * 1e6);  // staker2 YES=300e6
+        vm.prank(staker3);
+        pool.stakePool(poolId, false, 100 * 1e6); // staker3 NO=100e6
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        vm.warp(p2.resolvedAt + 86400 + 1);
+        pool.finalizePool(poolId);
+
+        // totalYes=600e6, totalNo=100e6, totalPool=700e6
+        // protocolFee = 700e6 * 250 / 10000 = 17500000
+        // hostCommission = 600e6 * 500 / 10000 = 30000000
+        // netLosingPool = 100e6 - 47500000 = 52500000
+        // host (not last): winShare = mulDiv(100e6, 52500000, 600e6) = 8750000
+        // staker1 (not last): winShare = mulDiv(200e6, 52500000, 600e6) = 17500000
+        // staker2 (last): winShare = 52500000 - 8750000 - 17500000 = 26250000
+
+        uint256 treasuryBefore = token.balanceOf(treasury);
+        uint256 hostBefore     = token.balanceOf(host);
+        uint256 staker1Before  = token.balanceOf(staker1);
+        uint256 staker2Before  = token.balanceOf(staker2);
+
+        vm.prank(host);
+        pool.claimPoolWinnings(poolId);
+
+        vm.prank(staker1);
+        pool.claimPoolWinnings(poolId);
+
+        vm.prank(staker2);
+        pool.claimPoolWinnings(poolId);
+
+        assertEq(token.balanceOf(treasury), treasuryBefore + 17500000);
+        // host receives commission (30e6) + payout (100e6 + 8750000)
+        assertEq(token.balanceOf(host), hostBefore + 30000000 + 108750000);
+        assertEq(token.balanceOf(staker1), staker1Before + 217500000);
+        assertEq(token.balanceOf(staker2), staker2Before + 326250000);
+        assertEq(token.balanceOf(address(pool)), 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 34 (NC-012B #4) — claimPoolWinnings: rounding dust absorbed by last claimer
+    // -------------------------------------------------------------------------
+
+    function test_claimPoolWinnings_roundingDust() public {
+        // Create pool with non-uniform YES stakes to induce rounding
+        vm.prank(host);
+        uint256 poolId = pool.createPool(
+            resolver,
+            address(token),
+            block.timestamp + 1 days,
+            block.timestamp + 2 days,
+            block.timestamp + 3 days,
+            500 * 1e6,
+            1000 * 1e6,
+            500,         // hostCommissionBps
+            101 * 1e6    // initialYesStake
+        );
+
+        vm.prank(staker1);
+        pool.stakePool(poolId, true, 99 * 1e6);   // staker1 YES=99e6
+
+        vm.prank(staker2);
+        pool.stakePool(poolId, false, 57 * 1e6);  // staker2 NO=57e6
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        vm.warp(p2.resolvedAt + 86400 + 1);
+        pool.finalizePool(poolId);
+
+        uint256 contractBefore = token.balanceOf(address(pool));
+        assertEq(contractBefore, 257 * 1e6);
+
+        uint256 treasuryBefore = token.balanceOf(treasury);
+        uint256 hostBefore     = token.balanceOf(host);
+        uint256 staker1Before  = token.balanceOf(staker1);
+
+        vm.prank(host);
+        pool.claimPoolWinnings(poolId);
+
+        vm.prank(staker1);
+        pool.claimPoolWinnings(poolId);
+
+        // Contract fully drained
+        assertEq(token.balanceOf(address(pool)), 0);
+
+        // Conservation: all outflows sum to total pool
+        uint256 hostGain     = token.balanceOf(host) - hostBefore;
+        uint256 staker1Gain  = token.balanceOf(staker1) - staker1Before;
+        uint256 treasuryGain = token.balanceOf(treasury) - treasuryBefore;
+        assertEq(hostGain + staker1Gain + treasuryGain, 257 * 1e6);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 35 (NC-012B #5) — claimPoolWinnings: reverts from wrong states
+    // -------------------------------------------------------------------------
+
+    function test_claimPoolWinnings_revertsWrongState() public {
+        // Sub-case A: OPEN
+        uint256 poolId = _defaultCreatePool();
+        vm.prank(host);
+        vm.expectRevert(CloutPool.WrongState.selector);
+        pool.claimPoolWinnings(poolId);
+
+        // Sub-case B: CLOSED
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+        vm.prank(host);
+        vm.expectRevert(CloutPool.WrongState.selector);
+        pool.claimPoolWinnings(poolId);
+
+        // Sub-case C: SUBMITTED
+        uint256 poolId2 = _createAndClosePoolWithNoStaker();
+        vm.prank(resolver);
+        pool.resolvePool(poolId2, true);
+        vm.prank(host);
+        vm.expectRevert(CloutPool.WrongState.selector);
+        pool.claimPoolWinnings(poolId2);
+
+        // Sub-case D: DISPUTED
+        uint256 poolId3 = _createAndClosePoolWithMultipleNoStakers(5);
+        vm.prank(resolver);
+        pool.resolvePool(poolId3, true);
+        vm.prank(staker1);
+        pool.disputePool(poolId3);
+        vm.prank(staker2);
+        pool.disputePool(poolId3); // triggers DISPUTED
+        vm.prank(host);
+        vm.expectRevert(CloutPool.WrongState.selector);
+        pool.claimPoolWinnings(poolId3);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 36 (NC-012B #6) — claimPoolWinnings: reverts AlreadyClaimed
+    // -------------------------------------------------------------------------
+
+    function test_claimPoolWinnings_revertsAlreadyClaimed() public {
+        uint256 poolId = _createFinalizedPool_yesWins();
+
+        vm.prank(host);
+        pool.claimPoolWinnings(poolId);
+
+        vm.prank(host);
+        vm.expectRevert(CloutPool.AlreadyClaimed.selector);
+        pool.claimPoolWinnings(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 37 (NC-012B #7) — claimPoolWinnings: reverts NotWinningStaker
+    // -------------------------------------------------------------------------
+
+    function test_claimPoolWinnings_revertsNotWinningStaker() public {
+        uint256 poolId = _createFinalizedPool_yesWins();
+        // yesWins=true; host=YES (winner), staker1=NO (loser)
+
+        // staker2 has no stake at all
+        vm.prank(staker2);
+        vm.expectRevert(CloutPool.NotWinningStaker.selector);
+        pool.claimPoolWinnings(poolId);
+
+        // staker1 is on the losing NO side
+        vm.prank(staker1);
+        vm.expectRevert(CloutPool.NotWinningStaker.selector);
+        pool.claimPoolWinnings(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 38 (NC-012B #8) — voidPool: resolver timeout from CLOSED
+    // -------------------------------------------------------------------------
+
+    function test_voidPool_resolveByTimeout() public {
+        uint256 poolId = _createClosedPool_notResolved();
+        CloutPool.Pool memory p = pool.getPool(poolId);
+
+        vm.warp(p.resolveBy + 1);
+
+        vm.expectEmit(true, false, false, false);
+        emit PoolVoided(poolId);
+        pool.voidPool(poolId);
+
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        assertEq(uint8(p2.state), uint8(CloutPool.PoolState.VOIDED));
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 39 (NC-012B #9) — voidPool: OPEN with no audience stakers
+    // -------------------------------------------------------------------------
+
+    function test_voidPool_noStakers() public {
+        uint256 poolId = _defaultCreatePool(); // only host staked YES
+        CloutPool.Pool memory p = pool.getPool(poolId);
+
+        vm.warp(p.eventStart);
+
+        vm.expectEmit(true, false, false, false);
+        emit PoolVoided(poolId);
+        pool.voidPool(poolId);
+
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        assertEq(uint8(p2.state), uint8(CloutPool.PoolState.VOIDED));
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 39B (NC-012B) — voidPool: host staked both sides, no audience
+    // -------------------------------------------------------------------------
+
+    function test_voidPool_noStakers_hostStakedBothSides() public {
+        uint256 poolId = _defaultCreatePool(); // host YES=STAKE
+
+        // Host also stakes NO — still only host in the pool
+        vm.prank(host);
+        pool.stakePool(poolId, false, STAKE);
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+
+        vm.expectEmit(true, false, false, false);
+        emit PoolVoided(poolId);
+        pool.voidPool(poolId);
+
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        assertEq(uint8(p2.state), uint8(CloutPool.PoolState.VOIDED));
+
+        // Host claims both sides back, no fee
+        uint256 hostBefore = token.balanceOf(host);
+        vm.prank(host);
+        pool.claimPoolWinnings(poolId);
+
+        assertEq(token.balanceOf(host), hostBefore + STAKE + STAKE);
+        assertEq(token.balanceOf(address(pool)), 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 40 (NC-012B #10) — voidPool: reverts NotVoidable
+    // -------------------------------------------------------------------------
+
+    function test_voidPool_revertsNotVoidable() public {
+        // Sub-case A: OPEN before eventStart
+        uint256 poolId = _defaultCreatePool();
+        vm.expectRevert(CloutPool.NotVoidable.selector);
+        pool.voidPool(poolId);
+
+        // Sub-case B: CLOSED before resolveBy
+        uint256 poolId2 = _createClosedPool_notResolved();
+        // resolveBy has not passed yet
+        vm.expectRevert(CloutPool.NotVoidable.selector);
+        pool.voidPool(poolId2);
+
+        // Sub-case C: SUBMITTED pool
+        uint256 poolId3 = _createAndClosePoolWithNoStaker();
+        vm.prank(resolver);
+        pool.resolvePool(poolId3, true); // state = SUBMITTED
+        vm.expectRevert(CloutPool.NotVoidable.selector);
+        pool.voidPool(poolId3);
+
+        // Sub-case D: OPEN with another YES staker (yesStakerCount=2)
+        uint256 poolId4 = _defaultCreatePool();
+        vm.prank(staker1);
+        pool.stakePool(poolId4, true, STAKE); // yesStakerCount=2
+        CloutPool.Pool memory p4 = pool.getPool(poolId4);
+        vm.warp(p4.eventStart);
+        vm.expectRevert(CloutPool.NotVoidable.selector);
+        pool.voidPool(poolId4);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 41 (NC-012B #11) — voidPool: refund YES staker via claimPoolWinnings
+    // -------------------------------------------------------------------------
+
+    function test_voidPool_refundClaim_yesStaker() public {
+        uint256 poolId = _createClosedPool_notResolved();
+        // host staked YES=STAKE; staker1 staked NO=STAKE
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.resolveBy + 1);
+        pool.voidPool(poolId);
+
+        uint256 hostBefore = token.balanceOf(host);
+
+        vm.expectEmit(true, true, false, true);
+        emit WinningsClaimed(poolId, host, STAKE);
+        vm.prank(host);
+        pool.claimPoolWinnings(poolId);
+
+        assertEq(token.balanceOf(host), hostBefore + STAKE);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 42 (NC-012B #12) — voidPool: refund NO staker via claimPoolWinnings
+    // -------------------------------------------------------------------------
+
+    function test_voidPool_refundClaim_noStaker() public {
+        uint256 poolId = _createClosedPool_notResolved();
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.resolveBy + 1);
+        pool.voidPool(poolId);
+
+        uint256 staker1Before = token.balanceOf(staker1);
+
+        vm.expectEmit(true, true, false, true);
+        emit WinningsClaimed(poolId, staker1, STAKE);
+        vm.prank(staker1);
+        pool.claimPoolWinnings(poolId);
+
+        assertEq(token.balanceOf(staker1), staker1Before + STAKE);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 43 (NC-012B #13) — claimPoolWinnings: reverts on CLOSED (before void)
+    // -------------------------------------------------------------------------
+
+    function test_claimPoolWinnings_revertsBeforeVoid() public {
+        uint256 poolId = _createClosedPool_notResolved();
+        // state = CLOSED, not yet voided
+
+        vm.prank(staker1);
+        vm.expectRevert(CloutPool.WrongState.selector);
+        pool.claimPoolWinnings(poolId);
     }
 }

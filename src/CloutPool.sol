@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract CloutPool is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
@@ -75,6 +76,25 @@ contract CloutPool is ReentrancyGuard, Ownable {
     // Per-staker claim tracking — for NC-012B (prevents double-claim)
     mapping(uint256 => mapping(address => bool)) public claimed;
 
+    /// @notice Whether fees and host commission have been transferred for this pool.
+    ///         Set to true by the first claimPoolWinnings caller on a FINALIZED pool.
+    mapping(uint256 => bool) public feesPaid;
+
+    /// @notice Snapshotted protocol fee amount for this pool (set at first claim, used by all).
+    ///         Prevents fee-param drift affecting payout consistency across claims.
+    mapping(uint256 => uint256) public snapshotProtocolFee;
+
+    /// @notice Snapshotted host commission amount for this pool (set at first claim, used by all).
+    mapping(uint256 => uint256) public snapshotHostCommission;
+
+    /// @notice Running total of netLosingPool already distributed to winners.
+    ///         Used to determine the final rounding-dust amount for the last claimer.
+    mapping(uint256 => uint256) public losingPoolDistributed;
+
+    /// @notice Count of winning stakers (or all stakers in VOIDED) who have claimed.
+    ///         Used to identify the last claimer who absorbs rounding dust.
+    mapping(uint256 => uint256) public claimedWinnerCount;
+
     // Stablecoin whitelist
     mapping(address => bool) private _whitelistedTokens;
 
@@ -104,6 +124,9 @@ contract CloutPool is ReentrancyGuard, Ownable {
     error AlreadyFlagged();          // disputeFlags[poolId][msg.sender] is already true
     error DisputeWindowExpired();    // block.timestamp > resolvedAt + DISPUTE_WINDOW
     error DisputeWindowOpen();       // block.timestamp <= resolvedAt + DISPUTE_WINDOW (can't finalize yet)
+    error AlreadyClaimed();          // claimed[poolId][msg.sender] is already true
+    error NotWinningStaker();        // caller has zero stake on winning side (or any stake on VOIDED)
+    error NotVoidable();             // neither void condition is met
 
     // -------------------------------------------------------------------------
     // Events
@@ -477,5 +500,148 @@ contract CloutPool is ReentrancyGuard, Ownable {
     {
         yesCount = yesStakerCount[poolId];
         noCount  = noStakerCount[poolId];
+    }
+
+    // -------------------------------------------------------------------------
+    // claimPoolWinnings
+    // -------------------------------------------------------------------------
+
+    /// @notice Claims payout for a winning staker from a FINALIZED pool, or
+    ///         full stake refund from a VOIDED pool. Permissionless per staker.
+    /// @param poolId The pool to claim from.
+    function claimPoolWinnings(uint256 poolId) external nonReentrant {
+        Pool storage pool = pools[poolId];
+
+        // CHECKS
+        if (pool.host == address(0)) revert WrongState();
+        if (pool.state != PoolState.FINALIZED && pool.state != PoolState.VOIDED) revert WrongState();
+        if (claimed[poolId][msg.sender]) revert AlreadyClaimed();
+
+        uint256 payout;
+
+        if (pool.state == PoolState.VOIDED) {
+            // CASE A — VOIDED: full stake refund, no fee (I-13: fee excluded on void)
+            uint256 myStake = yesStakes[poolId][msg.sender] + noStakes[poolId][msg.sender];
+            if (myStake == 0) revert NotWinningStaker();
+            payout = myStake;
+        } else {
+            // CASE B — FINALIZED
+            bool yesWins = pool.yesWins;
+            uint256 myStake = yesWins ? yesStakes[poolId][msg.sender] : noStakes[poolId][msg.sender];
+            if (myStake == 0) revert NotWinningStaker();
+
+            uint256 _totalPool       = pool.yesTotal + pool.noTotal;
+            uint256 totalLosingSide  = yesWins ? pool.noTotal : pool.yesTotal;
+            uint256 totalWinningSide = yesWins ? pool.yesTotal : pool.noTotal;
+
+            uint256 _protocolFee;
+            uint256 _hostCommission;
+
+            if (!feesPaid[poolId]) {
+                if (totalLosingSide == 0) {
+                    // Zero-loser pool: no losing pool to extract fees from (INTERPRETED-3)
+                    _protocolFee    = 0;
+                    _hostCommission = 0;
+                } else {
+                    address _treasury = treasury;
+                    _protocolFee    = (_treasury != address(0)) ? (_totalPool * feeBps / 10000) : 0;
+                    // I-12: host commission only on YES outcome
+                    _hostCommission = yesWins ? (pool.yesTotal * pool.hostCommissionBps / 10000) : 0;
+
+                    // Overflow guard: combined fees cannot exceed losing pool (prevents insolvency)
+                    uint256 _combinedFees = _protocolFee + _hostCommission;
+                    if (_combinedFees >= totalLosingSide) {
+                        if (_combinedFees > 0) {
+                            _protocolFee    = totalLosingSide * _protocolFee / _combinedFees;
+                            _hostCommission = totalLosingSide - _protocolFee;
+                        } else {
+                            _protocolFee    = 0;
+                            _hostCommission = 0;
+                        }
+                    }
+                }
+
+                // Snapshot and pay fees exactly once; all future claimers read snapshot
+                feesPaid[poolId]               = true;
+                snapshotProtocolFee[poolId]    = _protocolFee;
+                snapshotHostCommission[poolId] = _hostCommission;
+
+                if (_protocolFee > 0)    IERC20(pool.token).safeTransfer(treasury, _protocolFee);
+                if (_hostCommission > 0) IERC20(pool.token).safeTransfer(pool.host, _hostCommission);
+            } else {
+                // Read from snapshot to ensure consistent fee values across all claimers
+                _protocolFee    = snapshotProtocolFee[poolId];
+                _hostCommission = snapshotHostCommission[poolId];
+            }
+
+            // Net losing pool (I-14)
+            uint256 combinedFees  = _protocolFee + _hostCommission;
+            uint256 netLosingPool = (totalLosingSide > combinedFees)
+                ? totalLosingSide - combinedFees
+                : 0;
+
+            // Last-claimer dust detection
+            uint256 totalWinners = yesWins ? yesStakerCount[poolId] : noStakerCount[poolId];
+            bool isLast = (claimedWinnerCount[poolId] == totalWinners - 1);
+
+            uint256 winShare;
+            if (isLast) {
+                // Last claimer absorbs all remaining rounding dust
+                winShare = netLosingPool - losingPoolDistributed[poolId];
+            } else {
+                // Pro-rata share (mulDiv prevents 256-bit overflow)
+                winShare = Math.mulDiv(myStake, netLosingPool, totalWinningSide);
+                losingPoolDistributed[poolId] += winShare;
+            }
+
+            payout = myStake + winShare;
+        }
+
+        // EFFECTS
+        claimed[poolId][msg.sender] = true;
+        claimedWinnerCount[poolId]++;
+
+        // INTERACTIONS
+        IERC20(pool.token).safeTransfer(msg.sender, payout);
+        emit WinningsClaimed(poolId, msg.sender, payout);
+    }
+
+    // -------------------------------------------------------------------------
+    // voidPool
+    // -------------------------------------------------------------------------
+
+    /// @notice Permissionless: voids a pool when the resolver deadline passes without
+    ///         resolution from CLOSED state, or when OPEN and no audience stakers joined
+    ///         before eventStart. State transitions to VOIDED.
+    ///         Stakers reclaim their individual stakes via claimPoolWinnings.
+    /// @param poolId The pool to void.
+    function voidPool(uint256 poolId) external nonReentrant {
+        Pool storage pool = pools[poolId];
+        if (pool.host == address(0)) revert WrongState();
+
+        bool canVoid = false;
+
+        // Condition 1 — Resolver timeout from CLOSED
+        if (pool.state == PoolState.CLOSED && block.timestamp > pool.resolveBy) {
+            canVoid = true;
+        }
+
+        // Condition 2 — No audience stakers by eventStart from OPEN
+        if (pool.state == PoolState.OPEN && block.timestamp >= pool.eventStart) {
+            // "Only host has any stake" — handles host-staked-YES-only AND host-staked-both-sides
+            bool hostOnlyYes = (yesStakerCount[poolId] == 1);
+            // noCount=0: nobody staked NO; noCount=1 and noStakes[host]>0: only host staked NO
+            bool hostOnlyNo  = (noStakerCount[poolId] == 0) ||
+                               (noStakerCount[poolId] == 1 && noStakes[poolId][pool.host] > 0);
+            if (hostOnlyYes && hostOnlyNo) {
+                canVoid = true;
+            }
+        }
+
+        if (!canVoid) revert NotVoidable();
+
+        // EFFECTS
+        pool.state = PoolState.VOIDED;
+        emit PoolVoided(poolId);
     }
 }
