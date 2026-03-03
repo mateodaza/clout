@@ -25,6 +25,7 @@ contract CloutEscrowNC010Test is Test {
 
     uint256 constant STAKE       = 100e6;
     uint256 constant SMALL_STAKE = 21;
+    // forge-lint: disable-next-line(unsafe-typecast)
     bytes32 constant GAME_ID     = bytes32("game-nc010");
 
     uint256 constant EXPECTED_FEE       = 5_000_000;

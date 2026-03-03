@@ -67,6 +67,7 @@ contract CloutEscrowTest is Test {
     address treasury = address(0xFEE1);      // protocol fee recipient
 
     uint256 constant STAKE   = 100 * 1e6;           // 100 USDC
+    // forge-lint: disable-next-line(unsafe-typecast)
     bytes32 constant GAME_ID = bytes32("game-1");
 
     function setUp() public {

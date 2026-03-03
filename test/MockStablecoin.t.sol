@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/MockStablecoin.sol";
+import {Test} from "forge-std/Test.sol";
+import {MockStablecoin} from "../src/MockStablecoin.sol";
 
 contract MockStablecoinTest is Test {
     MockStablecoin token;
@@ -36,8 +36,8 @@ contract MockStablecoinTest is Test {
         token.mint(alice, amount);
         
         vm.prank(alice);
-        token.transfer(bob, amount);
-        
+        assertTrue(token.transfer(bob, amount));
+
         assertEq(token.balanceOf(alice), 0);
         assertEq(token.balanceOf(bob), amount);
     }
@@ -50,8 +50,8 @@ contract MockStablecoinTest is Test {
         token.approve(bob, amount);
         
         vm.prank(bob);
-        token.transferFrom(alice, bob, amount);
-        
+        assertTrue(token.transferFrom(alice, bob, amount));
+
         assertEq(token.balanceOf(alice), 0);
         assertEq(token.balanceOf(bob), amount);
     }
@@ -64,8 +64,8 @@ contract MockStablecoinTest is Test {
         assertEq(token.balanceOf(alice), initialMint);
         
         vm.prank(alice);
-        token.transfer(bob, transferAmount);
-        
+        assertTrue(token.transfer(bob, transferAmount));
+
         assertEq(token.balanceOf(alice), initialMint - transferAmount);
         assertEq(token.balanceOf(bob), transferAmount);
     }

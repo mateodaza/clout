@@ -183,7 +183,7 @@
 
 ## GATE 1 CHECKPOINT
 
-#### NC-G1 [ ] Gate 1: CloutEscrow complete
+#### NC-G1 [x] Gate 1: CloutEscrow complete
 - **What:** Verify Gate 1 pass criteria from GLOBAL_PLAN.md. This is a validation-only task — no new code. Run `forge build` (zero warnings), run `forge test -v` (all pass, 15+ tests), verify all 9 gate criteria are met by reading test output and contract source.
 - **Acceptance criteria:**
   - `forge build` compiles with zero errors and zero warnings
