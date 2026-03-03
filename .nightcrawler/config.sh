@@ -8,3 +8,7 @@ BUILD_WALL=120
 BUILD_IDLE=60
 TEST_WALL=300
 TEST_IDLE=120
+
+# Iteration caps — Solidity tasks are complex, give more room
+MAX_PLAN_ITERATIONS=3
+MAX_IMPL_ITERATIONS=5
