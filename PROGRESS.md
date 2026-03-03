@@ -91,3 +91,4 @@ Start with NC-003 (CloutEscrow core structs + createChallenge). This is a large 
 - **NC-007** — 2026-03-03 — `1051654` — Session: 20260303-002651-clout
 - **NC-008** — 2026-03-03 — `66c5b64` — Session: 20260303-002651-clout
 - **NC-009** — 2026-03-03 — `2f10f54` — Session: 20260303-023136-clout
+- **NC-010** — 2026-03-03 — `7c08720` — Session: 20260303-023136-clout — ⚠ Committed after soft review rejections cap; local verification passed.

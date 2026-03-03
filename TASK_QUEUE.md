@@ -160,7 +160,7 @@
 - **Dependencies:** NC-008
 - **Constraints:** WalletRecord updates happen inside the relevant mutating functions, not in separate transactions. This task focuses on the view function and integration tests — the updates themselves are already in NC-003, NC-004, NC-006, NC-008.
 
-#### NC-010 [ ] CloutEscrow comprehensive test suite + invariant checks
+#### NC-010 [x] CloutEscrow comprehensive test suite + invariant checks
 - **What:** Full integration tests covering every path through the state machine. Should include: happy path (create → accept → submit → confirm → claim for each outcome), dispute path (dispute → resolve → finalize), appeal path (dispute → resolve → appeal → admin decides), all timeout paths (6 timeouts: 48h create, 48h accept, 24h confirm auto-accept, 48h resolver, 24h appeal, 48h admin), edge cases (double claim, wrong caller, wrong state, zero stake). Named invariant tests for I-1 through I-7. Target: 15+ individual test functions.
 - **Acceptance criteria:**
   - 15+ test functions, all passing
