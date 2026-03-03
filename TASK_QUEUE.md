@@ -54,7 +54,7 @@
 - **Dependencies:** NC-001, NC-002
 - **Constraints:** Use `mapping(uint256 => Challenge) public challenges` for storage. Use `uint256 public challengeCount` as counter. Token address is a parameter.
 
-#### NC-004 [ ] Implement acceptChallenge and voidChallenge (timeout)
+#### NC-004 [x] Implement acceptChallenge and voidChallenge (timeout)
 - **What:** `acceptChallenge(uint256 challengeId)`: validates caller is the designated opponent, challenge is in CREATED state, transfers matching stake, updates state to ACCEPTED, emits event. Update WalletRecord entry stats on accept: increment `challengesEntered`, accumulate `totalStaked`, set `firstChallengeAt` if zero, update `lastChallengeAt`. Void logic for CREATED state: if 48h elapsed since creation and no acceptance, anyone can call `voidChallenge()` to refund creator. Void logic for ACCEPTED state: if 48h elapsed since acceptance and no result submitted, either party can call `voidChallenge()` to refund both. Update WalletRecord completion stats on void (no win increment).
 - **Acceptance criteria:**
   - acceptChallenge transfers matching stake, sets state to ACCEPTED

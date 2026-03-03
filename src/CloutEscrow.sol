@@ -35,6 +35,7 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         uint256 acceptedAt;
         uint256 submittedAt;         // when result was submitted (starts confirmation deadline)
         uint256 disputedAt;          // when dispute was triggered (starts resolver deadline)
+        bool claimed;                // true after settlement; set by voidChallenge or claimWinnings
     }
 
     struct WalletRecord {
@@ -46,6 +47,12 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         uint256 firstChallengeAt;      // timestamp of first entry action (create or accept)
         uint256 lastChallengeAt;       // timestamp of most recent challenge
     }
+
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+
+    uint256 public constant VOID_TIMEOUT = 172800; // 48 hours in seconds
 
     // -------------------------------------------------------------------------
     // Storage
@@ -66,6 +73,10 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     error OpponentIsCreator();
     error ResolverIsCreator();
     error ResolverIsOpponent();
+    error NotOpponent();       // caller != challenge.opponent
+    error WrongState();        // challenge not in required state
+    error TimeoutNotExpired(); // 48h hasn't elapsed yet
+    error NotParticipant();    // caller is not creator or opponent (ACCEPTED-void guard)
 
     // -------------------------------------------------------------------------
     // Events
@@ -83,6 +94,16 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     );
     event TokenWhitelisted(address indexed token);
     event TokenDelisted(address indexed token);
+    event ChallengeAccepted(
+        uint256 indexed challengeId,
+        address indexed opponent,
+        uint256 acceptedAt
+    );
+    event ChallengeVoided(
+        uint256 indexed challengeId,
+        address indexed calledBy,
+        uint256 voidedAt
+    );
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -178,5 +199,64 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         r.totalStaked += stakeAmount;
         if (r.firstChallengeAt == 0) r.firstChallengeAt = block.timestamp;
         r.lastChallengeAt = block.timestamp;
+    }
+
+    /// @notice Updates wallet completion statistics for a participant.
+    /// @dev Called on voidChallenge (won=false) and will be called by claimWinnings (NC-008).
+    /// @param wallet The participant address.
+    /// @param won True if the participant won the challenge.
+    function _updateCompletionStats(address wallet, bool won) internal {
+        WalletRecord storage r = walletRecords[wallet];
+        r.challengesCompleted++;
+        if (won) r.challengesWon++;
+    }
+
+    // -------------------------------------------------------------------------
+    // acceptChallenge
+    // -------------------------------------------------------------------------
+
+    /// @notice Accepts a challenge and transfers the opponent's matching stake into escrow.
+    /// @param challengeId The ID of the challenge to accept.
+    function acceptChallenge(uint256 challengeId) external nonReentrant {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.CREATED) revert WrongState();
+        if (msg.sender != c.opponent) revert NotOpponent();
+        IERC20(c.token).safeTransferFrom(msg.sender, address(this), c.stakeAmount);
+        c.state = ChallengeState.ACCEPTED;
+        c.acceptedAt = block.timestamp;
+        _updateEntryStats(msg.sender, c.stakeAmount);
+        emit ChallengeAccepted(challengeId, msg.sender, block.timestamp);
+    }
+
+    // -------------------------------------------------------------------------
+    // voidChallenge
+    // -------------------------------------------------------------------------
+
+    /// @notice Voids a challenge after the 48-hour timeout, refunding all staked tokens.
+    /// @dev CREATED: anyone may call after 48h from creation; refunds creator.
+    ///      ACCEPTED: creator or opponent may call after 48h from acceptance; refunds both.
+    /// @param challengeId The ID of the challenge to void.
+    function voidChallenge(uint256 challengeId) external nonReentrant {
+        Challenge storage c = challenges[challengeId];
+        if (c.state == ChallengeState.CREATED) {
+            if (block.timestamp < c.createdAt + VOID_TIMEOUT) revert TimeoutNotExpired();
+            c.state = ChallengeState.VOIDED;
+            c.claimed = true;
+            IERC20(c.token).safeTransfer(c.creator, c.stakeAmount);
+            _updateCompletionStats(c.creator, false);
+            emit ChallengeVoided(challengeId, msg.sender, block.timestamp);
+        } else if (c.state == ChallengeState.ACCEPTED) {
+            if (msg.sender != c.creator && msg.sender != c.opponent) revert NotParticipant();
+            if (block.timestamp < c.acceptedAt + VOID_TIMEOUT) revert TimeoutNotExpired();
+            c.state = ChallengeState.VOIDED;
+            c.claimed = true;
+            IERC20(c.token).safeTransfer(c.creator, c.stakeAmount);
+            IERC20(c.token).safeTransfer(c.opponent, c.stakeAmount);
+            _updateCompletionStats(c.creator, false);
+            _updateCompletionStats(c.opponent, false);
+            emit ChallengeVoided(challengeId, msg.sender, block.timestamp);
+        } else {
+            revert WrongState();
+        }
     }
 }
