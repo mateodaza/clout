@@ -69,6 +69,10 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     /// @notice Tracks how many disputes each resolver has resolved (for collusion detection).
     mapping(address => uint256) public resolvedChallenges;
 
+    uint256 public feeBps;               // protocol fee in basis points (250 = 2.5%)
+    address public treasury;             // protocol fee recipient; address(0) = no fee collected
+    uint256 public constant MAX_FEE_BPS = 1000; // hard cap: 10%
+
     // -------------------------------------------------------------------------
     // Custom Errors
     // -------------------------------------------------------------------------
@@ -93,6 +97,8 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     error AppealPending();         // finalizeResolution called when c.appealed == true
     error AdminTimeoutExpired();   // adminFinalizeAppeal called after appealedAt + 48h
     error AppealNotAllowed();      // appealResolution called when designatedResolver == address(0); admin decisions are final
+    error AlreadyClaimed();        // c.claimed == true when claimWinnings is called
+    error FeeTooHigh();            // feeBps > MAX_FEE_BPS in setProtocolFee
 
     // -------------------------------------------------------------------------
     // Events
@@ -161,6 +167,15 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         uint256 indexed challengeId,
         uint256 voidedAt
     );
+    event WinningsClaimed(
+        uint256 indexed challengeId,
+        Outcome outcome,
+        uint256 creatorPayout,
+        uint256 opponentPayout,
+        uint256 protocolFee
+    );
+    event ProtocolFeeUpdated(uint256 oldBps, uint256 newBps);
+    event TreasuryUpdated(address oldTreasury, address newTreasury);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -168,7 +183,9 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
 
     /// @notice Deploys CloutEscrow, setting the deployer as owner.
     /// @dev OZ v5 Ownable requires explicit initialOwner argument.
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable(msg.sender) {
+        feeBps = 250; // default 2.5%
+    }
 
     // -------------------------------------------------------------------------
     // Stablecoin Whitelist
@@ -351,19 +368,11 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         if (c.state == ChallengeState.CREATED) {
             if (block.timestamp < c.createdAt + VOID_TIMEOUT) revert TimeoutNotExpired();
             c.state = ChallengeState.VOIDED;
-            c.claimed = true;
-            IERC20(c.token).safeTransfer(c.creator, c.stakeAmount);
-            _updateCompletionStats(c.creator, false);
             emit ChallengeVoided(challengeId, msg.sender, block.timestamp);
         } else if (c.state == ChallengeState.ACCEPTED) {
             if (msg.sender != c.creator && msg.sender != c.opponent) revert NotParticipant();
             if (block.timestamp < c.acceptedAt + VOID_TIMEOUT) revert TimeoutNotExpired();
             c.state = ChallengeState.VOIDED;
-            c.claimed = true;
-            IERC20(c.token).safeTransfer(c.creator, c.stakeAmount);
-            IERC20(c.token).safeTransfer(c.opponent, c.stakeAmount);
-            _updateCompletionStats(c.creator, false);
-            _updateCompletionStats(c.opponent, false);
             emit ChallengeVoided(challengeId, msg.sender, block.timestamp);
         } else {
             revert WrongState();
@@ -476,11 +485,6 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         if (!c.appealed) revert NoAppeal();
         if (block.timestamp < c.appealedAt + VOID_TIMEOUT) revert TimeoutNotExpired();
         c.state = ChallengeState.VOIDED;
-        c.claimed = true;
-        IERC20(c.token).safeTransfer(c.creator, c.stakeAmount);
-        IERC20(c.token).safeTransfer(c.opponent, c.stakeAmount);
-        _updateCompletionStats(c.creator, false);
-        _updateCompletionStats(c.opponent, false);
         emit ChallengeVoidedByAdminTimeout(challengeId, block.timestamp);
     }
 
@@ -525,5 +529,116 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
             if (block.timestamp < c.disputedAt + VOID_TIMEOUT) revert TimeoutNotExpired();
         }
         _doResolve(challengeId, outcome, msg.sender);
+    }
+
+    // -------------------------------------------------------------------------
+    // setProtocolFee
+    // -------------------------------------------------------------------------
+
+    /// @notice Sets the protocol fee in basis points. Admin only. Hard-capped at MAX_FEE_BPS.
+    /// @param bps The new fee in basis points (e.g., 250 = 2.5%).
+    function setProtocolFee(uint256 bps) external onlyOwner {
+        if (bps > MAX_FEE_BPS) revert FeeTooHigh();
+        emit ProtocolFeeUpdated(feeBps, bps);
+        feeBps = bps;
+    }
+
+    // -------------------------------------------------------------------------
+    // setTreasury
+    // -------------------------------------------------------------------------
+
+    /// @notice Sets the protocol fee recipient address. Admin only.
+    /// @param _treasury The new treasury address; address(0) disables fee collection.
+    function setTreasury(address _treasury) external onlyOwner {
+        emit TreasuryUpdated(treasury, _treasury);
+        treasury = _treasury;
+    }
+
+    // -------------------------------------------------------------------------
+    // claimWinnings
+    // -------------------------------------------------------------------------
+
+    /// @notice Settles a FINALIZED or VOIDED challenge: distributes tokens to participants
+    ///         and the protocol treasury. Either creator or opponent may call.
+    /// @param challengeId The ID of the challenge to settle.
+    function claimWinnings(uint256 challengeId) external nonReentrant {
+        // CHECKS
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.FINALIZED && c.state != ChallengeState.VOIDED)
+            revert WrongState();
+        if (msg.sender != c.creator && msg.sender != c.opponent) revert NotParticipant();
+        if (c.claimed) revert AlreadyClaimed();
+
+        // EFFECTS — mark claimed before any transfer
+        c.claimed = true;
+
+        uint256 stake     = c.stakeAmount;
+        Outcome outcome   = c.submittedResult;
+        address tok       = c.token;
+        address _treasury = treasury;    // cache storage reads
+        uint256 _feeBps   = feeBps;      // cache storage reads
+
+        uint256 creatorPayout;
+        uint256 opponentPayout;
+        uint256 fee;
+
+        if (c.state == ChallengeState.VOIDED) {
+            // VOIDED: no fee, refund staked amounts only.
+            // Discriminant: c.acceptedAt == 0 → CREATED→VOIDED (creator only staked)
+            //               c.acceptedAt != 0 → ACCEPTED→VOIDED or voidByAdminTimeout (both staked)
+            fee = 0;
+            if (c.acceptedAt == 0) {
+                // Only creator staked — refund creator only
+                creatorPayout  = stake;
+                opponentPayout = 0;
+                _updateCompletionStats(c.creator, false);
+                // Opponent never entered — do NOT update opponent completion stats
+            } else {
+                // Both staked — refund both
+                creatorPayout  = stake;
+                opponentPayout = stake;
+                _updateCompletionStats(c.creator, false);
+                _updateCompletionStats(c.opponent, false);
+            }
+        } else {
+            // FINALIZED: apply outcome and fee logic
+            if (outcome == Outcome.CREATOR_WIN) {
+                fee            = (_treasury != address(0)) ? (2 * stake) * _feeBps / 10000 : 0;
+                creatorPayout  = 2 * stake - fee;
+                opponentPayout = 0;
+                _updateCompletionStats(c.creator, true);
+                _updateCompletionStats(c.opponent, false);
+
+            } else if (outcome == Outcome.OPPONENT_WIN) {
+                fee            = (_treasury != address(0)) ? (2 * stake) * _feeBps / 10000 : 0;
+                creatorPayout  = 0;
+                opponentPayout = 2 * stake - fee;
+                _updateCompletionStats(c.creator, false);
+                _updateCompletionStats(c.opponent, true);
+
+            } else if (outcome == Outcome.DRAW) {
+                fee               = (_treasury != address(0)) ? (2 * stake) * _feeBps / 10000 : 0;
+                uint256 remaining = 2 * stake - fee;
+                opponentPayout    = remaining / 2;              // floor
+                creatorPayout     = remaining - opponentPayout; // ceiling — absorbs rounding dust
+                _updateCompletionStats(c.creator, false);
+                _updateCompletionStats(c.opponent, false);
+
+            } else {
+                // Outcome.INVALID (and defensive fallback for NONE, which should never be finalized)
+                fee            = 0;
+                creatorPayout  = stake;
+                opponentPayout = stake;
+                _updateCompletionStats(c.creator, false);
+                _updateCompletionStats(c.opponent, false);
+            }
+        }
+
+        // INTERACTIONS
+        if (creatorPayout  > 0) IERC20(tok).safeTransfer(c.creator,  creatorPayout);
+        if (opponentPayout > 0) IERC20(tok).safeTransfer(c.opponent, opponentPayout);
+        if (fee            > 0) IERC20(tok).safeTransfer(_treasury,  fee);
+
+        emit WinningsClaimed(challengeId, outcome, creatorPayout, opponentPayout, fee);
     }
 }

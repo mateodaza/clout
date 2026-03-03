@@ -122,7 +122,7 @@
 
 ## Phase 3: Payouts + Hardening (Day 4)
 
-#### NC-008 [ ] Implement claimWinnings and fee routing
+#### NC-008 [x] Implement claimWinnings and fee routing
 - **What:** `claimWinnings(uint256 challengeId)`: callable by EITHER creator or opponent when state is FINALIZED or VOIDED. This is a settlement function — one call distributes ALL owed payouts atomically and marks the challenge as `claimed`. Calculates protocol fee (configurable basis points, default 250 = 2.5%). Fee calculation: `protocolFee = (2 * stake) * feeBps / 10000`. Transfers:
   - CREATOR_WIN: `(2 * stake - protocolFee)` to creator, `protocolFee` to treasury
   - OPPONENT_WIN: `(2 * stake - protocolFee)` to opponent, `protocolFee` to treasury

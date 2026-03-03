@@ -45,16 +45,26 @@ contract CloutEscrowTest is Test {
     event ResolutionAppealed(uint256 indexed, address indexed, uint256);
     event ResolutionFinalized(uint256 indexed, CloutEscrow.Outcome, uint256);
     event ChallengeVoidedByAdminTimeout(uint256 indexed, uint256);
+    event WinningsClaimed(
+        uint256 indexed challengeId,
+        CloutEscrow.Outcome outcome,
+        uint256 creatorPayout,
+        uint256 opponentPayout,
+        uint256 protocolFee
+    );
+    event ProtocolFeeUpdated(uint256 oldBps, uint256 newBps);
+    event TreasuryUpdated(address oldTreasury, address newTreasury);
 
     CloutEscrow escrow;
     MockStablecoin token;
     MockReturnFalseToken badToken;
 
-    address admin = address(this);        // test contract = owner of escrow
-    address alice = address(0xA11CE);     // creator
-    address bob   = address(0xB0B);       // opponent
-    address charlie = address(0xC4A1);   // designated resolver
-    address dave  = address(0xDA7E);      // unrelated address
+    address admin    = address(this);        // test contract = owner of escrow
+    address alice    = address(0xA11CE);     // creator
+    address bob      = address(0xB0B);       // opponent
+    address charlie  = address(0xC4A1);      // designated resolver
+    address dave     = address(0xDA7E);      // unrelated address
+    address treasury = address(0xFEE1);      // protocol fee recipient
 
     uint256 constant STAKE   = 100 * 1e6;           // 100 USDC
     bytes32 constant GAME_ID = bytes32("game-1");
@@ -65,6 +75,7 @@ contract CloutEscrowTest is Test {
         escrow = new CloutEscrow();
 
         escrow.addWhitelistedToken(address(token));
+        escrow.setTreasury(treasury);   // feeBps defaults to 250 from constructor
 
         token.mint(alice, 10_000e6);
         token.mint(bob, 10_000e6);
@@ -477,7 +488,7 @@ contract CloutEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------------
-    // Test 23: voidChallenge from CREATED — refunds creator after timeout
+    // Test 23: voidChallenge from CREATED — refunds creator after timeout (via claimWinnings)
     // -------------------------------------------------------------------------
     function test_voidChallenge_fromCreated_afterTimeout_refundsCreator() public {
         uint256 id = _createDefault();
@@ -491,6 +502,11 @@ contract CloutEscrowTest is Test {
 
         (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , , , ) = escrow.challenges(id);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.VOIDED));
+
+        // claimWinnings settles the transfer
+        vm.prank(alice);
+        escrow.claimWinnings(id);
+
         assertEq(token.balanceOf(alice), aliceBefore + STAKE);
         assertEq(token.balanceOf(address(escrow)), 0);
     }
@@ -526,7 +542,7 @@ contract CloutEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------------
-    // Test 26: voidChallenge from CREATED — WalletRecord completion stats
+    // Test 26: voidChallenge from CREATED — WalletRecord completion stats (via claimWinnings)
     // -------------------------------------------------------------------------
     function test_voidChallenge_fromCreated_walletRecord_completionStats() public {
         uint256 id = _createDefault();
@@ -535,6 +551,10 @@ contract CloutEscrowTest is Test {
         vm.warp(createdAt + escrow.VOID_TIMEOUT() + 1);
         vm.prank(dave);
         escrow.voidChallenge(id);
+
+        // claimWinnings updates completion stats
+        vm.prank(alice);
+        escrow.claimWinnings(id);
 
         (, uint256 aliceCompleted, uint256 aliceWon, , , , ) = escrow.walletRecords(alice);
         assertEq(aliceCompleted, 1);
@@ -546,7 +566,7 @@ contract CloutEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------------
-    // Test 27: voidChallenge from ACCEPTED — refunds both parties after timeout
+    // Test 27: voidChallenge from ACCEPTED — refunds both parties after timeout (via claimWinnings)
     // -------------------------------------------------------------------------
     function test_voidChallenge_fromAccepted_afterTimeout_refundsBoth() public {
         uint256 id = _createDefault();
@@ -564,6 +584,11 @@ contract CloutEscrowTest is Test {
 
         (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , , , ) = escrow.challenges(id);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.VOIDED));
+
+        // claimWinnings settles the transfers
+        vm.prank(alice);
+        escrow.claimWinnings(id);
+
         assertEq(token.balanceOf(alice), aliceBefore + STAKE);
         assertEq(token.balanceOf(bob), bobBefore + STAKE);
         assertEq(token.balanceOf(address(escrow)), 0);
@@ -617,6 +642,10 @@ contract CloutEscrowTest is Test {
         vm.prank(alice);
         escrow.voidChallenge(id);
 
+        // claimWinnings updates completion stats (ACCEPTED→VOIDED: both parties)
+        vm.prank(alice);
+        escrow.claimWinnings(id);
+
         (, uint256 aliceCompleted, uint256 aliceWon, , , , ) = escrow.walletRecords(alice);
         assertEq(aliceCompleted, 1);
         assertEq(aliceWon, 0);
@@ -627,7 +656,7 @@ contract CloutEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------------
-    // Test 31: voidChallenge — claimed field is true after void
+    // Test 31: voidChallenge — claimed field is true after claimWinnings (not after void)
     // -------------------------------------------------------------------------
     function test_voidChallenge_claimed_field_true_after_void() public {
         uint256 id = _createDefault();
@@ -636,6 +665,14 @@ contract CloutEscrowTest is Test {
         vm.warp(createdAt + escrow.VOID_TIMEOUT() + 1);
         vm.prank(dave);
         escrow.voidChallenge(id);
+
+        // claimed is not set by voidChallenge — only by claimWinnings
+        (, , , , , , , , , , , , , , , bool claimedBefore, , ) = escrow.challenges(id);
+        assertEq(claimedBefore, false);
+
+        // claimWinnings sets claimed = true
+        vm.prank(alice);
+        escrow.claimWinnings(id);
 
         (, , , , , , , , , , , , , , , bool claimed, , ) = escrow.challenges(id);
         assertEq(claimed, true);
@@ -1358,7 +1395,7 @@ contract CloutEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------------
-    // NC-007 Test 12: voidByAdminTimeout — success; both refunded; stats updated
+    // NC-007 Test 12: voidByAdminTimeout — success; state VOIDED; claimWinnings refunds both; stats updated
     // -------------------------------------------------------------------------
     function test_voidByAdminTimeout_success() public {
         uint256 id = _submitDisputeAndResolve();
@@ -1379,8 +1416,16 @@ contract CloutEscrowTest is Test {
         vm.prank(dave);
         escrow.voidByAdminTimeout(id);
 
-        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , bool claimed, , ) = escrow.challenges(id);
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , bool claimedBefore, , ) = escrow.challenges(id);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.VOIDED));
+        // claimed is not set by voidByAdminTimeout — only by claimWinnings
+        assertEq(claimedBefore, false);
+
+        // claimWinnings settles refunds and updates stats
+        vm.prank(alice);
+        escrow.claimWinnings(id);
+
+        (, , , , , , , , , , , , , , , bool claimed, , ) = escrow.challenges(id);
         assertEq(claimed, true);
         assertEq(token.balanceOf(alice), aliceBefore + STAKE);
         assertEq(token.balanceOf(bob), bobBefore + STAKE);
