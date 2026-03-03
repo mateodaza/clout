@@ -312,7 +312,7 @@
 
 ## Phase 6: Frontend (Days 7-8)
 
-#### NC-014 [ ] Initialize Next.js frontend with wallet connection
+#### NC-014 [x] Initialize Next.js frontend with wallet connection
 - **What:** Next.js app (in `frontend/` subdirectory) with Tailwind CSS, wagmi v2, viem, RainbowKit (or similar wallet connector). Configure for Avalanche Fuji network. Import contract ABIs from Foundry artifacts (`out/` directory). Environment variables for contract addresses (`NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_POOL_ADDRESS`, `NEXT_PUBLIC_TOKEN_ADDRESS`) and Fuji RPC (`NEXT_PUBLIC_RPC_URL`). Create `.env.example` with placeholder values.
 - **Acceptance criteria:**
   - `pnpm dev` runs without errors
