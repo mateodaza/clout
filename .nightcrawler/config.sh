@@ -12,3 +12,7 @@ TEST_IDLE=120
 # Iteration caps — Solidity tasks are complex, give more room
 MAX_PLAN_ITERATIONS=3
 MAX_IMPL_ITERATIONS=5
+
+# Claude CLI max-turns — scale up as codebase grows
+PLAN_MAX_TURNS=20
+IMPL_MAX_TURNS=25
