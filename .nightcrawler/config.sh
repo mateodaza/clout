@@ -1,0 +1,10 @@
+# Nightcrawler project config — Clout (Solidity/Foundry)
+# Sourced by nightcrawler.sh at startup. Override any default variable.
+
+PROJECT_DESC="Solidity/Foundry"
+BUILD_CMD="forge build"
+TEST_CMD="forge test -v"
+BUILD_WALL=120
+BUILD_IDLE=60
+TEST_WALL=300
+TEST_IDLE=120
