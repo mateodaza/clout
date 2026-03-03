@@ -213,6 +213,17 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     }
 
     // -------------------------------------------------------------------------
+    // getWalletRecord
+    // -------------------------------------------------------------------------
+
+    /// @notice Returns the WalletRecord for a given wallet address.
+    /// @param wallet The address to query.
+    /// @return The complete WalletRecord for the given wallet.
+    function getWalletRecord(address wallet) external view returns (WalletRecord memory) {
+        return walletRecords[wallet];
+    }
+
+    // -------------------------------------------------------------------------
     // createChallenge
     // -------------------------------------------------------------------------
 

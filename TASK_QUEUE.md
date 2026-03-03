@@ -147,7 +147,7 @@
 - **Dependencies:** NC-007
 - **Constraints:** Use basis points (10000 = 100%). Handle DRAW rounding: give any remainder (smallest token unit) to creator.
 
-#### NC-009 [ ] Implement WalletRecord view and integration hardening
+#### NC-009 [x] Implement WalletRecord view and integration hardening
 - **What:** Expose `getWalletRecord(address)` view function returning all WalletRecord fields. Verify that WalletRecord updates are correctly integrated into all mutating functions (create, accept, claim, void, dispute — implemented in prior tasks). Write focused tests for the complete WalletRecord lifecycle across multiple challenges.
 - **Acceptance criteria:**
   - getWalletRecord returns correct data for: challengesEntered, challengesCompleted, challengesWon, challengesDisputed, totalStaked, firstChallengeAt, lastChallengeAt

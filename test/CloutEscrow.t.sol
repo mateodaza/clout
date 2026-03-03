@@ -1541,4 +1541,211 @@ contract CloutEscrowTest is Test {
         vm.expectRevert(CloutEscrow.AppealNotAllowed.selector);
         escrow.appealResolution(id);
     }
+
+    // =========================================================================
+    // NC-009: getWalletRecord view and integration hardening
+    // =========================================================================
+
+    // -------------------------------------------------------------------------
+    // NC-009 Test 1: getWalletRecord returns correct struct for all 7 fields
+    // -------------------------------------------------------------------------
+    function test_NC009_getWalletRecord_returnsCorrectStruct() public {
+        vm.prank(alice);
+        escrow.createChallenge(bob, STAKE, address(token), GAME_ID, charlie);
+
+        CloutEscrow.WalletRecord memory r = escrow.getWalletRecord(alice);
+        assertEq(r.challengesEntered,   1);
+        assertEq(r.challengesCompleted, 0);
+        assertEq(r.challengesWon,       0);
+        assertEq(r.challengesDisputed,  0);
+        assertEq(r.totalStaked,         STAKE);
+        assertEq(r.firstChallengeAt,    block.timestamp);
+        assertEq(r.lastChallengeAt,     block.timestamp);
+
+        // bob has not acted — all fields should be zero
+        CloutEscrow.WalletRecord memory rBob = escrow.getWalletRecord(bob);
+        assertEq(rBob.challengesEntered,   0);
+        assertEq(rBob.challengesCompleted, 0);
+        assertEq(rBob.challengesWon,       0);
+        assertEq(rBob.challengesDisputed,  0);
+        assertEq(rBob.totalStaked,         0);
+        assertEq(rBob.firstChallengeAt,    0);
+        assertEq(rBob.lastChallengeAt,     0);
+    }
+
+    // -------------------------------------------------------------------------
+    // NC-009 Test 2: full lifecycle — create → accept → submit → confirm → claim
+    // -------------------------------------------------------------------------
+    function test_NC009_walletRecord_lifecycle_creatorWinPath() public {
+        uint256 t0 = block.timestamp;
+
+        vm.prank(alice);
+        uint256 id = escrow.createChallenge(bob, STAKE, address(token), GAME_ID, charlie);
+
+        // After create: alice entry stats set; bob untouched
+        CloutEscrow.WalletRecord memory rA = escrow.getWalletRecord(alice);
+        assertEq(rA.challengesEntered,   1);
+        assertEq(rA.challengesCompleted, 0);
+        assertEq(rA.challengesWon,       0);
+        assertEq(rA.totalStaked,         STAKE);
+        assertEq(rA.firstChallengeAt,    t0);
+        assertEq(rA.lastChallengeAt,     t0);
+
+        CloutEscrow.WalletRecord memory rB = escrow.getWalletRecord(bob);
+        assertEq(rB.challengesEntered, 0);
+
+        vm.prank(bob);
+        escrow.acceptChallenge(id);
+
+        // After accept: bob entry stats set
+        rB = escrow.getWalletRecord(bob);
+        assertEq(rB.challengesEntered,   1);
+        assertEq(rB.challengesCompleted, 0);
+        assertEq(rB.challengesWon,       0);
+        assertEq(rB.totalStaked,         STAKE);
+        assertEq(rB.firstChallengeAt,    t0);
+        assertEq(rB.lastChallengeAt,     t0);
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        // submitResult does not mutate WalletRecord
+        rA = escrow.getWalletRecord(alice);
+        assertEq(rA.challengesCompleted, 0);
+
+        vm.prank(bob);
+        escrow.confirmResult(id);
+
+        // confirmResult does not mutate WalletRecord
+        rA = escrow.getWalletRecord(alice);
+        assertEq(rA.challengesCompleted, 0);
+
+        vm.prank(alice);
+        escrow.claimWinnings(id);
+
+        // After claim: completion stats updated for both
+        rA = escrow.getWalletRecord(alice);
+        assertEq(rA.challengesEntered,   1);
+        assertEq(rA.challengesCompleted, 1);
+        assertEq(rA.challengesWon,       1);
+
+        rB = escrow.getWalletRecord(bob);
+        assertEq(rB.challengesEntered,   1);
+        assertEq(rB.challengesCompleted, 1);
+        assertEq(rB.challengesWon,       0);
+    }
+
+    // -------------------------------------------------------------------------
+    // NC-009 Test 3: firstChallengeAt set once; lastChallengeAt updates each entry
+    // -------------------------------------------------------------------------
+    function test_NC009_walletRecord_multiChallenge_entryTimestamps() public {
+        vm.prank(alice);
+        uint256 id1 = escrow.createChallenge(bob, STAKE, address(token), GAME_ID, address(0));
+
+        // Read firstChallengeAt from storage after first create (avoids via_ir CSE issue)
+        CloutEscrow.WalletRecord memory rA = escrow.getWalletRecord(alice);
+        uint256 aliceFirstTs = rA.firstChallengeAt;
+        assertEq(rA.challengesEntered, 1);
+        assertEq(rA.totalStaked,       STAKE);
+        assertEq(rA.firstChallengeAt,  aliceFirstTs);
+        assertEq(rA.lastChallengeAt,   aliceFirstTs);
+
+        vm.warp(block.timestamp + 1 days);
+        uint256 t1 = block.timestamp;
+
+        vm.prank(alice);
+        uint256 id2 = escrow.createChallenge(bob, STAKE, address(token), GAME_ID, address(0));
+
+        // After second create: firstChallengeAt unchanged; lastChallengeAt = t1
+        rA = escrow.getWalletRecord(alice);
+        assertEq(rA.challengesEntered, 2);
+        assertEq(rA.totalStaked,       2 * STAKE);
+        assertEq(rA.firstChallengeAt,  aliceFirstTs);   // UNCHANGED (storage-read reference)
+        assertEq(rA.lastChallengeAt,   t1);             // updated
+
+        vm.prank(bob);
+        escrow.acceptChallenge(id1);
+
+        // bob's first action: read firstChallengeAt from storage (same avoidance pattern)
+        CloutEscrow.WalletRecord memory rB = escrow.getWalletRecord(bob);
+        uint256 bobFirstTs = rB.firstChallengeAt;
+        assertEq(rB.challengesEntered, 1);
+        assertEq(rB.totalStaked,       STAKE);
+        assertEq(rB.firstChallengeAt,  bobFirstTs);
+        assertEq(rB.lastChallengeAt,   bobFirstTs);
+
+        vm.warp(block.timestamp + 1 hours);
+        uint256 t2 = block.timestamp;
+
+        vm.prank(bob);
+        escrow.acceptChallenge(id2);
+
+        // bob's second action: firstChallengeAt unchanged; lastChallengeAt = t2
+        rB = escrow.getWalletRecord(bob);
+        assertEq(rB.challengesEntered, 2);
+        assertEq(rB.totalStaked,       2 * STAKE);
+        assertEq(rB.firstChallengeAt,  bobFirstTs);   // UNCHANGED (storage-read reference)
+        assertEq(rB.lastChallengeAt,   t2);           // updated
+    }
+
+    // -------------------------------------------------------------------------
+    // NC-009 Test 4: disputeResult increments challengesDisputed; DRAW path
+    // -------------------------------------------------------------------------
+    function test_NC009_walletRecord_lifecycle_disputeAndDrawPath() public {
+        // Part A: dispute → resolve → finalize → claim (CREATOR_WIN)
+        uint256 id = _submitAndDispute();
+
+        // challengesDisputed incremented for bob (disputer), not alice
+        CloutEscrow.WalletRecord memory rB = escrow.getWalletRecord(bob);
+        assertEq(rB.challengesDisputed, 1);
+        CloutEscrow.WalletRecord memory rA = escrow.getWalletRecord(alice);
+        assertEq(rA.challengesDisputed, 0);
+
+        vm.prank(charlie);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        // Warp past 24h appeal window then finalize
+        (, , , , , , , , , , , , , uint256 resolvedAt, , , , ) = escrow.challenges(id);
+        vm.warp(resolvedAt + escrow.SUBMISSION_TIMEOUT() + 1);
+        escrow.finalizeResolution(id);
+
+        vm.prank(alice);
+        escrow.claimWinnings(id);
+
+        // After claim
+        rA = escrow.getWalletRecord(alice);
+        assertEq(rA.challengesEntered,   1);
+        assertEq(rA.challengesCompleted, 1);
+        assertEq(rA.challengesWon,       1);
+        assertEq(rA.challengesDisputed,  0);
+
+        rB = escrow.getWalletRecord(bob);
+        assertEq(rB.challengesEntered,   1);
+        assertEq(rB.challengesCompleted, 1);
+        assertEq(rB.challengesWon,       0);
+        assertEq(rB.challengesDisputed,  1);
+
+        // Part B: DRAW outcome
+        vm.prank(alice);
+        uint256 id2 = escrow.createChallenge(bob, STAKE, address(token), GAME_ID, address(0));
+        vm.prank(bob);
+        escrow.acceptChallenge(id2);
+        vm.prank(alice);
+        escrow.submitResult(id2, CloutEscrow.Outcome.DRAW);
+        vm.prank(bob);
+        escrow.confirmResult(id2);
+        vm.prank(bob);
+        escrow.claimWinnings(id2);
+
+        // After DRAW claim: completed++ for both, won unchanged
+        rA = escrow.getWalletRecord(alice);
+        assertEq(rA.challengesEntered,   2);
+        assertEq(rA.challengesCompleted, 2);
+        assertEq(rA.challengesWon,       1);   // still only from Part A
+
+        rB = escrow.getWalletRecord(bob);
+        assertEq(rB.challengesEntered,   2);
+        assertEq(rB.challengesCompleted, 2);
+        assertEq(rB.challengesWon,       0);   // DRAW does not count as won
+    }
 }
