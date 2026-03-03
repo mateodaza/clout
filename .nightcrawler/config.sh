@@ -6,8 +6,8 @@ INSTALL_CMD="pnpm install"
 BUILD_CMD="pnpm turbo build"
 TEST_CMD="pnpm turbo build && cd packages/contracts && forge test -v"
 WORKDIR=""  # root of repo (turborepo runs from root)
-BUILD_WALL=180
-BUILD_IDLE=90
+BUILD_WALL=300
+BUILD_IDLE=120
 TEST_WALL=360
 TEST_IDLE=180
 
