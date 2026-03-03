@@ -4,6 +4,29 @@
 > Only Mateo adds or reorders tasks. Nightcrawler marks completion status.
 > Tasks use stable IDs (NC-001, NC-002, etc.) that never change when tasks are reordered.
 
+## ⚠️ CRITICAL CONTEXT: Monorepo Refactor (2026-03-03)
+
+Mateo restructured the repo into a turborepo monorepo. **All paths have changed:**
+
+| Before | After |
+|--------|-------|
+| `src/` | `packages/contracts/src/` |
+| `test/` | `packages/contracts/test/` |
+| `script/` | `packages/contracts/script/` |
+| `foundry.toml` | `packages/contracts/foundry.toml` |
+| `frontend/` (NC-014) | `apps/web/` (already scaffolded by Mateo) |
+
+**New packages:**
+- `packages/types/` — `@clout/types` with shared TS types (ChallengeState, Outcome, Challenge, WalletRecord, PoolState, Pool). Import via `import { Challenge } from "@clout/types"`.
+- `apps/web/` — `@clout/web` with Next.js 16.1.6, React 19.2.3, Tailwind 4, TypeScript 5.9.3. Already depends on `@clout/types`.
+
+**Build/test:**
+- From root: `pnpm turbo test`, `pnpm turbo build`, `pnpm turbo dev`
+- From `packages/contracts/`: `forge build`, `forge test -v` (182 tests, all passing)
+
+**Audit fixes applied by Mateo:**
+- P2: .gitignore dedup, P4: orphan header removed, P5: lifecycle function reorder, P7: comment fix, P15: EventNotEnded check in resolvePool
+
 ## Status Legend
 - [ ] Queued
 - [ ] In Progress (session: {session-id})
@@ -295,78 +318,111 @@
 ## Phase 5: Deployment Script (Day 6)
 
 #### NC-013 [ ] Create Anvil-verified deployment script
-- **What:** Foundry deployment script (`script/Deploy.s.sol`) that deploys: 1) MockStablecoin, 2) CloutEscrow, 3) CloutPool. Then configures: whitelist MockStablecoin on both contracts, set protocol fee to 250 bps, set treasury address. Logs all deployed addresses. Create `DEPLOYMENTS.md` template with placeholders for Fuji addresses. Script must work on local Anvil — this is the Nightcrawler-executable scope. Fuji broadcast is a manual step for Mateo.
+- **What:** Foundry deployment script (`packages/contracts/script/Deploy.s.sol`) that deploys: 1) MockStablecoin, 2) CloutEscrow, 3) CloutPool. Then configures: whitelist MockStablecoin on both contracts, set protocol fee to 250 bps, set treasury address. Logs all deployed addresses. Create `DEPLOYMENTS.md` template (at repo root) with placeholders for Fuji addresses. Script must work on local Anvil — this is the Nightcrawler-executable scope. Fuji broadcast is a manual step for Mateo.
 - **Acceptance criteria:**
   - Script deploys all 3 contracts in correct order
   - Constructor args: owner = `vm.envAddress("OWNER_ADDRESS")`, treasury = `vm.envAddress("TREASURY_ADDRESS")`, feeBps = `vm.envUint("FEE_BPS")` (default 250)
   - Configuration calls succeed: whitelist MockStablecoin on both contracts, set protocol fee, set treasury
   - All addresses logged to console
-  - Script works on local Anvil: `forge script script/Deploy.s.sol --fork-url http://localhost:8545 --broadcast`
-  - DEPLOYMENTS.md has structured placeholders for Fuji addresses, verified-on links, and tx hashes
-  - `.env.example` created with `OWNER_ADDRESS`, `TREASURY_ADDRESS`, `FEE_BPS`, `PRIVATE_KEY`, `FUJI_RPC_URL` (all placeholder values)
+  - Script works on local Anvil: `cd packages/contracts && forge script script/Deploy.s.sol --fork-url http://localhost:8545 --broadcast`
+  - DEPLOYMENTS.md (repo root) has structured placeholders for Fuji addresses, verified-on links, and tx hashes
+  - `packages/contracts/.env.example` created with `OWNER_ADDRESS`, `TREASURY_ADDRESS`, `FEE_BPS`, `PRIVATE_KEY`, `FUJI_RPC_URL` (all placeholder values)
   - Owner == deployer initially. No ownership transfer in script (Mateo does this manually if needed).
 - **Dependencies:** NC-G2
-- **Constraints:** Use `forge script` with `vm.envAddress`/`vm.envUint` for all configurable values. NEVER hardcode keys or addresses. Anvil testing only — Nightcrawler does NOT broadcast to Fuji.
+- **Constraints:** Use `forge script` with `vm.envAddress`/`vm.envUint` for all configurable values. NEVER hardcode keys or addresses. Anvil testing only — Nightcrawler does NOT broadcast to Fuji. **Path:** all Foundry files are in `packages/contracts/`.
 
 ---
 
 ## Phase 6: Frontend (Days 7-8)
 
-#### NC-014 [x] Initialize Next.js frontend with wallet connection
-- **What:** Next.js app (in `frontend/` subdirectory) with Tailwind CSS, wagmi v2, viem, RainbowKit (or similar wallet connector). Configure for Avalanche Fuji network. Import contract ABIs from Foundry artifacts (`out/` directory). Environment variables for contract addresses (`NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_POOL_ADDRESS`, `NEXT_PUBLIC_TOKEN_ADDRESS`) and Fuji RPC (`NEXT_PUBLIC_RPC_URL`). Create `.env.example` with placeholder values.
+> **⚠️ MONOREPO CONTEXT:** The frontend is at `apps/web/` (NOT `frontend/`). It's a Next.js 16.1.6 app with React 19.2.3, Tailwind 4, TypeScript 5.9.3. It already depends on `@clout/types` (workspace package). Use `@clout/types` for all domain type imports (ChallengeState, Outcome, Challenge, WalletRecord, PoolState, Pool). ABIs must be imported from `../../packages/contracts/out/` artifacts or copied into a shared location. Run `pnpm dev` from repo root (turbo) or `pnpm dev` from `apps/web/`.
+
+#### NC-014 [x] Initialize Next.js frontend with wallet connection (REPLACED by Mateo's turborepo refactor)
+- **Status:** Mateo scaffolded `apps/web/` with Next.js 16.1.6 during the turborepo refactor. NC-014's original `frontend/` output is superseded. **Nightcrawler: skip this task, proceed to NC-014B.**
+
+#### NC-014B [ ] Set up wagmi + viem + wallet connection in apps/web/
+- **What:** Install and configure wagmi v2, viem, and RainbowKit in the existing `apps/web/` Next.js app. Configure for Avalanche Fuji network (chain ID 43113). Extract ABI JSON for CloutEscrow, CloutPool, MockStablecoin from `packages/contracts/out/<Contract>.sol/<Contract>.json` (the `abi` field only) and write them as typed `as const` exports in `apps/web/src/lib/contracts.ts`. Create `apps/web/src/lib/wagmi.ts` with chain + client config. Create `apps/web/src/components/Providers.tsx` ("use client") that wraps children in `WagmiProvider` + `QueryClientProvider` + `RainbowKitProvider`. Import `Providers` in `apps/web/src/app/layout.tsx` (layout stays a Server Component). Add connect wallet button via RainbowKit `<ConnectButton />` to the nav.
 - **Acceptance criteria:**
-  - `pnpm dev` runs without errors
-  - Wallet connection component renders and connects (tested visually against Anvil if possible)
-  - Contract ABIs imported and typed (generated from Foundry `out/` artifacts)
-  - Fuji chain configured in wagmi config (chain ID 43113)
-  - Basic layout with navigation: Challenges, Pools
-  - `.env.example` with all required env vars documented
-- **Dependencies:** NC-013
-- **Constraints:** Keep dependencies minimal. No state management library — wagmi hooks are sufficient. Tailwind for styling, no component library needed for MVP.
+  - `pnpm turbo build` (from repo root) completes with zero errors
+  - `ConnectButton` renders in the layout nav
+  - `apps/web/src/lib/contracts.ts` exports typed `as const` ABI constants for all 3 contracts
+  - `apps/web/src/lib/wagmi.ts` exports wagmi config with Fuji (chain ID 43113)
+  - `apps/web/.env.example` with `NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_POOL_ADDRESS`, `NEXT_PUBLIC_TOKEN_ADDRESS`, `NEXT_PUBLIC_RPC_URL`
+  - All domain types imported from `@clout/types` (no local redefinitions)
+- **Dependencies:** NC-G2
+- **Constraints:** `apps/web/` already exists — do NOT run `create-next-app`. Install with `pnpm add @rainbow-me/rainbowkit@2.2.0 wagmi@2.14.16 viem@2.23.10 @tanstack/react-query@5.74.4 --filter @clout/web`. App Router is at `apps/web/src/app/`. **CRITICAL: `layout.tsx` must remain a Server Component — put all wagmi/RainbowKit providers in a separate `Providers.tsx` with `"use client"` at the top.** Verify with `pnpm turbo build` from repo root.
 
 #### NC-015A [ ] Build PvP Escrow challenge list and create pages
-- **What:** Two pages: `/challenges` (list active challenges from contract reads — loop over `challengeCount`, read each challenge, filter by state), `/challenges/create` (form: opponent address, stake amount, token select, game description, resolver address — calls `approve` then `createChallenge`).
+- **What:** Two pages in `apps/web/src/app/`: `/challenges` (list active challenges — loop `challengeCount`, read each via `getChallenge`, filter by state), `/challenges/create` (form: opponent address, stake amount, game description, resolver address — calls `approve` then `createChallenge`).
 - **Acceptance criteria:**
-  - `/challenges` page lists challenges with: ID, creator, opponent, stake, state badge, game
+  - `/challenges` lists challenges with: ID, creator, opponent, stake, state badge, game description
   - List reads directly from contract (no indexer)
   - `/challenges/create` form validates: non-empty opponent, positive stake, valid addresses
   - Form calls `approve` then `createChallenge` with loading/success/error states
   - Transaction hash shown on success
-  - Tests: not required for frontend (manual verification by Mateo)
-- **Dependencies:** NC-014
-- **Constraints:** Read challenge data directly from contract. Keep UI functional, not polished.
+  - `ChallengeState` from `@clout/types` used for state labels/badges
+- **Dependencies:** NC-014B
+- **Constraints:** Read challenge data directly from contract. Keep UI functional, not polished. Pages at `apps/web/src/app/challenges/` and `apps/web/src/app/challenges/create/`. Verify with `pnpm turbo build` from repo root.
 
 #### NC-015B [ ] Build PvP Escrow challenge detail page
-- **What:** `/challenges/[id]` page: reads challenge by ID, shows all fields (creator, opponent, stake, state, outcome, timestamps, resolver). Dynamic action buttons based on state and connected wallet: Accept (CREATED, if wallet == opponent), Submit Result (ACCEPTED, if wallet == creator or opponent), Confirm (SUBMITTED, if wallet == non-submitter), Dispute (SUBMITTED, if wallet == non-submitter), Claim (FINALIZED/VOIDED, if wallet == creator or opponent), Resolve (DISPUTED, if wallet == resolver or admin), Appeal (RESOLVED, if wallet == creator or opponent). Each button calls the corresponding contract function.
+- **What:** `/challenges/[id]` page: reads challenge by ID, shows all fields. Dynamic action buttons per state and connected wallet: Accept (CREATED, caller == opponent), Submit Result (ACCEPTED, caller == creator or opponent), Confirm (SUBMITTED, caller == non-submitter), Dispute (SUBMITTED, caller == non-submitter), Claim (FINALIZED/VOIDED, caller == creator or opponent), Resolve Dispute (DISPUTED, caller == resolver or admin), Appeal (RESOLVED, caller == creator or opponent). Each button calls the corresponding contract function.
 - **Acceptance criteria:**
-  - Detail page shows all challenge fields and current state
-  - Correct action buttons appear per state per caller role (at least 7 action buttons total)
-  - Each action button calls the right contract function with correct args
+  - Shows all challenge fields and current state
+  - Correct action buttons appear per state per caller role (at least 7 total)
+  - Each button calls the right contract function with correct args
   - Transactions show pending/success/error states
-  - Page refreshes state after successful transaction
+  - Page re-fetches challenge state after successful transaction
+  - `ChallengeState` and `Outcome` from `@clout/types` used for state-driven rendering
 - **Dependencies:** NC-015A
-- **Constraints:** One component per action. Keep rendering logic state-driven (switch on ChallengeState enum).
+- **Constraints:** State-driven rendering via switch on `ChallengeState`. Page at `apps/web/src/app/challenges/[id]/`. Verify with `pnpm turbo build` from repo root.
 
 #### NC-016A [ ] Build Challenge Pools list and create pages
-- **What:** Two pages: `/pools` (list active pools from contract reads), `/pools/create` (form: event description, eventStart, eventEnd, resolveBy timestamps, resolver address, per-wallet cap, total cap, host commission bps, initial YES stake — calls `approve` then `createPool`).
+- **What:** Two pages in `apps/web/src/app/`: `/pools` (list active pools), `/pools/create` (form: event description, eventStart, eventEnd, resolveBy as datetime inputs, resolver address, per-wallet cap, total cap, host commission bps, initial YES stake — calls `approve` then `createPool`).
 - **Acceptance criteria:**
-  - `/pools` page lists pools with: ID, host, state, YES/NO totals, event times
-  - `/pools/create` form validates timestamps (eventStart > now, eventStart < eventEnd < resolveBy), caps > 0, commission bps <= 10000
+  - `/pools` lists pools with: ID, host, state, YES total, NO total, event start/end
+  - `/pools/create` form validates: eventStart > now, eventStart < eventEnd < resolveBy, caps > 0, commission bps <= 10000
   - Form calls `approve` then `createPool`
   - Transaction states shown
-- **Dependencies:** NC-014
-- **Constraints:** Read pool data from contract directly. Same patterns as NC-015A.
+  - `PoolState` from `@clout/types` used for state labels/badges
+- **Dependencies:** NC-014B
+- **Constraints:** Read pool data directly from contract. Pages at `apps/web/src/app/pools/` and `apps/web/src/app/pools/create/`. Same patterns as NC-015A. Verify with `pnpm turbo build` from repo root.
 
 #### NC-016B [ ] Build Challenge Pools detail page
-- **What:** `/pools/[id]` page: shows pool state, YES/NO totals, user's stake, event times, resolver. Action buttons: Stake YES / Stake NO (OPEN, if under caps), Resolve (CLOSED, if wallet == resolver), Flag Dispute (SUBMITTED, if wallet on losing side), Claim (FINALIZED, if wallet is staker), Admin Resolve (DISPUTED, if wallet == admin).
+- **What:** `/pools/[id]` page: shows pool state, YES/NO totals, user's current stake, event times, resolver. Action buttons: Stake YES / Stake NO (OPEN, under caps), Resolve (CLOSED, caller == resolver), Flag Dispute (SUBMITTED, caller on losing side), Claim (FINALIZED, caller is staker), Admin Resolve (DISPUTED, caller == admin). Stake buttons show remaining cap.
 - **Acceptance criteria:**
-  - Detail page shows all pool fields, YES/NO totals, user's current stake
+  - Shows all pool fields, YES/NO totals, user's stake
   - Correct action buttons per state per role
-  - Stake buttons enforce cap display (show remaining allowance)
-  - Resolver sees resolve button when pool is CLOSED
+  - Stake buttons show remaining allowance (walletCap minus user's current stake)
+  - All buttons call correct contract functions
   - Transactions show pending/success/error states
+  - `PoolState` from `@clout/types` used for state-driven rendering
 - **Dependencies:** NC-016A
-- **Constraints:** Same patterns as NC-015B.
+- **Constraints:** Page at `apps/web/src/app/pools/[id]/`. Verify with `pnpm turbo build` from repo root.
+
+#### NC-017 [ ] Build home page and wallet record display
+- **What:** Two things: 1) A home page (`/`) that explains what Clout is — brief product description, two cards linking to Challenges and Pools, a connected-wallet stats summary. 2) A wallet record component (reusable) that reads `getWalletRecord(address)` from CloutEscrow and displays: challenges entered, completed, won, disputed, total staked, first/last challenge timestamps. Show this component on the home page for the connected wallet.
+- **Acceptance criteria:**
+  - Home page renders without wallet connection (shows connect prompt)
+  - Home page renders wallet record stats when connected
+  - WalletRecord component reads from `CloutEscrow.getWalletRecord`
+  - Stats shown: entered, completed, won, disputed, totalStaked, firstChallengeAt (human-readable date)
+  - Two nav cards linking to `/challenges` and `/pools`
+  - `WalletRecord` type imported from `@clout/types`
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-015A
+- **Constraints:** WalletRecord component should be reusable (`apps/web/src/components/WalletRecord.tsx`). Keep the home page minimal — this is an MVP, not a landing page.
+
+#### NC-018 [ ] Global UI polish: loading states, errors, empty states
+- **What:** Audit all pages built in NC-015A/B, NC-016A/B, NC-017 and add: 1) Loading skeletons or spinners while contract reads are pending. 2) Error messages when transactions fail (show revert reason if available). 3) Empty state messages when lists are empty ("No challenges yet — create one"). 4) Consistent state badge styling across challenges and pools (color-coded: OPEN=green, SUBMITTED=yellow, DISPUTED=red, FINALIZED=blue, VOIDED=gray). 5) Disable action buttons while a transaction is pending (prevent double-submit).
+- **Acceptance criteria:**
+  - All list pages show a loading state while data loads
+  - All list pages show an empty state when no items exist
+  - All action buttons show a pending state during transaction and disable re-clicks
+  - All errors surface a readable message (not a raw hex revert)
+  - State badges are consistently color-coded across challenges and pools
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-016B, NC-017
+- **Constraints:** No new pages — polish only. Keep changes in existing components/pages. If a specific page is already handling errors well, skip it.
 
 ---
 

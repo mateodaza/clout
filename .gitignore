@@ -1,11 +1,25 @@
+# Dependencies
+node_modules/
+
 # Foundry build artifacts
 out/
 cache/
 
+# Next.js
+.next/
+.vercel/
+
+# Turbo
+.turbo/
+
+# Types build output
+dist/
+
 # IDE / OS
 .claude/
 .DS_Store
-out/
-cache/
-out/
-cache/
+*.env
+!.env.example
+
+# pnpm
+.pnpm-store/

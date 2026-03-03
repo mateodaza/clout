@@ -412,6 +412,7 @@ contract CloutPoolTest is Test {
         CloutPool.Pool memory p = pool.getPool(poolId);
         vm.warp(p.eventStart);
         pool.closePool(poolId);
+        vm.warp(p.eventEnd);
     }
 
     /// Creates pool, stakes count NO stakers (staker1..staker5), closes, returns poolId.
@@ -427,6 +428,7 @@ contract CloutPoolTest is Test {
         CloutPool.Pool memory p = pool.getPool(poolId);
         vm.warp(p.eventStart);
         pool.closePool(poolId);
+        vm.warp(p.eventEnd);
     }
 
     // -------------------------------------------------------------------------
@@ -500,6 +502,7 @@ contract CloutPoolTest is Test {
         CloutPool.Pool memory p = pool.getPool(poolId);
         vm.warp(p.eventStart);
         pool.closePool(poolId);
+        vm.warp(p.eventEnd);
 
         vm.expectEmit(true, false, false, true);
         emit PoolResolved(poolId, true, block.timestamp);
@@ -766,6 +769,7 @@ contract CloutPoolTest is Test {
         CloutPool.Pool memory p = pool.getPool(poolId);
         vm.warp(p.eventStart);
         pool.closePool(poolId);
+        vm.warp(p.eventEnd);
         vm.prank(resolver);
         pool.resolvePool(poolId, true);
         CloutPool.Pool memory p2 = pool.getPool(poolId);
@@ -784,6 +788,7 @@ contract CloutPoolTest is Test {
         CloutPool.Pool memory p = pool.getPool(poolId);
         vm.warp(p.eventStart);
         pool.closePool(poolId);
+        vm.warp(p.eventEnd);
         vm.prank(resolver);
         pool.resolvePool(poolId, false);
         CloutPool.Pool memory p2 = pool.getPool(poolId);
@@ -846,6 +851,7 @@ contract CloutPoolTest is Test {
         CloutPool.Pool memory p = pool.getPool(poolId);
         vm.warp(p.eventStart);
         pool.closePool(poolId);
+        vm.warp(p.eventEnd);
         vm.prank(resolver);
         pool.resolvePool(poolId, true); // losingCount=0 → immediate FINALIZED
 
@@ -914,6 +920,7 @@ contract CloutPoolTest is Test {
         CloutPool.Pool memory p = pool.getPool(poolId);
         vm.warp(p.eventStart);
         pool.closePool(poolId);
+        vm.warp(p.eventEnd);
         vm.prank(resolver);
         pool.resolvePool(poolId, true);
         CloutPool.Pool memory p2 = pool.getPool(poolId);
@@ -978,6 +985,7 @@ contract CloutPoolTest is Test {
         CloutPool.Pool memory p = pool.getPool(poolId);
         vm.warp(p.eventStart);
         pool.closePool(poolId);
+        vm.warp(p.eventEnd);
         vm.prank(resolver);
         pool.resolvePool(poolId, true);
         CloutPool.Pool memory p2 = pool.getPool(poolId);

@@ -126,6 +126,7 @@ contract CloutPool is ReentrancyGuard, Ownable {
     error DisputeWindowOpen();       // block.timestamp <= resolvedAt + DISPUTE_WINDOW (can't finalize yet)
     error AlreadyClaimed();          // claimed[poolId][msg.sender] is already true
     error NotWinningStaker();        // caller has zero stake on winning side (or any stake on VOIDED)
+    error EventNotEnded();           // resolver cannot submit before eventEnd
     error NotVoidable();             // neither void condition is met
 
     // -------------------------------------------------------------------------
@@ -383,6 +384,7 @@ contract CloutPool is ReentrancyGuard, Ownable {
         if (pool.host == address(0)) revert WrongState();
         if (pool.state != PoolState.CLOSED) revert WrongState();
         if (msg.sender != pool.resolver) revert NotResolver();
+        if (block.timestamp < pool.eventEnd) revert EventNotEnded();
         if (block.timestamp > pool.resolveBy) revert ResolverDeadlinePassed();
 
         // EFFECTS

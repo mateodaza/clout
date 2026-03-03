@@ -66,6 +66,7 @@ contract CloutPoolNC012CTest is Test {
         pool.stakePool(poolId, false, STAKE);
         vm.warp(pool.getPool(poolId).eventStart);
         pool.closePool(poolId);
+        vm.warp(pool.getPool(poolId).eventEnd);
     }
 
     /// @dev _createAndClose → resolver resolves → warp past dispute window → finalizePool.
@@ -235,6 +236,7 @@ contract CloutPoolNC012CTest is Test {
 
             vm.warp(pool.getPool(poolId).eventStart);
             pool.closePool(poolId);
+            vm.warp(pool.getPool(poolId).eventEnd);
 
             vm.prank(resolver);
             pool.resolvePool(poolId, false); // NO wins
@@ -298,6 +300,7 @@ contract CloutPoolNC012CTest is Test {
 
             vm.warp(pool.getPool(poolId).eventStart);
             pool.closePool(poolId);
+            vm.warp(pool.getPool(poolId).eventEnd);
 
             vm.prank(resolver);
             pool.resolvePool(poolId, false);
@@ -370,6 +373,7 @@ contract CloutPoolNC012CTest is Test {
 
         vm.warp(pool.getPool(poolId).eventStart);
         pool.closePool(poolId);
+        vm.warp(pool.getPool(poolId).eventEnd);
 
         // losingStakerCount = noStakerCount = 1 → SUBMITTED
         vm.prank(resolver);
@@ -458,6 +462,7 @@ contract CloutPoolNC012CTest is Test {
         assertGe(token.balanceOf(address(pool)), 300e6);
 
         // Step 5: resolvePool(true=YES) → SUBMITTED — unclaimedObligation=300e6
+        vm.warp(pool.getPool(poolId).eventEnd);
         vm.prank(resolver);
         pool.resolvePool(poolId, true);
         assertGe(token.balanceOf(address(pool)), 300e6);
@@ -510,6 +515,7 @@ contract CloutPoolNC012CTest is Test {
 
         vm.warp(pool.getPool(poolId).eventStart);
         pool.closePool(poolId);
+        vm.warp(pool.getPool(poolId).eventEnd);
 
         // losingStakerCount = noStakerCount = 2 → SUBMITTED
         vm.prank(resolver);
@@ -569,6 +575,7 @@ contract CloutPoolNC012CTest is Test {
 
         vm.warp(pool.getPool(poolId).eventStart);
         pool.closePool(poolId);
+        vm.warp(pool.getPool(poolId).eventEnd);
 
         // losingStakerCount = yesStakerCount = 2 → SUBMITTED
         vm.prank(resolver);
@@ -634,6 +641,7 @@ contract CloutPoolNC012CTest is Test {
 
         vm.warp(pool.getPool(poolId).eventStart);
         pool.closePool(poolId);
+        vm.warp(pool.getPool(poolId).eventEnd);
 
         // Resolver says YES wins → losingStakerCount=2 → SUBMITTED
         vm.prank(resolver);

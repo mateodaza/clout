@@ -3,56 +3,60 @@
 > Updated by Nightcrawler after each completed task. Verified by Mateo during day sessions.
 
 ## Current Phase
-Phase 1: Foundation (Day 1)
+Phase 6: Frontend (Days 7-8)
 
 ## Overall Status
-- **Nightcrawler tasks:** 0 / 19 (NC-001→NC-016B + NC-G1 + NC-G2)
+- **Nightcrawler tasks:** 15 / 22 (NC-001→NC-018 + NC-G1 + NC-G2 + NC-014B)
 - **Manual tasks:** 0 / 3 (NC-020, NC-021, NC-022 — Mateo-only)
 - **Tasks blocked:** 0
 - **Tasks locked:** 0
-- **Last session:** None yet
-- **Last commit:** None yet
-- **Audit status:** All 15 Codex findings patched (3 CRITICAL, 7 HIGH, 4 MEDIUM, 1 LOW)
+- **Last NC session:** 20260303-023136-clout
+- **Last NC commit:** 8db9e02 (NC-014)
+- **Audit status:** All 15 Codex findings patched (3 CRITICAL, 7 HIGH, 4 MEDIUM, 1 LOW). Mateo applied additional audit fixes (P2, P4, P5, P7, P15) on 2026-03-03.
+- **Turborepo status:** Mateo refactored to turborepo monorepo on 2026-03-03. See "Monorepo Refactor" section below.
 
 ## Phase Progress
 
-### Phase 1: Foundation (Day 1) — NOT STARTED
-- [ ] NC-001: Initialize Foundry project
-- [ ] NC-002: MockStablecoin.sol
-- [ ] NC-003: CloutEscrow core structs + createChallenge
-- [ ] NC-004: acceptChallenge + voidChallenge
+### Phase 1: Foundation (Day 1) — COMPLETE
+- [x] NC-001: Initialize Foundry project
+- [x] NC-002: MockStablecoin.sol
+- [x] NC-003: CloutEscrow core structs + createChallenge
+- [x] NC-004: acceptChallenge + voidChallenge
 
-### Phase 2: Resolution Pipeline (Days 2-3) — NOT STARTED
-- [ ] NC-005: submitResult + confirmResult
-- [ ] NC-006: disputeResult + resolveDispute
-- [ ] NC-007: appealResolution + finalizeResolution
+### Phase 2: Resolution Pipeline (Days 2-3) — COMPLETE
+- [x] NC-005: submitResult + confirmResult
+- [x] NC-006: disputeResult + resolveDispute
+- [x] NC-007: appealResolution + finalizeResolution
 
-### Phase 3: Payouts + Hardening (Day 4) — NOT STARTED
-- [ ] NC-008: claimWinnings + fee routing
-- [ ] NC-009: WalletRecord view + integration hardening
-- [ ] NC-010: Comprehensive test suite + invariant checks
+### Phase 3: Payouts + Hardening (Day 4) — COMPLETE
+- [x] NC-008: claimWinnings + fee routing
+- [x] NC-009: WalletRecord view + integration hardening
+- [x] NC-010: Comprehensive test suite + invariant checks
 
-### GATE 1 — NOT REACHED
-- [ ] NC-G1: Gate 1 validation (CloutEscrow complete)
+### GATE 1 — PASSED
+- [x] NC-G1: Gate 1 validation (CloutEscrow complete)
 
-### Phase 4: Challenge Pools (Day 5) — NOT STARTED
-- [ ] NC-011: CloutPool core (create, stake, close) — depends on NC-G1
-- [ ] NC-012A: CloutPool resolution + dispute
-- [ ] NC-012B: CloutPool payouts
-- [ ] NC-012C: CloutPool test suite + invariant checks (I-8 through I-14)
+### Phase 4: Challenge Pools (Day 5) — COMPLETE
+- [x] NC-011: CloutPool core (create, stake, close)
+- [x] NC-012A: CloutPool resolution + dispute
+- [x] NC-012B: CloutPool payouts
+- [x] NC-012C: CloutPool test suite + invariant checks (I-8 through I-14)
 
-### GATE 2 — NOT REACHED
-- [ ] NC-G2: Gate 2 validation (both contracts pass tests)
+### GATE 2 — PASSED
+- [x] NC-G2: Gate 2 validation (both contracts pass tests)
 
-### Phase 5: Deployment Script (Day 6) — NOT STARTED
-- [ ] NC-013: Anvil-verified deployment script — depends on NC-G2
+### Phase 5: Deployment Script (Day 6) — PENDING
+- [ ] NC-013: Anvil-verified deployment script
 
-### Phase 6: Frontend (Days 7-8) — NOT STARTED
-- [ ] NC-014: Next.js + wallet connection
+### Phase 6: Frontend (Days 7-8) — IN PROGRESS
+- [x] NC-014: Next.js + wallet connection (REPLACED — Mateo scaffolded apps/web/ during turborepo refactor)
+- [ ] NC-014B: wagmi + viem + wallet connection setup in apps/web/
 - [ ] NC-015A: PvP challenge list + create pages
 - [ ] NC-015B: PvP challenge detail page
 - [ ] NC-016A: Pool list + create pages
 - [ ] NC-016B: Pool detail page
+- [ ] NC-017: Home page + WalletRecord display
+- [ ] NC-018: Global UI polish (loading, errors, empty states)
 
 ### Phase 7: Manual Integration + Demo (Day 9) — MATEO-ONLY
 - [🚧] NC-020: Deploy to Fuji + verify (MANUAL)
@@ -60,28 +64,62 @@ Phase 1: Foundation (Day 1)
 - [🚧] NC-022: Bug fixes + demo prep + submission (MANUAL)
 
 ## Gate Status
-- **Gate 1 (End of Day 4):** NOT REACHED
-- **Gate 2 (End of Day 5):** NOT REACHED
+- **Gate 1 (End of Day 4):** PASSED — `8bee332`
+- **Gate 2 (End of Day 5):** PASSED — `1564aa5`
 - **Gate 3 (End of Day 9):** NOT REACHED (manual)
 
-## Session 20260301-183846-clout (completed)
+---
 
-**Duration:** ~3 hours
-**Completed tasks:**
-- [x] NC-001: Initialize Foundry project (verified scaffolding)
-- [x] NC-002: MockStablecoin ERC20 implementation
+## Monorepo Refactor (Mateo, 2026-03-03)
 
-**Test results:** 12/12 passing (8 MockStablecoin + 4 smoke)
-**Commits:**
-- 01446d8: Mark NC-001 complete
-- c2892a4: Implement MockStablecoin
+Mateo restructured the repo into a turborepo monorepo. All paths changed:
 
-**Budget spent:** $0.26 (planning iterations)
-**Budget remaining:** $17.74
+```
+clutch/
+├── apps/web/              (@clout/web — Next.js 16.1.6, React 19.2.3, Tailwind 4)
+├── packages/
+│   ├── contracts/          (@clout/contracts — Foundry, all Solidity + tests)
+│   └── types/              (@clout/types — shared TS types mirroring Solidity enums/structs)
+├── package.json            (root, turbo scripts, pnpm@10.6.1)
+├── turbo.json
+├── pnpm-workspace.yaml
+└── pnpm-lock.yaml
+```
 
-**Next session:**
-Start with NC-003 (CloutEscrow core structs + createChallenge). This is a large task requiring ~500 lines of code. Recommend breaking into smaller substeps or planning multiple sessions.
+**Key path changes for Nightcrawler:**
+- Solidity source: `packages/contracts/src/` (was `src/`)
+- Tests: `packages/contracts/test/` (was `test/`)
+- Scripts: `packages/contracts/script/` (was `script/`)
+- Foundry config: `packages/contracts/foundry.toml` (was `foundry.toml`)
+- Frontend: `apps/web/` (NOT `frontend/`)
+- Shared types: `packages/types/src/index.ts` — has ChallengeState, Outcome, Challenge, WalletRecord, PoolState, Pool
 
+**Build/test from root:**
+- `pnpm turbo test` — runs all tests (delegates to `forge test` in contracts)
+- `pnpm turbo build` — builds all packages
+- `pnpm turbo dev` — runs all dev servers
+
+**Build/test from packages/contracts/:**
+- `forge build` — compiles contracts
+- `forge test -v` — runs 182 tests (all passing)
+
+**Audit fixes applied by Mateo (2026-03-03):**
+- P2: .gitignore duplicate entries removed
+- P4: Orphan `// voidChallenge` header removed from CloutEscrow.sol
+- P5: Lifecycle function reorder in CloutEscrow.sol (dispute → resolve → appeal)
+- P7: VOID_TIMEOUT comment clarification in CloutEscrow.sol
+- P15: Added `EventNotEnded` check in CloutPool.resolvePool (resolver cannot submit before eventEnd)
+
+---
+
+## Session Log
+
+### Session 20260301-183846-clout (completed)
+**Completed:** NC-001, NC-002
+**Test results:** 12/12 passing
+**Commits:** 01446d8, c2892a4
+
+### NC Task Commits
 - **NC-003** — 2026-03-01 — `bf43e88` — Session: 20260301-225514-clout — ⚠ Committed after 3 soft review rejections; local verification passed.
 - **NC-003** — 2026-03-02 — `8132e2e` — Session: 20260302-211616-clout
 - **NC-003** — 2026-03-02 — `f7c4c2c` — Session: 20260302-211616-clout
@@ -98,4 +136,4 @@ Start with NC-003 (CloutEscrow core structs + createChallenge). This is a large 
 - **NC-012B** — 2026-03-03 — `545a7e6` — Session: 20260303-023136-clout — ⚠ Committed after soft review rejections cap; local verification passed.
 - **NC-012C** — 2026-03-03 — `f190fef` — Session: 20260303-023136-clout — ⚠ Committed after soft review rejections cap; local verification passed.
 - **NC-G2** — 2026-03-03 — `1564aa5` — Session: 20260303-023136-clout — ⚠ Committed after soft review rejections cap; local verification passed.
-- **NC-014** — 2026-03-03 — `8db9e02` — Session: 20260303-023136-clout — ⚠ Committed after soft review rejections cap; local verification passed.
+- **NC-014** — 2026-03-03 — `8db9e02` — Session: 20260303-023136-clout — ⚠ Committed after soft review rejections cap; local verification passed. (SUPERSEDED by turborepo refactor)
