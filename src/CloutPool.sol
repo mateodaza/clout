@@ -98,6 +98,12 @@ contract CloutPool is ReentrancyGuard, Ownable {
     error TotalCapExceeded();
     error ZeroAmount();
     error FeeTooHigh();
+    error NotResolver();             // msg.sender != pool.resolver
+    error ResolverDeadlinePassed(); // block.timestamp > pool.resolveBy — resolver cannot submit after deadline
+    error NotLosingStaker();         // caller has zero stake on the losing side
+    error AlreadyFlagged();          // disputeFlags[poolId][msg.sender] is already true
+    error DisputeWindowExpired();    // block.timestamp > resolvedAt + DISPUTE_WINDOW
+    error DisputeWindowOpen();       // block.timestamp <= resolvedAt + DISPUTE_WINDOW (can't finalize yet)
 
     // -------------------------------------------------------------------------
     // Events
@@ -339,6 +345,104 @@ contract CloutPool is ReentrancyGuard, Ownable {
         pool.state = PoolState.CLOSED;
 
         emit PoolClosed(poolId, pool.yesTotal, pool.noTotal);
+    }
+
+    // -------------------------------------------------------------------------
+    // resolvePool
+    // -------------------------------------------------------------------------
+
+    /// @notice Resolver submits the outcome of a closed pool.
+    /// @param poolId  The ID of the pool to resolve.
+    /// @param yesWins True if the YES side won; false otherwise.
+    function resolvePool(uint256 poolId, bool yesWins) external {
+        Pool storage pool = pools[poolId];
+        // CHECKS
+        if (pool.host == address(0)) revert WrongState();
+        if (pool.state != PoolState.CLOSED) revert WrongState();
+        if (msg.sender != pool.resolver) revert NotResolver();
+        if (block.timestamp > pool.resolveBy) revert ResolverDeadlinePassed();
+
+        // EFFECTS
+        pool.yesWins = yesWins;
+
+        uint256 losingCount = yesWins ? noStakerCount[poolId] : yesStakerCount[poolId];
+        pool.losingStakerCount = losingCount;
+        pool.resolvedAt = block.timestamp;
+
+        if (losingCount == 0) {
+            pool.state = PoolState.FINALIZED;
+            emit PoolResolved(poolId, yesWins, pool.resolvedAt);
+            emit PoolFinalized(poolId, yesWins);
+        } else {
+            pool.state = PoolState.SUBMITTED;
+            emit PoolResolved(poolId, yesWins, pool.resolvedAt);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // disputePool
+    // -------------------------------------------------------------------------
+
+    /// @notice A losing-side staker flags the resolution as disputed.
+    /// @param poolId The ID of the pool to dispute.
+    function disputePool(uint256 poolId) external {
+        Pool storage pool = pools[poolId];
+        // CHECKS
+        if (pool.host == address(0)) revert WrongState();
+        if (pool.state != PoolState.SUBMITTED) revert WrongState();
+        if (block.timestamp > pool.resolvedAt + DISPUTE_WINDOW) revert DisputeWindowExpired();
+        if (pool.yesWins) {
+            if (noStakes[poolId][msg.sender] == 0) revert NotLosingStaker();
+        } else {
+            if (yesStakes[poolId][msg.sender] == 0) revert NotLosingStaker();
+        }
+        if (disputeFlags[poolId][msg.sender]) revert AlreadyFlagged();
+
+        // EFFECTS
+        disputeFlags[poolId][msg.sender] = true;
+        pool.flagCount++;
+        emit PoolDisputeFlagged(poolId, msg.sender, pool.flagCount);
+
+        if (pool.flagCount * 10000 > pool.losingStakerCount * 2000) {
+            pool.state = PoolState.DISPUTED;
+            emit PoolDisputeTriggered(poolId);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // finalizePool
+    // -------------------------------------------------------------------------
+
+    /// @notice Permissionless finalization after the 24h dispute window passes with no threshold met.
+    /// @param poolId The ID of the pool to finalize.
+    function finalizePool(uint256 poolId) external {
+        Pool storage pool = pools[poolId];
+        // CHECKS
+        if (pool.host == address(0)) revert WrongState();
+        if (pool.state != PoolState.SUBMITTED) revert WrongState();
+        if (block.timestamp <= pool.resolvedAt + DISPUTE_WINDOW) revert DisputeWindowOpen();
+
+        // EFFECTS
+        pool.state = PoolState.FINALIZED;
+        emit PoolFinalized(poolId, pool.yesWins);
+    }
+
+    // -------------------------------------------------------------------------
+    // adminResolvePool
+    // -------------------------------------------------------------------------
+
+    /// @notice Admin resolves a disputed pool with a final verdict.
+    /// @param poolId  The ID of the disputed pool to resolve.
+    /// @param yesWins True if the YES side wins; false otherwise.
+    function adminResolvePool(uint256 poolId, bool yesWins) external onlyOwner {
+        Pool storage pool = pools[poolId];
+        // CHECKS
+        if (pool.state != PoolState.DISPUTED) revert WrongState();
+
+        // EFFECTS
+        pool.yesWins = yesWins;
+        pool.state = PoolState.FINALIZED;
+        emit PoolFinalized(poolId, yesWins);
     }
 
     // -------------------------------------------------------------------------

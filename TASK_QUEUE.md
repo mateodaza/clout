@@ -217,7 +217,7 @@
 - **Dependencies:** NC-G1
 - **Constraints:** Ownable (same admin pattern as CloutEscrow). Separate contract file. Uses same whitelisted token pattern (duplicate the whitelist or share via inheritance — implementer's choice, but must work).
 
-#### NC-012A [ ] Implement CloutPool resolution and dispute
+#### NC-012A [x] Implement CloutPool resolution and dispute
 - **What:** `resolvePool(uint256 poolId, bool yesWins)`: designated resolver submits YES or NO outcome. Only from CLOSED state. Sets state to SUBMITTED. Stores `resolvedAt` timestamp. 24h dispute window begins. Resolver timeout: if resolveBy timestamp passes with no resolution → void path (separate task NC-012C). `disputePool(uint256 poolId)`: losing-side stakers can flag within 24h of resolution. Track flags per wallet (one flag per wallet). Dispute threshold: `flags * 10000 > losingStakerCount * 2000` (equivalent to >20%). `losingStakerCount` is snapshotted at resolution time. If threshold met, state → DISPUTED, admin must resolve. If zero losing stakers, pool finalizes immediately with no dispute path. `finalizePool(uint256 poolId)`: permissionless after 24h with dispute threshold NOT met → FINALIZED. Admin resolution after dispute: `adminResolvePool(uint256 poolId, bool yesWins)` → FINALIZED.
 - **Acceptance criteria:**
   - resolvePool: only resolver, only from CLOSED state

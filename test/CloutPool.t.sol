@@ -24,6 +24,10 @@ contract CloutPoolTest is Test {
     );
     event Staked(uint256 indexed poolId, address indexed staker, bool isYes, uint256 amount);
     event PoolClosed(uint256 indexed poolId, uint256 totalYes, uint256 totalNo);
+    event PoolResolved(uint256 indexed poolId, bool yesWins, uint256 resolvedAt);
+    event PoolDisputeFlagged(uint256 indexed poolId, address indexed flagger, uint256 flagCount);
+    event PoolDisputeTriggered(uint256 indexed poolId);
+    event PoolFinalized(uint256 indexed poolId, bool yesWins);
 
     CloutPool pool;
     MockStablecoin token;
@@ -33,6 +37,9 @@ contract CloutPoolTest is Test {
     address resolver = address(0xB0);
     address staker1  = address(0xC0);
     address staker2  = address(0xD0);
+    address staker3  = address(0xE0);
+    address staker4  = address(0xF0);
+    address staker5  = address(0x1A0);
     address treasury = address(0xFEE1);
 
     uint256 constant STAKE = 100 * 1e6; // 100 USDC (6 decimals)
@@ -45,7 +52,7 @@ contract CloutPoolTest is Test {
         pool.setTreasury(treasury);
 
         // Mint and approve for all actors
-        address[5] memory actors = [host, resolver, staker1, staker2, treasury];
+        address[8] memory actors = [host, resolver, staker1, staker2, staker3, staker4, staker5, treasury];
         for (uint256 i = 0; i < actors.length; i++) {
             token.mint(actors[i], 1000 * 1e6);
             vm.prank(actors[i]);
@@ -386,5 +393,361 @@ contract CloutPoolTest is Test {
 
         vm.expectRevert(CloutPool.WrongState.selector);
         pool.closePool(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers for NC-012A tests
+    // -------------------------------------------------------------------------
+
+    /// Creates pool, stakes staker1 NO, warps to eventStart, closes.
+    /// Returns poolId with: host YES=STAKE, staker1 NO=STAKE.
+    function _createAndClosePoolWithNoStaker() internal returns (uint256 poolId) {
+        poolId = _defaultCreatePool();
+
+        vm.prank(staker1);
+        pool.stakePool(poolId, false, STAKE);
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+    }
+
+    /// Creates pool, stakes count NO stakers (staker1..staker5), closes, returns poolId.
+    function _createAndClosePoolWithMultipleNoStakers(uint256 count) internal returns (uint256 poolId) {
+        poolId = _defaultCreatePool();
+
+        address[5] memory stakers = [staker1, staker2, staker3, staker4, staker5];
+        for (uint256 i = 0; i < count; i++) {
+            vm.prank(stakers[i]);
+            pool.stakePool(poolId, false, STAKE);
+        }
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 13 (NC-012A #1) — resolvePool: success yesWins
+    // -------------------------------------------------------------------------
+
+    function test_resolvePool_success_yesWins() public {
+        uint256 poolId = _createAndClosePoolWithNoStaker();
+
+        vm.expectEmit(true, false, false, true);
+        emit PoolResolved(poolId, true, block.timestamp);
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        assertEq(uint8(p2.state), uint8(CloutPool.PoolState.SUBMITTED));
+        assertEq(p2.resolvedAt, block.timestamp);
+        assertEq(p2.losingStakerCount, pool.noStakerCount(poolId));
+        assertTrue(p2.yesWins);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 14 (NC-012A #2) — resolvePool: success noWins
+    // -------------------------------------------------------------------------
+
+    function test_resolvePool_success_noWins() public {
+        uint256 poolId = _createAndClosePoolWithNoStaker();
+
+        vm.expectEmit(true, false, false, true);
+        emit PoolResolved(poolId, false, block.timestamp);
+        vm.prank(resolver);
+        pool.resolvePool(poolId, false);
+
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        assertEq(uint8(p2.state), uint8(CloutPool.PoolState.SUBMITTED));
+        assertEq(p2.losingStakerCount, pool.yesStakerCount(poolId));
+        assertFalse(p2.yesWins);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 15 (NC-012A #3) — resolvePool: reverts not resolver
+    // -------------------------------------------------------------------------
+
+    function test_resolvePool_revertsNotResolver() public {
+        uint256 poolId = _createAndClosePoolWithNoStaker();
+
+        vm.prank(staker1);
+        vm.expectRevert(CloutPool.NotResolver.selector);
+        pool.resolvePool(poolId, true);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 16 (NC-012A #4) — resolvePool: reverts wrong state (OPEN)
+    // -------------------------------------------------------------------------
+
+    function test_resolvePool_revertsWrongState_open() public {
+        uint256 poolId = _defaultCreatePool();
+
+        vm.prank(resolver);
+        vm.expectRevert(CloutPool.WrongState.selector);
+        pool.resolvePool(poolId, true);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 17 (NC-012A #5) — resolvePool: zero losing stakers → immediate FINALIZED
+    // -------------------------------------------------------------------------
+
+    function test_resolvePool_zeroLosingStakers_immediateFinalize() public {
+        // Pool with only YES stakers (host); no NO stakers
+        uint256 poolId = _defaultCreatePool();
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.eventStart);
+        pool.closePool(poolId);
+
+        vm.expectEmit(true, false, false, true);
+        emit PoolResolved(poolId, true, block.timestamp);
+        vm.expectEmit(true, false, false, true);
+        emit PoolFinalized(poolId, true);
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        assertEq(uint8(p2.state), uint8(CloutPool.PoolState.FINALIZED));
+        assertEq(p2.losingStakerCount, 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 18 (NC-012A #6) — resolvePool: reverts after resolveBy
+    // -------------------------------------------------------------------------
+
+    function test_resolvePool_revertsAfterResolveBy() public {
+        uint256 poolId = _createAndClosePoolWithNoStaker();
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.resolveBy + 1);
+
+        vm.prank(resolver);
+        vm.expectRevert(CloutPool.ResolverDeadlinePassed.selector);
+        pool.resolvePool(poolId, true);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 19 (NC-012A #7) — disputePool: single flag below threshold
+    // -------------------------------------------------------------------------
+
+    function test_disputePool_success_flagCounted_belowThreshold() public {
+        uint256 poolId = _createAndClosePoolWithMultipleNoStakers(5);
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true); // YES wins, NO side loses (5 stakers)
+
+        vm.expectEmit(true, true, false, true);
+        emit PoolDisputeFlagged(poolId, staker1, 1);
+        vm.prank(staker1);
+        pool.disputePool(poolId);
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        assertEq(p.flagCount, 1);
+        assertEq(uint8(p.state), uint8(CloutPool.PoolState.SUBMITTED)); // threshold not met
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 20 (NC-012A #8) — disputePool: threshold met → DISPUTED
+    // -------------------------------------------------------------------------
+
+    function test_disputePool_thresholdMet_triggersDisputed() public {
+        uint256 poolId = _createAndClosePoolWithMultipleNoStakers(5);
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true); // YES wins, 5 NO losers
+
+        // 2 flags: 2*10000=20000 > 5*2000=10000 → threshold met
+        vm.prank(staker1);
+        pool.disputePool(poolId);
+
+        vm.expectEmit(true, false, false, false);
+        emit PoolDisputeTriggered(poolId);
+        vm.prank(staker2);
+        pool.disputePool(poolId);
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        assertEq(uint8(p.state), uint8(CloutPool.PoolState.DISPUTED));
+        assertEq(p.flagCount, 2);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 21 (NC-012A #9) — disputePool: winning side staker reverts
+    // -------------------------------------------------------------------------
+
+    function test_disputePool_revertsWinningSideStaker() public {
+        uint256 poolId = _createAndClosePoolWithNoStaker();
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true); // YES wins; host is YES staker
+
+        vm.prank(host);
+        vm.expectRevert(CloutPool.NotLosingStaker.selector);
+        pool.disputePool(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 22 (NC-012A #10) — disputePool: already flagged reverts AlreadyFlagged
+    // -------------------------------------------------------------------------
+
+    function test_disputePool_revertsAlreadyFlagged() public {
+        // Need 5 NO losers so first flag (1*10000 = 10000, NOT > 5*2000 = 10000) doesn't trigger DISPUTED
+        uint256 poolId = _createAndClosePoolWithMultipleNoStakers(5);
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+
+        vm.prank(staker1);
+        pool.disputePool(poolId);
+
+        vm.prank(staker1);
+        vm.expectRevert(CloutPool.AlreadyFlagged.selector);
+        pool.disputePool(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 23 (NC-012A #11) — disputePool: window expired reverts
+    // -------------------------------------------------------------------------
+
+    function test_disputePool_revertsWindowExpired() public {
+        uint256 poolId = _createAndClosePoolWithNoStaker();
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.resolvedAt + 86400 + 1);
+
+        vm.prank(staker1);
+        vm.expectRevert(CloutPool.DisputeWindowExpired.selector);
+        pool.disputePool(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 24 (NC-012A #12) — disputePool: wrong state (OPEN) reverts
+    // -------------------------------------------------------------------------
+
+    function test_disputePool_revertsWrongState_open() public {
+        uint256 poolId = _defaultCreatePool();
+
+        vm.prank(staker1);
+        vm.expectRevert(CloutPool.WrongState.selector);
+        pool.disputePool(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 25 (NC-012A #13) — finalizePool: success after 24h
+    // -------------------------------------------------------------------------
+
+    function test_finalizePool_success() public {
+        uint256 poolId = _createAndClosePoolWithNoStaker();
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.resolvedAt + 86400 + 1);
+
+        vm.expectEmit(true, false, false, true);
+        emit PoolFinalized(poolId, true);
+        pool.finalizePool(poolId);
+
+        CloutPool.Pool memory p2 = pool.getPool(poolId);
+        assertEq(uint8(p2.state), uint8(CloutPool.PoolState.FINALIZED));
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 26 (NC-012A #14) — finalizePool: reverts before window expires
+    // -------------------------------------------------------------------------
+
+    function test_finalizePool_revertsBeforeWindow() public {
+        uint256 poolId = _createAndClosePoolWithNoStaker();
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+
+        vm.expectRevert(CloutPool.DisputeWindowOpen.selector);
+        pool.finalizePool(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 27 (NC-012A #15) — finalizePool: reverts on DISPUTED state
+    // -------------------------------------------------------------------------
+
+    function test_finalizePool_revertsDisputedState() public {
+        uint256 poolId = _createAndClosePoolWithMultipleNoStakers(5);
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+
+        // Trigger dispute
+        vm.prank(staker1);
+        pool.disputePool(poolId);
+        vm.prank(staker2);
+        pool.disputePool(poolId); // triggers DISPUTED
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        vm.warp(p.resolvedAt + 86400 + 1);
+
+        vm.expectRevert(CloutPool.WrongState.selector);
+        pool.finalizePool(poolId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 28 (NC-012A #16) — adminResolvePool: success
+    // -------------------------------------------------------------------------
+
+    function test_adminResolvePool_success() public {
+        uint256 poolId = _createAndClosePoolWithMultipleNoStakers(5);
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+
+        vm.prank(staker1);
+        pool.disputePool(poolId);
+        vm.prank(staker2);
+        pool.disputePool(poolId); // triggers DISPUTED
+
+        vm.expectEmit(true, false, false, true);
+        emit PoolFinalized(poolId, false); // admin overrides to false
+        pool.adminResolvePool(poolId, false);
+
+        CloutPool.Pool memory p = pool.getPool(poolId);
+        assertEq(uint8(p.state), uint8(CloutPool.PoolState.FINALIZED));
+        assertFalse(p.yesWins);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 29 (NC-012A #17) — adminResolvePool: non-admin reverts
+    // -------------------------------------------------------------------------
+
+    function test_adminResolvePool_revertsNotAdmin() public {
+        uint256 poolId = _createAndClosePoolWithMultipleNoStakers(5);
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true);
+
+        vm.prank(staker1);
+        pool.disputePool(poolId);
+        vm.prank(staker2);
+        pool.disputePool(poolId);
+
+        vm.prank(staker1);
+        vm.expectRevert();
+        pool.adminResolvePool(poolId, false);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 30 (NC-012A #18) — adminResolvePool: wrong state (SUBMITTED) reverts
+    // -------------------------------------------------------------------------
+
+    function test_adminResolvePool_revertsWrongState_submitted() public {
+        uint256 poolId = _createAndClosePoolWithNoStaker();
+
+        vm.prank(resolver);
+        pool.resolvePool(poolId, true); // state = SUBMITTED
+
+        vm.expectRevert(CloutPool.WrongState.selector);
+        pool.adminResolvePool(poolId, false);
     }
 }
