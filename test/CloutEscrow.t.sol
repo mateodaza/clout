@@ -40,6 +40,8 @@ contract CloutEscrowTest is Test {
     event ResultSubmitted(uint256 indexed, address indexed, CloutEscrow.Outcome, uint256);
     event ResultConfirmed(uint256 indexed, address indexed, CloutEscrow.Outcome);
     event ChallengeFinalizedByTimeout(uint256 indexed, CloutEscrow.Outcome, uint256);
+    event ResultDisputed(uint256 indexed, address indexed, uint256);
+    event DisputeResolved(uint256 indexed, address indexed, CloutEscrow.Outcome, uint256);
 
     CloutEscrow escrow;
     MockStablecoin token;
@@ -84,6 +86,15 @@ contract CloutEscrowTest is Test {
         return id;
     }
 
+    function _submitAndDispute() internal returns (uint256) {
+        uint256 id = _createAndAccept();
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+        vm.prank(bob);
+        escrow.disputeResult(id);
+        return id;
+    }
+
     // -------------------------------------------------------------------------
     // Test 1: success — fields stored correctly, challengeCount=1, return value=1
     // -------------------------------------------------------------------------
@@ -109,6 +120,7 @@ contract CloutEscrowTest is Test {
             uint256 acceptedAt,
             uint256 submittedAt,
             uint256 disputedAt,
+            uint256 resolvedAt,
             bool claimed
         ) = escrow.challenges(1);
 
@@ -126,6 +138,7 @@ contract CloutEscrowTest is Test {
         assertEq(acceptedAt, 0);
         assertEq(submittedAt, 0);
         assertEq(disputedAt, 0);
+        assertEq(resolvedAt, 0);
         assertEq(claimed, false);
     }
 
@@ -168,7 +181,7 @@ contract CloutEscrowTest is Test {
         vm.prank(alice);
         escrow.createChallenge(bob, STAKE, address(token), GAME_ID, address(0));
 
-        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , ) = escrow.challenges(1);
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , ) = escrow.challenges(1);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.CREATED));
     }
 
@@ -235,7 +248,7 @@ contract CloutEscrowTest is Test {
         uint256 id = escrow.createChallenge(bob, STAKE, address(token), GAME_ID, address(0));
         assertEq(id, 1);
 
-        (, , address designatedResolver, , , , , , , , , , , , ) = escrow.challenges(1);
+        (, , address designatedResolver, , , , , , , , , , , , , ) = escrow.challenges(1);
         assertEq(designatedResolver, address(0));
     }
 
@@ -354,7 +367,7 @@ contract CloutEscrowTest is Test {
         vm.prank(bob);
         escrow.acceptChallenge(id);
 
-        (, , , , , CloutEscrow.ChallengeState state, , , , , , uint256 acceptedAt, , , ) = escrow.challenges(id);
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , uint256 acceptedAt, , , , ) = escrow.challenges(id);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.ACCEPTED));
         assertEq(acceptedAt, block.timestamp);
         assertEq(token.balanceOf(address(escrow)), 2 * STAKE);
@@ -443,7 +456,7 @@ contract CloutEscrowTest is Test {
     // -------------------------------------------------------------------------
     function test_voidChallenge_fromCreated_afterTimeout_refundsCreator() public {
         uint256 id = _createDefault();
-        (, , , , , , , , , , uint256 createdAt, , , , ) = escrow.challenges(id);
+        (, , , , , , , , , , uint256 createdAt, , , , , ) = escrow.challenges(id);
         uint256 aliceBefore = token.balanceOf(alice);
 
         vm.warp(createdAt + escrow.VOID_TIMEOUT() + 1);
@@ -451,7 +464,7 @@ contract CloutEscrowTest is Test {
         vm.prank(dave);
         escrow.voidChallenge(id);
 
-        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , ) = escrow.challenges(id);
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , ) = escrow.challenges(id);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.VOIDED));
         assertEq(token.balanceOf(alice), aliceBefore + STAKE);
         assertEq(token.balanceOf(address(escrow)), 0);
@@ -462,7 +475,7 @@ contract CloutEscrowTest is Test {
     // -------------------------------------------------------------------------
     function test_voidChallenge_fromCreated_emitsChallengeVoidedEvent() public {
         uint256 id = _createDefault();
-        (, , , , , , , , , , uint256 createdAt, , , , ) = escrow.challenges(id);
+        (, , , , , , , , , , uint256 createdAt, , , , , ) = escrow.challenges(id);
 
         vm.warp(createdAt + escrow.VOID_TIMEOUT() + 1);
 
@@ -478,7 +491,7 @@ contract CloutEscrowTest is Test {
     // -------------------------------------------------------------------------
     function test_voidChallenge_fromCreated_beforeTimeout_reverts() public {
         uint256 id = _createDefault();
-        (, , , , , , , , , , uint256 createdAt, , , , ) = escrow.challenges(id);
+        (, , , , , , , , , , uint256 createdAt, , , , , ) = escrow.challenges(id);
 
         vm.warp(createdAt + escrow.VOID_TIMEOUT() - 1);
 
@@ -492,7 +505,7 @@ contract CloutEscrowTest is Test {
     // -------------------------------------------------------------------------
     function test_voidChallenge_fromCreated_walletRecord_completionStats() public {
         uint256 id = _createDefault();
-        (, , , , , , , , , , uint256 createdAt, , , , ) = escrow.challenges(id);
+        (, , , , , , , , , , uint256 createdAt, , , , , ) = escrow.challenges(id);
 
         vm.warp(createdAt + escrow.VOID_TIMEOUT() + 1);
         vm.prank(dave);
@@ -515,7 +528,7 @@ contract CloutEscrowTest is Test {
         vm.prank(bob);
         escrow.acceptChallenge(id);
 
-        (, , , , , , , , , , , uint256 acceptedAt, , , ) = escrow.challenges(id);
+        (, , , , , , , , , , , uint256 acceptedAt, , , , ) = escrow.challenges(id);
         uint256 aliceBefore = token.balanceOf(alice);
         uint256 bobBefore = token.balanceOf(bob);
 
@@ -524,7 +537,7 @@ contract CloutEscrowTest is Test {
         vm.prank(alice);
         escrow.voidChallenge(id);
 
-        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , ) = escrow.challenges(id);
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , ) = escrow.challenges(id);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.VOIDED));
         assertEq(token.balanceOf(alice), aliceBefore + STAKE);
         assertEq(token.balanceOf(bob), bobBefore + STAKE);
@@ -539,7 +552,7 @@ contract CloutEscrowTest is Test {
         vm.prank(bob);
         escrow.acceptChallenge(id);
 
-        (, , , , , , , , , , , uint256 acceptedAt, , , ) = escrow.challenges(id);
+        (, , , , , , , , , , , uint256 acceptedAt, , , , ) = escrow.challenges(id);
 
         vm.warp(acceptedAt + escrow.VOID_TIMEOUT() - 1);
 
@@ -556,7 +569,7 @@ contract CloutEscrowTest is Test {
         vm.prank(bob);
         escrow.acceptChallenge(id);
 
-        (, , , , , , , , , , , uint256 acceptedAt, , , ) = escrow.challenges(id);
+        (, , , , , , , , , , , uint256 acceptedAt, , , , ) = escrow.challenges(id);
 
         vm.warp(acceptedAt + escrow.VOID_TIMEOUT() + 1);
 
@@ -573,7 +586,7 @@ contract CloutEscrowTest is Test {
         vm.prank(bob);
         escrow.acceptChallenge(id);
 
-        (, , , , , , , , , , , uint256 acceptedAt, , , ) = escrow.challenges(id);
+        (, , , , , , , , , , , uint256 acceptedAt, , , , ) = escrow.challenges(id);
 
         vm.warp(acceptedAt + escrow.VOID_TIMEOUT() + 1);
         vm.prank(alice);
@@ -593,13 +606,13 @@ contract CloutEscrowTest is Test {
     // -------------------------------------------------------------------------
     function test_voidChallenge_claimed_field_true_after_void() public {
         uint256 id = _createDefault();
-        (, , , , , , , , , , uint256 createdAt, , , , ) = escrow.challenges(id);
+        (, , , , , , , , , , uint256 createdAt, , , , , ) = escrow.challenges(id);
 
         vm.warp(createdAt + escrow.VOID_TIMEOUT() + 1);
         vm.prank(dave);
         escrow.voidChallenge(id);
 
-        (, , , , , , , , , , , , , , bool claimed) = escrow.challenges(id);
+        (, , , , , , , , , , , , , , , bool claimed) = escrow.challenges(id);
         assertEq(claimed, true);
     }
 
@@ -608,7 +621,7 @@ contract CloutEscrowTest is Test {
     // -------------------------------------------------------------------------
     function test_voidChallenge_fromVoided_reverts() public {
         uint256 id = _createDefault();
-        (, , , , , , , , , , uint256 createdAt, , , , ) = escrow.challenges(id);
+        (, , , , , , , , , , uint256 createdAt, , , , , ) = escrow.challenges(id);
 
         vm.warp(createdAt + escrow.VOID_TIMEOUT() + 1);
         vm.prank(dave);
@@ -637,7 +650,7 @@ contract CloutEscrowTest is Test {
             address submittedBy,
             , ,
             uint256 submittedAt,
-            ,
+            , ,
         ) = escrow.challenges(id);
 
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.SUBMITTED));
@@ -655,7 +668,7 @@ contract CloutEscrowTest is Test {
         vm.prank(bob);
         escrow.submitResult(id, CloutEscrow.Outcome.OPPONENT_WIN);
 
-        (, , , , , CloutEscrow.ChallengeState state, , , , address submittedBy, , , , , ) = escrow.challenges(id);
+        (, , , , , CloutEscrow.ChallengeState state, , , , address submittedBy, , , , , , ) = escrow.challenges(id);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.SUBMITTED));
         assertEq(submittedBy, bob);
     }
@@ -669,7 +682,7 @@ contract CloutEscrowTest is Test {
         vm.prank(alice);
         escrow.submitResult(id, CloutEscrow.Outcome.DRAW);
 
-        (, , , , , , , , CloutEscrow.Outcome submittedResult, , , , , , ) = escrow.challenges(id);
+        (, , , , , , , , CloutEscrow.Outcome submittedResult, , , , , , , ) = escrow.challenges(id);
         assertEq(uint256(submittedResult), uint256(CloutEscrow.Outcome.DRAW));
     }
 
@@ -743,7 +756,7 @@ contract CloutEscrowTest is Test {
         vm.prank(bob);
         escrow.confirmResult(id);
 
-        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , ) = escrow.challenges(id);
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , ) = escrow.challenges(id);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.FINALIZED));
     }
 
@@ -811,7 +824,7 @@ contract CloutEscrowTest is Test {
         vm.prank(alice);
         escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
 
-        (, , , , , , , , , , , , uint256 submittedAt, , ) = escrow.challenges(id);
+        (, , , , , , , , , , , , uint256 submittedAt, , , ) = escrow.challenges(id);
         vm.warp(submittedAt + escrow.SUBMISSION_TIMEOUT() + 1);
 
         vm.expectEmit(true, false, false, true);
@@ -820,7 +833,7 @@ contract CloutEscrowTest is Test {
         vm.prank(dave);
         escrow.finalizeSubmission(id);
 
-        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , ) = escrow.challenges(id);
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , ) = escrow.challenges(id);
         assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.FINALIZED));
     }
 
@@ -833,7 +846,7 @@ contract CloutEscrowTest is Test {
         vm.prank(alice);
         escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
 
-        (, , , , , , , , , , , , uint256 submittedAt, , ) = escrow.challenges(id);
+        (, , , , , , , , , , , , uint256 submittedAt, , , ) = escrow.challenges(id);
         vm.warp(submittedAt + escrow.SUBMISSION_TIMEOUT() - 1);
 
         vm.prank(dave);
@@ -850,5 +863,303 @@ contract CloutEscrowTest is Test {
         vm.prank(dave);
         vm.expectRevert(CloutEscrow.WrongState.selector);
         escrow.finalizeSubmission(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T49: disputeResult — state DISPUTED, disputedAt set
+    // -------------------------------------------------------------------------
+    function test_disputeResult_success() public {
+        uint256 id = _createAndAccept();
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        uint256 ts = block.timestamp;
+        vm.prank(bob);
+        escrow.disputeResult(id);
+
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , uint256 disputedAt, , ) = escrow.challenges(id);
+        assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.DISPUTED));
+        assertEq(disputedAt, ts);
+    }
+
+    // -------------------------------------------------------------------------
+    // T50: disputeResult — emits ResultDisputed event
+    // -------------------------------------------------------------------------
+    function test_disputeResult_emitsResultDisputedEvent() public {
+        uint256 id = _createAndAccept();
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        uint256 ts = block.timestamp;
+        vm.expectEmit(true, true, false, true);
+        emit ResultDisputed(id, bob, ts);
+
+        vm.prank(bob);
+        escrow.disputeResult(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T51: disputeResult — walletRecord challengesDisputed incremented
+    // -------------------------------------------------------------------------
+    function test_disputeResult_walletRecord_challengesDisputedIncremented() public {
+        uint256 id = _createAndAccept();
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+        vm.prank(bob);
+        escrow.disputeResult(id);
+
+        (, , , uint256 bobDisputed, , , ) = escrow.walletRecords(bob);
+        assertEq(bobDisputed, 1);
+
+        (, , , uint256 aliceDisputed, , , ) = escrow.walletRecords(alice);
+        assertEq(aliceDisputed, 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // T52: disputeResult — reverts when called by the submitter (CallerIsSubmitter)
+    // -------------------------------------------------------------------------
+    function test_disputeResult_revertsOnSubmitter() public {
+        uint256 id = _createAndAccept();
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        vm.prank(alice);
+        vm.expectRevert(CloutEscrow.CallerIsSubmitter.selector);
+        escrow.disputeResult(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T53: disputeResult — reverts from ACCEPTED state (WrongState)
+    // -------------------------------------------------------------------------
+    function test_disputeResult_revertsOnWrongState_accepted() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(bob);
+        vm.expectRevert(CloutEscrow.WrongState.selector);
+        escrow.disputeResult(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T54: disputeResult — reverts for non-participant (NotParticipant)
+    // -------------------------------------------------------------------------
+    function test_disputeResult_revertsOnNotParticipant() public {
+        uint256 id = _createAndAccept();
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        vm.prank(dave);
+        vm.expectRevert(CloutEscrow.NotParticipant.selector);
+        escrow.disputeResult(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T55: resolveDispute — resolver succeeds within 48h, state RESOLVED
+    // -------------------------------------------------------------------------
+    function test_resolveDispute_resolver_success() public {
+        uint256 id = _submitAndDispute();
+        uint256 ts = block.timestamp;
+
+        vm.prank(charlie);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        (, , , , , CloutEscrow.ChallengeState state, , , CloutEscrow.Outcome submittedResult, , , , , , uint256 resolvedAt, ) = escrow.challenges(id);
+        assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.RESOLVED));
+        assertEq(uint256(submittedResult), uint256(CloutEscrow.Outcome.CREATOR_WIN));
+        assertEq(resolvedAt, ts);
+        assertEq(escrow.resolvedChallenges(charlie), 1);
+    }
+
+    // -------------------------------------------------------------------------
+    // T56: resolveDispute — emits DisputeResolved event
+    // -------------------------------------------------------------------------
+    function test_resolveDispute_resolver_emitsDisputeResolvedEvent() public {
+        uint256 id = _submitAndDispute();
+        uint256 ts = block.timestamp;
+
+        vm.expectEmit(true, true, false, true);
+        emit DisputeResolved(id, charlie, CloutEscrow.Outcome.CREATOR_WIN, ts);
+
+        vm.prank(charlie);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T57: resolveDispute — resolver can submit Outcome.INVALID
+    // -------------------------------------------------------------------------
+    function test_resolveDispute_resolver_canSubmitInvalidOutcome() public {
+        uint256 id = _submitAndDispute();
+
+        vm.prank(charlie);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.INVALID);
+
+        (, , , , , , , , CloutEscrow.Outcome submittedResult, , , , , , , ) = escrow.challenges(id);
+        assertEq(uint256(submittedResult), uint256(CloutEscrow.Outcome.INVALID));
+    }
+
+    // -------------------------------------------------------------------------
+    // T58: resolveDispute — reverts for wrong caller (NotResolver)
+    // -------------------------------------------------------------------------
+    function test_resolveDispute_revertsOnWrongCaller_notResolver() public {
+        uint256 id = _submitAndDispute();
+
+        vm.prank(dave);
+        vm.expectRevert(CloutEscrow.NotResolver.selector);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T59: resolveDispute — reverts from SUBMITTED state (WrongState)
+    // -------------------------------------------------------------------------
+    function test_resolveDispute_revertsOnWrongState_submitted() public {
+        uint256 id = _createAndAccept();
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        vm.prank(charlie);
+        vm.expectRevert(CloutEscrow.WrongState.selector);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T60: resolveDispute — resolver reverts after 48h timeout (ResolverTimedOut)
+    // -------------------------------------------------------------------------
+    function test_resolveDispute_resolver_revertsAfterTimeout() public {
+        uint256 id = _submitAndDispute();
+        (, , , , , , , , , , , , , uint256 disputedAt, , ) = escrow.challenges(id);
+
+        vm.warp(disputedAt + escrow.VOID_TIMEOUT() + 1);
+
+        vm.prank(charlie);
+        vm.expectRevert(CloutEscrow.ResolverTimedOut.selector);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T61: resolveDispute — admin succeeds when no resolver is set
+    // -------------------------------------------------------------------------
+    function test_resolveDispute_admin_success_noResolver() public {
+        vm.prank(alice);
+        uint256 id = escrow.createChallenge(bob, STAKE, address(token), GAME_ID, address(0));
+        vm.prank(bob);
+        escrow.acceptChallenge(id);
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+        vm.prank(bob);
+        escrow.disputeResult(id);
+
+        escrow.resolveDispute(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , ) = escrow.challenges(id);
+        assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.RESOLVED));
+    }
+
+    // -------------------------------------------------------------------------
+    // T62: resolveDisputeAsAdmin — succeeds after 48h timeout
+    // -------------------------------------------------------------------------
+    function test_resolveDisputeAsAdmin_success_afterTimeout() public {
+        uint256 id = _submitAndDispute();
+        (, , , , , , , , , , , , , uint256 disputedAt, , ) = escrow.challenges(id);
+
+        vm.warp(disputedAt + escrow.VOID_TIMEOUT() + 1);
+        escrow.resolveDisputeAsAdmin(id, CloutEscrow.Outcome.OPPONENT_WIN);
+
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , uint256 resolvedAt, ) = escrow.challenges(id);
+        assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.RESOLVED));
+        assertGt(resolvedAt, 0);
+        assertEq(escrow.resolvedChallenges(admin), 1);
+    }
+
+    // -------------------------------------------------------------------------
+    // T63: resolveDisputeAsAdmin — reverts before 48h timeout (TimeoutNotExpired)
+    // -------------------------------------------------------------------------
+    function test_resolveDisputeAsAdmin_revertsBeforeTimeout() public {
+        uint256 id = _submitAndDispute(); // charlie is designated resolver
+
+        vm.expectRevert(CloutEscrow.TimeoutNotExpired.selector);
+        escrow.resolveDisputeAsAdmin(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T64: resolveDisputeAsAdmin — succeeds immediately when no resolver is set
+    // -------------------------------------------------------------------------
+    function test_resolveDisputeAsAdmin_success_noResolver() public {
+        vm.prank(alice);
+        uint256 id = escrow.createChallenge(bob, STAKE, address(token), GAME_ID, address(0));
+        vm.prank(bob);
+        escrow.acceptChallenge(id);
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+        vm.prank(bob);
+        escrow.disputeResult(id);
+
+        escrow.resolveDisputeAsAdmin(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , , ) = escrow.challenges(id);
+        assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.RESOLVED));
+    }
+
+    // -------------------------------------------------------------------------
+    // T65: resolveDisputeAsAdmin — reverts for non-admin (OwnableUnauthorizedAccount)
+    // -------------------------------------------------------------------------
+    function test_resolveDisputeAsAdmin_revertsForNonAdmin() public {
+        uint256 id = _submitAndDispute();
+        (, , , , , , , , , , , , , uint256 disputedAt, , ) = escrow.challenges(id);
+
+        vm.warp(disputedAt + escrow.VOID_TIMEOUT() + 1);
+
+        vm.prank(dave);
+        vm.expectRevert();
+        escrow.resolveDisputeAsAdmin(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T66: resolvedChallenges tracking increments per resolve
+    // -------------------------------------------------------------------------
+    function test_resolvedChallenges_tracking() public {
+        uint256 id1 = _submitAndDispute();
+        vm.prank(charlie);
+        escrow.resolveDispute(id1, CloutEscrow.Outcome.CREATOR_WIN);
+        assertEq(escrow.resolvedChallenges(charlie), 1);
+
+        vm.prank(alice);
+        uint256 id2 = escrow.createChallenge(bob, STAKE, address(token), GAME_ID, charlie);
+        vm.prank(bob);
+        escrow.acceptChallenge(id2);
+        vm.prank(alice);
+        escrow.submitResult(id2, CloutEscrow.Outcome.CREATOR_WIN);
+        vm.prank(bob);
+        escrow.disputeResult(id2);
+
+        vm.prank(charlie);
+        escrow.resolveDispute(id2, CloutEscrow.Outcome.DRAW);
+        assertEq(escrow.resolvedChallenges(charlie), 2);
+    }
+
+    // -------------------------------------------------------------------------
+    // T67: resolveDispute — admin blocked when resolver is set (before and after timeout)
+    // -------------------------------------------------------------------------
+    function test_resolveDispute_admin_blocked_when_resolver_set() public {
+        uint256 id = _submitAndDispute();
+        (, , , , , , , , , , , , , uint256 disputedAt, , ) = escrow.challenges(id);
+
+        // Admin blocked within 48h
+        vm.expectRevert(CloutEscrow.NotResolver.selector);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        // Admin still blocked after timeout — must use resolveDisputeAsAdmin
+        vm.warp(disputedAt + escrow.VOID_TIMEOUT() + 1);
+        vm.expectRevert(CloutEscrow.NotResolver.selector);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T68: resolveDispute — reverts on Outcome.NONE (InvalidOutcome)
+    // -------------------------------------------------------------------------
+    function test_resolveDispute_revertsOnNoneOutcome() public {
+        uint256 id = _submitAndDispute();
+
+        vm.prank(charlie);
+        vm.expectRevert(CloutEscrow.InvalidOutcome.selector);
+        escrow.resolveDispute(id, CloutEscrow.Outcome.NONE);
     }
 }

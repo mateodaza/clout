@@ -35,6 +35,7 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         uint256 acceptedAt;
         uint256 submittedAt;         // when result was submitted (starts confirmation deadline)
         uint256 disputedAt;          // when dispute was triggered (starts resolver deadline)
+        uint256 resolvedAt;          // when dispute was resolved (starts 24h appeal window for NC-007)
         bool claimed;                // true after settlement; set by voidChallenge or claimWinnings
     }
 
@@ -63,6 +64,8 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     uint256 public challengeCount;
     mapping(address => bool) private _whitelistedTokens;
     mapping(address => WalletRecord) public walletRecords;
+    /// @notice Tracks how many disputes each resolver has resolved (for collusion detection).
+    mapping(address => uint256) public resolvedChallenges;
 
     // -------------------------------------------------------------------------
     // Custom Errors
@@ -80,6 +83,8 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     error NotParticipant();    // caller is not creator or opponent (ACCEPTED-void guard)
     error InvalidOutcome();    // submitter passed Outcome.NONE or Outcome.INVALID
     error CallerIsSubmitter(); // submitter attempts to call confirmResult
+    error NotResolver();       // caller is not the designated resolver (when set) or admin (when no resolver)
+    error ResolverTimedOut();  // designated resolver attempts to act after 48h window
 
     // -------------------------------------------------------------------------
     // Events
@@ -122,6 +127,17 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         uint256 indexed challengeId,
         Outcome outcome,
         uint256 finalizedAt
+    );
+    event ResultDisputed(
+        uint256 indexed challengeId,
+        address indexed disputer,
+        uint256 disputedAt
+    );
+    event DisputeResolved(
+        uint256 indexed challengeId,
+        address indexed resolver,
+        Outcome outcome,
+        uint256 resolvedAt
     );
 
     // -------------------------------------------------------------------------
@@ -330,5 +346,84 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         } else {
             revert WrongState();
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // disputeResult
+    // -------------------------------------------------------------------------
+
+    /// @notice Disputes the submitted result. Transitions challenge from SUBMITTED to DISPUTED.
+    /// @dev Only the non-submitting participant may dispute.
+    /// @param challengeId The ID of the challenge.
+    function disputeResult(uint256 challengeId) external {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.SUBMITTED) revert WrongState();
+        if (msg.sender != c.creator && msg.sender != c.opponent) revert NotParticipant();
+        if (msg.sender == c.submittedBy) revert CallerIsSubmitter();
+        c.state = ChallengeState.DISPUTED;
+        c.disputedAt = block.timestamp;
+        walletRecords[msg.sender].challengesDisputed++;
+        emit ResultDisputed(challengeId, msg.sender, block.timestamp);
+    }
+
+    // -------------------------------------------------------------------------
+    // _doResolve (internal shared resolution logic)
+    // -------------------------------------------------------------------------
+
+    /// @notice Shared resolution logic for both resolveDispute and resolveDisputeAsAdmin.
+    /// @param challengeId The ID of the challenge.
+    /// @param outcome The resolver's verdict (must not be Outcome.NONE).
+    /// @param resolverAddr The address of the entity resolving (for tracking).
+    function _doResolve(uint256 challengeId, Outcome outcome, address resolverAddr) internal {
+        if (outcome == Outcome.NONE) revert InvalidOutcome();
+        Challenge storage c = challenges[challengeId];
+        c.submittedResult = outcome;
+        c.state = ChallengeState.RESOLVED;
+        c.resolvedAt = block.timestamp;
+        resolvedChallenges[resolverAddr]++;
+        emit DisputeResolved(challengeId, resolverAddr, outcome, block.timestamp);
+    }
+
+    // -------------------------------------------------------------------------
+    // resolveDispute
+    // -------------------------------------------------------------------------
+
+    /// @notice Resolves a disputed challenge.
+    /// @dev When a designatedResolver is set, only that resolver may call (within 48h).
+    ///      Admin is blocked from this function when a resolver is set — use resolveDisputeAsAdmin.
+    ///      When no resolver is set (designatedResolver == address(0)), only admin may call.
+    /// @param challengeId The ID of the challenge.
+    /// @param outcome The resolver's verdict.
+    function resolveDispute(uint256 challengeId, Outcome outcome) external {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.DISPUTED) revert WrongState();
+        if (c.designatedResolver != address(0)) {
+            // Resolver-assigned path: ONLY the designated resolver may call.
+            // Admin is blocked here — admin must use resolveDisputeAsAdmin after timeout.
+            if (msg.sender != c.designatedResolver) revert NotResolver();
+            if (block.timestamp >= c.disputedAt + VOID_TIMEOUT) revert ResolverTimedOut();
+        } else {
+            // Admin-only path: no designated resolver, no timeout applies.
+            if (msg.sender != owner()) revert NotResolver();
+        }
+        _doResolve(challengeId, outcome, msg.sender);
+    }
+
+    // -------------------------------------------------------------------------
+    // resolveDisputeAsAdmin
+    // -------------------------------------------------------------------------
+
+    /// @notice Admin fallback to resolve a dispute after the resolver's 48h window expires.
+    /// @dev When designatedResolver is set, admin must wait for the 48h timeout.
+    ///      When designatedResolver == address(0), admin may call immediately (no timeout).
+    /// @param challengeId The ID of the challenge.
+    /// @param outcome The admin's verdict.
+    function resolveDisputeAsAdmin(uint256 challengeId, Outcome outcome) external onlyOwner {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.DISPUTED) revert WrongState();
+        if (c.designatedResolver != address(0)) {
+            if (block.timestamp < c.disputedAt + VOID_TIMEOUT) revert TimeoutNotExpired();
+        }
+        _doResolve(challengeId, outcome, msg.sender);
     }
 }

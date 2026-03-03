@@ -87,7 +87,7 @@
 - **Dependencies:** NC-004
 - **Constraints:** Store `submittedBy` address to enforce only-non-submitter can confirm/dispute. 24 hours = 86400 seconds.
 
-#### NC-006 [ ] Implement disputeResult and resolveDispute
+#### NC-006 [x] Implement disputeResult and resolveDispute
 - **What:** `disputeResult(uint256 challengeId)`: only the non-submitter can call from SUBMITTED state. Sets state to DISPUTED. Stores `disputedAt` timestamp. Increments WalletRecord `challengesDisputed` for the disputer. `resolveDispute(uint256 challengeId, Outcome outcome)`: callable by designated resolver (if set and within 48h of disputedAt) or admin. Submits verdict (any Outcome including INVALID). Sets state to RESOLVED. Stores `resolvedAt` timestamp. Starts 24h appeal window. Resolver timeout: if designated resolver doesn't act within 48h of disputedAt, resolution falls back to admin-only — implement `resolveDisputeAsAdmin(uint256 challengeId, Outcome outcome)` callable only by admin, only from DISPUTED state, only after 48h resolver timeout. Track resolver decisions in `resolvedChallenges` mapping for collusion detection.
 - **Acceptance criteria:**
   - disputeResult: only non-submitter, only from SUBMITTED state
