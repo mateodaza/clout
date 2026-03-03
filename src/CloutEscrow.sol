@@ -53,6 +53,7 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     // -------------------------------------------------------------------------
 
     uint256 public constant VOID_TIMEOUT = 172800; // 48 hours in seconds
+    uint256 public constant SUBMISSION_TIMEOUT = 86400; // 24 hours in seconds
 
     // -------------------------------------------------------------------------
     // Storage
@@ -77,6 +78,8 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     error WrongState();        // challenge not in required state
     error TimeoutNotExpired(); // 48h hasn't elapsed yet
     error NotParticipant();    // caller is not creator or opponent (ACCEPTED-void guard)
+    error InvalidOutcome();    // submitter passed Outcome.NONE or Outcome.INVALID
+    error CallerIsSubmitter(); // submitter attempts to call confirmResult
 
     // -------------------------------------------------------------------------
     // Events
@@ -103,6 +106,22 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         uint256 indexed challengeId,
         address indexed calledBy,
         uint256 voidedAt
+    );
+    event ResultSubmitted(
+        uint256 indexed challengeId,
+        address indexed submitter,
+        Outcome outcome,
+        uint256 submittedAt
+    );
+    event ResultConfirmed(
+        uint256 indexed challengeId,
+        address indexed confirmer,
+        Outcome outcome
+    );
+    event ChallengeFinalizedByTimeout(
+        uint256 indexed challengeId,
+        Outcome outcome,
+        uint256 finalizedAt
     );
 
     // -------------------------------------------------------------------------
@@ -226,6 +245,59 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         c.acceptedAt = block.timestamp;
         _updateEntryStats(msg.sender, c.stakeAmount);
         emit ChallengeAccepted(challengeId, msg.sender, block.timestamp);
+    }
+
+    // -------------------------------------------------------------------------
+    // voidChallenge
+    // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // submitResult
+    // -------------------------------------------------------------------------
+
+    /// @notice Submits a match result. Transitions challenge from ACCEPTED to SUBMITTED.
+    /// @param challengeId The ID of the challenge.
+    /// @param outcome The result being submitted (CREATOR_WIN, OPPONENT_WIN, or DRAW).
+    function submitResult(uint256 challengeId, Outcome outcome) external {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.ACCEPTED) revert WrongState();
+        if (msg.sender != c.creator && msg.sender != c.opponent) revert NotParticipant();
+        if (outcome == Outcome.NONE || outcome == Outcome.INVALID) revert InvalidOutcome();
+        c.submittedResult = outcome;
+        c.submittedBy = msg.sender;
+        c.submittedAt = block.timestamp;
+        c.state = ChallengeState.SUBMITTED;
+        emit ResultSubmitted(challengeId, msg.sender, outcome, block.timestamp);
+    }
+
+    // -------------------------------------------------------------------------
+    // confirmResult
+    // -------------------------------------------------------------------------
+
+    /// @notice Confirms the submitted result. Transitions challenge from SUBMITTED to FINALIZED.
+    /// @dev Only the non-submitting participant may confirm.
+    /// @param challengeId The ID of the challenge.
+    function confirmResult(uint256 challengeId) external {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.SUBMITTED) revert WrongState();
+        if (msg.sender != c.creator && msg.sender != c.opponent) revert NotParticipant();
+        if (msg.sender == c.submittedBy) revert CallerIsSubmitter();
+        c.state = ChallengeState.FINALIZED;
+        emit ResultConfirmed(challengeId, msg.sender, c.submittedResult);
+    }
+
+    // -------------------------------------------------------------------------
+    // finalizeSubmission
+    // -------------------------------------------------------------------------
+
+    /// @notice Permissionless auto-finalize after 24h with no response from the other participant.
+    /// @param challengeId The ID of the challenge.
+    function finalizeSubmission(uint256 challengeId) external {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.SUBMITTED) revert WrongState();
+        if (block.timestamp < c.submittedAt + SUBMISSION_TIMEOUT) revert TimeoutNotExpired();
+        c.state = ChallengeState.FINALIZED;
+        emit ChallengeFinalizedByTimeout(challengeId, c.submittedResult, block.timestamp);
     }
 
     // -------------------------------------------------------------------------

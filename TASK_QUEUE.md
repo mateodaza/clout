@@ -75,7 +75,7 @@
 
 ## Phase 2: Resolution Pipeline (Days 2-3)
 
-#### NC-005 [ ] Implement submitResult and confirmResult
+#### NC-005 [x] Implement submitResult and confirmResult
 - **What:** `submitResult(uint256 challengeId, Outcome outcome)`: either creator or opponent submits result (CREATOR_WIN, OPPONENT_WIN, or DRAW). Stores submitter address and submitted outcome. Sets state to SUBMITTED. Starts 24h confirmation window. `confirmResult(uint256 challengeId)`: callable only by the party who did NOT submit. If they confirm the same outcome → state moves to FINALIZED. Auto-accept: if 24h passes after submission with no confirm or dispute, the submitted result auto-accepts. Implement a `finalizeSubmission(uint256 challengeId)` function anyone can call after 24h to trigger this.
 - **Acceptance criteria:**
   - submitResult: only creator or opponent can call. Only from ACCEPTED state. NONE and INVALID are not valid submissions from players.

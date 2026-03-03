@@ -37,6 +37,9 @@ contract CloutEscrowTest is Test {
         address indexed calledBy,
         uint256 voidedAt
     );
+    event ResultSubmitted(uint256 indexed, address indexed, CloutEscrow.Outcome, uint256);
+    event ResultConfirmed(uint256 indexed, address indexed, CloutEscrow.Outcome);
+    event ChallengeFinalizedByTimeout(uint256 indexed, CloutEscrow.Outcome, uint256);
 
     CloutEscrow escrow;
     MockStablecoin token;
@@ -72,6 +75,13 @@ contract CloutEscrowTest is Test {
     function _createDefault() internal returns (uint256) {
         vm.prank(alice);
         return escrow.createChallenge(bob, STAKE, address(token), GAME_ID, charlie);
+    }
+
+    function _createAndAccept() internal returns (uint256) {
+        uint256 id = _createDefault(); // alice creates (creator=alice, opponent=bob)
+        vm.prank(bob);
+        escrow.acceptChallenge(id);
+        return id;
     }
 
     // -------------------------------------------------------------------------
@@ -607,5 +617,238 @@ contract CloutEscrowTest is Test {
         vm.prank(dave);
         vm.expectRevert(CloutEscrow.WrongState.selector);
         escrow.voidChallenge(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T33: submitResult — creator submits CREATOR_WIN from ACCEPTED
+    // -------------------------------------------------------------------------
+    function test_submitResult_creatorSubmits_success() public {
+        uint256 id = _createAndAccept();
+        uint256 ts = block.timestamp;
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        (
+            , , , , ,
+            CloutEscrow.ChallengeState state,
+            , ,
+            CloutEscrow.Outcome submittedResult,
+            address submittedBy,
+            , ,
+            uint256 submittedAt,
+            ,
+        ) = escrow.challenges(id);
+
+        assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.SUBMITTED));
+        assertEq(submittedBy, alice);
+        assertEq(uint256(submittedResult), uint256(CloutEscrow.Outcome.CREATOR_WIN));
+        assertEq(submittedAt, ts);
+    }
+
+    // -------------------------------------------------------------------------
+    // T34: submitResult — opponent submits OPPONENT_WIN from ACCEPTED
+    // -------------------------------------------------------------------------
+    function test_submitResult_opponentSubmits_success() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(bob);
+        escrow.submitResult(id, CloutEscrow.Outcome.OPPONENT_WIN);
+
+        (, , , , , CloutEscrow.ChallengeState state, , , , address submittedBy, , , , , ) = escrow.challenges(id);
+        assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.SUBMITTED));
+        assertEq(submittedBy, bob);
+    }
+
+    // -------------------------------------------------------------------------
+    // T35: submitResult — creator submits DRAW
+    // -------------------------------------------------------------------------
+    function test_submitResult_drawSubmitted_success() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.DRAW);
+
+        (, , , , , , , , CloutEscrow.Outcome submittedResult, , , , , , ) = escrow.challenges(id);
+        assertEq(uint256(submittedResult), uint256(CloutEscrow.Outcome.DRAW));
+    }
+
+    // -------------------------------------------------------------------------
+    // T36: submitResult — emits ResultSubmitted event with correct args
+    // -------------------------------------------------------------------------
+    function test_submitResult_emitsResultSubmittedEvent() public {
+        uint256 id = _createAndAccept();
+        uint256 ts = block.timestamp;
+
+        vm.expectEmit(true, true, false, true);
+        emit ResultSubmitted(id, alice, CloutEscrow.Outcome.CREATOR_WIN, ts);
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T37: submitResult — reverts when called from CREATED state (WrongState)
+    // -------------------------------------------------------------------------
+    function test_submitResult_revertsOnWrongState_created() public {
+        uint256 id = _createDefault();
+
+        vm.prank(alice);
+        vm.expectRevert(CloutEscrow.WrongState.selector);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T38: submitResult — reverts for non-participant (NotParticipant)
+    // -------------------------------------------------------------------------
+    function test_submitResult_revertsOnNotParticipant() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(dave);
+        vm.expectRevert(CloutEscrow.NotParticipant.selector);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+    }
+
+    // -------------------------------------------------------------------------
+    // T39: submitResult — reverts when outcome is Outcome.NONE (InvalidOutcome)
+    // -------------------------------------------------------------------------
+    function test_submitResult_revertsOnNoneOutcome() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(alice);
+        vm.expectRevert(CloutEscrow.InvalidOutcome.selector);
+        escrow.submitResult(id, CloutEscrow.Outcome.NONE);
+    }
+
+    // -------------------------------------------------------------------------
+    // T40: submitResult — reverts when outcome is Outcome.INVALID (InvalidOutcome)
+    // -------------------------------------------------------------------------
+    function test_submitResult_revertsOnInvalidOutcome() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(alice);
+        vm.expectRevert(CloutEscrow.InvalidOutcome.selector);
+        escrow.submitResult(id, CloutEscrow.Outcome.INVALID);
+    }
+
+    // -------------------------------------------------------------------------
+    // T41: confirmResult — non-submitter confirms, state transitions to FINALIZED
+    // -------------------------------------------------------------------------
+    function test_confirmResult_success() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        vm.prank(bob);
+        escrow.confirmResult(id);
+
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , ) = escrow.challenges(id);
+        assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.FINALIZED));
+    }
+
+    // -------------------------------------------------------------------------
+    // T42: confirmResult — emits ResultConfirmed event with correct args
+    // -------------------------------------------------------------------------
+    function test_confirmResult_emitsResultConfirmedEvent() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        vm.expectEmit(true, true, false, true);
+        emit ResultConfirmed(id, bob, CloutEscrow.Outcome.CREATOR_WIN);
+
+        vm.prank(bob);
+        escrow.confirmResult(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T43: confirmResult — reverts when called from ACCEPTED state (WrongState)
+    // -------------------------------------------------------------------------
+    function test_confirmResult_revertsOnWrongState_accepted() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(bob);
+        vm.expectRevert(CloutEscrow.WrongState.selector);
+        escrow.confirmResult(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T44: confirmResult — reverts when the submitter tries to confirm own result
+    // -------------------------------------------------------------------------
+    function test_confirmResult_revertsOnSubmitter() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        vm.prank(alice);
+        vm.expectRevert(CloutEscrow.CallerIsSubmitter.selector);
+        escrow.confirmResult(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T48: confirmResult — reverts for non-participant (NotParticipant)
+    // -------------------------------------------------------------------------
+    function test_confirmResult_revertsOnNotParticipant() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        vm.prank(dave);
+        vm.expectRevert(CloutEscrow.NotParticipant.selector);
+        escrow.confirmResult(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T45: finalizeSubmission — succeeds after 24h+1s, state=FINALIZED, emits event
+    // -------------------------------------------------------------------------
+    function test_finalizeSubmission_success_afterTimeout() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        (, , , , , , , , , , , , uint256 submittedAt, , ) = escrow.challenges(id);
+        vm.warp(submittedAt + escrow.SUBMISSION_TIMEOUT() + 1);
+
+        vm.expectEmit(true, false, false, true);
+        emit ChallengeFinalizedByTimeout(id, CloutEscrow.Outcome.CREATOR_WIN, block.timestamp);
+
+        vm.prank(dave);
+        escrow.finalizeSubmission(id);
+
+        (, , , , , CloutEscrow.ChallengeState state, , , , , , , , , ) = escrow.challenges(id);
+        assertEq(uint256(state), uint256(CloutEscrow.ChallengeState.FINALIZED));
+    }
+
+    // -------------------------------------------------------------------------
+    // T46: finalizeSubmission — reverts before 24h elapses (TimeoutNotExpired)
+    // -------------------------------------------------------------------------
+    function test_finalizeSubmission_revertsBeforeTimeout() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(alice);
+        escrow.submitResult(id, CloutEscrow.Outcome.CREATOR_WIN);
+
+        (, , , , , , , , , , , , uint256 submittedAt, , ) = escrow.challenges(id);
+        vm.warp(submittedAt + escrow.SUBMISSION_TIMEOUT() - 1);
+
+        vm.prank(dave);
+        vm.expectRevert(CloutEscrow.TimeoutNotExpired.selector);
+        escrow.finalizeSubmission(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // T47: finalizeSubmission — reverts from ACCEPTED state (WrongState)
+    // -------------------------------------------------------------------------
+    function test_finalizeSubmission_revertsOnWrongState_accepted() public {
+        uint256 id = _createAndAccept();
+
+        vm.prank(dave);
+        vm.expectRevert(CloutEscrow.WrongState.selector);
+        escrow.finalizeSubmission(id);
     }
 }
