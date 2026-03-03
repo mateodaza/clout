@@ -103,7 +103,7 @@
 - **Dependencies:** NC-005
 - **Constraints:** If `designatedResolver == address(0)`, only admin can resolve (no timeout needed). Resolver timeout = 48h = 172800 seconds from `disputedAt`.
 
-#### NC-007 [ ] Implement appealResolution and finalizeResolution
+#### NC-007 [x] Implement appealResolution and finalizeResolution
 - **What:** `appealResolution(uint256 challengeId)`: either player can appeal a resolver's decision within 24h of RESOLVED state (`resolvedAt`). Sets `appealed = true`, emits event. Escalates to admin review. `finalizeResolution(uint256 challengeId)`: permissionless call after 24h appeal window with no appeal → auto-finalizes resolver's decision, sets state to FINALIZED. If appeal was filed, admin has 48h to review and make final decision via `adminFinalizeAppeal(uint256 challengeId, Outcome outcome)` → sets FINALIZED. Admin timeout void: implement `voidByAdminTimeout(uint256 challengeId)`: permissionless, callable if appeal was filed AND 48h elapsed since appeal with no admin action → auto-void (both refunded, VOIDED state).
 - **Acceptance criteria:**
   - appealResolution: only creator or opponent, only within 24h of `resolvedAt`, only from RESOLVED state

@@ -37,6 +37,8 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         uint256 disputedAt;          // when dispute was triggered (starts resolver deadline)
         uint256 resolvedAt;          // when dispute was resolved (starts 24h appeal window for NC-007)
         bool claimed;                // true after settlement; set by voidChallenge or claimWinnings
+        bool appealed;               // true if an appeal has been filed by creator or opponent
+        uint256 appealedAt;          // timestamp when the appeal was filed (0 if no appeal)
     }
 
     struct WalletRecord {
@@ -85,6 +87,12 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
     error CallerIsSubmitter(); // submitter attempts to call confirmResult
     error NotResolver();       // caller is not the designated resolver (when set) or admin (when no resolver)
     error ResolverTimedOut();  // designated resolver attempts to act after 48h window
+    error AppealWindowExpired();   // appealResolution called after resolvedAt + 24h
+    error AlreadyAppealed();       // appealResolution called when c.appealed == true
+    error NoAppeal();              // adminFinalizeAppeal or voidByAdminTimeout when c.appealed == false
+    error AppealPending();         // finalizeResolution called when c.appealed == true
+    error AdminTimeoutExpired();   // adminFinalizeAppeal called after appealedAt + 48h
+    error AppealNotAllowed();      // appealResolution called when designatedResolver == address(0); admin decisions are final
 
     // -------------------------------------------------------------------------
     // Events
@@ -138,6 +146,20 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         address indexed resolver,
         Outcome outcome,
         uint256 resolvedAt
+    );
+    event ResolutionAppealed(
+        uint256 indexed challengeId,
+        address indexed appellant,
+        uint256 appealedAt
+    );
+    event ResolutionFinalized(
+        uint256 indexed challengeId,
+        Outcome outcome,
+        uint256 finalizedAt
+    );
+    event ChallengeVoidedByAdminTimeout(
+        uint256 indexed challengeId,
+        uint256 voidedAt
     );
 
     // -------------------------------------------------------------------------
@@ -382,6 +404,84 @@ contract CloutEscrow is ReentrancyGuard, Ownable {
         c.resolvedAt = block.timestamp;
         resolvedChallenges[resolverAddr]++;
         emit DisputeResolved(challengeId, resolverAddr, outcome, block.timestamp);
+    }
+
+    // -------------------------------------------------------------------------
+    // resolveDispute
+    // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // appealResolution
+    // -------------------------------------------------------------------------
+
+    /// @notice Files an appeal against a resolver decision. Either creator or opponent may call
+    ///         within 24h of the challenge being resolved.
+    /// @param challengeId The ID of the challenge.
+    function appealResolution(uint256 challengeId) external {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.RESOLVED) revert WrongState();
+        if (msg.sender != c.creator && msg.sender != c.opponent) revert NotParticipant();
+        if (c.designatedResolver == address(0)) revert AppealNotAllowed(); // admin decisions are final
+        if (c.appealed) revert AlreadyAppealed();
+        if (block.timestamp >= c.resolvedAt + SUBMISSION_TIMEOUT) revert AppealWindowExpired();
+        c.appealed = true;
+        c.appealedAt = block.timestamp;
+        emit ResolutionAppealed(challengeId, msg.sender, block.timestamp);
+    }
+
+    // -------------------------------------------------------------------------
+    // finalizeResolution
+    // -------------------------------------------------------------------------
+
+    /// @notice Permissionless finalize after 24h with no appeal filed. Resolver decision stands.
+    /// @param challengeId The ID of the challenge.
+    function finalizeResolution(uint256 challengeId) external {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.RESOLVED) revert WrongState();
+        if (c.appealed) revert AppealPending();
+        if (block.timestamp < c.resolvedAt + SUBMISSION_TIMEOUT) revert TimeoutNotExpired();
+        c.state = ChallengeState.FINALIZED;
+        emit ResolutionFinalized(challengeId, c.submittedResult, block.timestamp);
+    }
+
+    // -------------------------------------------------------------------------
+    // adminFinalizeAppeal
+    // -------------------------------------------------------------------------
+
+    /// @notice Admin reviews an appeal and issues a final decision. Must be called within 48h
+    ///         of the appeal being filed.
+    /// @param challengeId The ID of the challenge.
+    /// @param outcome The admin's verdict (must not be Outcome.NONE).
+    function adminFinalizeAppeal(uint256 challengeId, Outcome outcome) external onlyOwner {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.RESOLVED) revert WrongState();
+        if (!c.appealed) revert NoAppeal();
+        if (outcome == Outcome.NONE) revert InvalidOutcome();
+        if (block.timestamp >= c.appealedAt + VOID_TIMEOUT) revert AdminTimeoutExpired();
+        c.submittedResult = outcome;
+        c.state = ChallengeState.FINALIZED;
+        emit ResolutionFinalized(challengeId, outcome, block.timestamp);
+    }
+
+    // -------------------------------------------------------------------------
+    // voidByAdminTimeout
+    // -------------------------------------------------------------------------
+
+    /// @notice Permissionless void when admin fails to act within 48h of an appeal. Both parties
+    ///         are refunded their stakes.
+    /// @param challengeId The ID of the challenge.
+    function voidByAdminTimeout(uint256 challengeId) external nonReentrant {
+        Challenge storage c = challenges[challengeId];
+        if (c.state != ChallengeState.RESOLVED) revert WrongState();
+        if (!c.appealed) revert NoAppeal();
+        if (block.timestamp < c.appealedAt + VOID_TIMEOUT) revert TimeoutNotExpired();
+        c.state = ChallengeState.VOIDED;
+        c.claimed = true;
+        IERC20(c.token).safeTransfer(c.creator, c.stakeAmount);
+        IERC20(c.token).safeTransfer(c.opponent, c.stakeAmount);
+        _updateCompletionStats(c.creator, false);
+        _updateCompletionStats(c.opponent, false);
+        emit ChallengeVoidedByAdminTimeout(challengeId, block.timestamp);
     }
 
     // -------------------------------------------------------------------------
