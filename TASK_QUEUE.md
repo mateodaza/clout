@@ -278,7 +278,7 @@
 
 ## GATE 2 CHECKPOINT
 
-#### NC-G2 [ ] Gate 2: Both contracts pass tests locally
+#### NC-G2 [x] Gate 2: Both contracts pass tests locally (session: nightcrawler/dev, commit: 1564aa55fc6265d6f83da826175947fb80aa84ab)
 - **What:** Verify Gate 2 pass criteria from GLOBAL_PLAN.md. Run `forge build` (zero warnings), run `forge test -v` (all pass for both contracts). Verify pool lifecycle, caps, commission, dispute threshold all work.
 - **Acceptance criteria:**
   - `forge build` compiles with zero warnings
