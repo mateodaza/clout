@@ -379,7 +379,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-015A
 - **Constraints:** State-driven rendering via switch on `ChallengeState`. Page at `apps/web/src/app/challenges/[id]/`. **Approve-then-write for Accept:** the Accept action transfers tokens, so use `approve` → `useWaitForTransactionReceipt` → `acceptChallenge` (same sequential pattern as NC-015A). **Re-fetch after transaction:** after any successful write transaction, re-fetch the challenge data so the UI updates to show new state and correct action buttons. Verify with `pnpm turbo build` from repo root.
 
-#### NC-016A [ ] Build Challenge Pools list and create pages
+#### NC-016A [x] Build Challenge Pools list and create pages
 - **What:** Two pages in `apps/web/src/app/`: `/pools` (list active pools), `/pools/create` (form: event description, eventStart, eventEnd, resolveBy as datetime inputs, resolver address, per-wallet cap, total cap, host commission bps, initial YES stake — calls `approve` then `createPool`).
 - **Acceptance criteria:**
   - `/pools` lists pools with: ID, host, state, YES total, NO total, event start/end
