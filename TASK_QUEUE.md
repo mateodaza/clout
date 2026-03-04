@@ -355,7 +355,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-G2
 - **Constraints:** `apps/web/` already exists — do NOT run `create-next-app`. Install with `pnpm add wagmi viem @tanstack/react-query --filter @clout/web`. App Router is at `apps/web/src/app/`. **CRITICAL: `layout.tsx` must remain a Server Component — put all wagmi providers in a separate `Providers.tsx` with `"use client"` at the top. Do NOT install RainbowKit or any wallet UI library.** For `coinbaseWallet` connector, set `preference: 'smartWalletOnly'` to enable account abstraction. Verify with `pnpm turbo build` from repo root.
 
-#### NC-015A [ ] Build PvP Escrow challenge list and create pages
+#### NC-015A [x] Build PvP Escrow challenge list and create pages
 - **What:** Two pages in `apps/web/src/app/`: `/challenges` (list active challenges — loop `challengeCount`, read each via `getChallenge`, filter by state), `/challenges/create` (form: opponent address, stake amount, game description, resolver address — calls `approve` then `createChallenge`).
 - **Acceptance criteria:**
   - `/challenges` lists challenges with: ID, creator, opponent, stake, state badge, game description
