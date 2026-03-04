@@ -341,16 +341,19 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Status:** Mateo scaffolded `apps/web/` with Next.js 16.1.6 during the turborepo refactor. NC-014's original `frontend/` output is superseded. **Nightcrawler: skip this task, proceed to NC-014B.**
 
 #### NC-014B [ ] Set up wagmi + viem + wallet connection in apps/web/
-- **What:** Install and configure wagmi v2, viem, and RainbowKit in the existing `apps/web/` Next.js app. Configure for Avalanche Fuji network (chain ID 43113). Extract ABI JSON for CloutEscrow, CloutPool, MockStablecoin from `packages/contracts/out/<Contract>.sol/<Contract>.json` (the `abi` field only) and write them as typed `as const` exports in `apps/web/src/lib/contracts.ts`. Create `apps/web/src/lib/wagmi.ts` with chain + client config. Create `apps/web/src/components/Providers.tsx` ("use client") that wraps children in `WagmiProvider` + `QueryClientProvider` + `RainbowKitProvider`. Import `Providers` in `apps/web/src/app/layout.tsx` (layout stays a Server Component). Add connect wallet button via RainbowKit `<ConnectButton />` to the nav.
+- **What:** Install and configure wagmi v2 + viem in the existing `apps/web/` Next.js app. **NO RainbowKit** — use wagmi's built-in connectors: `coinbaseWallet` (Smart Wallet with account abstraction), `walletConnect`, and `injected` (MetaMask). Configure for Avalanche Fuji testnet (chain ID 43113). Extract ABI JSON for CloutEscrow, CloutPool, MockStablecoin from `packages/contracts/out/<Contract>.sol/<Contract>.json` (the `abi` field only) and write them as typed `as const` exports in `apps/web/src/lib/contracts.ts`. Create `apps/web/src/lib/wagmi.ts` with chain config and all 3 connectors. Create `apps/web/src/components/Providers.tsx` (`"use client"`) that wraps children in `WagmiProvider` + `QueryClientProvider`. Import `Providers` in `apps/web/src/app/layout.tsx` (layout stays a Server Component). Build a custom `ConnectWallet` component (`apps/web/src/components/ConnectWallet.tsx`, `"use client"`) using wagmi hooks: `useConnect` (show connector buttons when disconnected), `useAccount` (show truncated address when connected), `useDisconnect` (disconnect button). Add `ConnectWallet` to the layout nav.
 - **Acceptance criteria:**
   - `pnpm turbo build` (from repo root) completes with zero errors
-  - `ConnectButton` renders in the layout nav
-  - `apps/web/src/lib/contracts.ts` exports typed `as const` ABI constants for all 3 contracts
-  - `apps/web/src/lib/wagmi.ts` exports wagmi config with Fuji (chain ID 43113)
-  - `apps/web/.env.example` with `NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_POOL_ADDRESS`, `NEXT_PUBLIC_TOKEN_ADDRESS`, `NEXT_PUBLIC_RPC_URL`
+  - `ConnectWallet` component renders in the layout nav
+  - Three connector options shown: Coinbase Wallet (Smart Wallet), WalletConnect, MetaMask (injected)
+  - Connected state shows truncated address + disconnect button
+  - `apps/web/src/lib/contracts.ts` exports typed `as const` ABI constants for all 3 contracts + contract addresses from env vars
+  - `apps/web/src/lib/wagmi.ts` exports wagmi config with Fuji (chain ID 43113) and all 3 connectors
+  - `apps/web/.env.example` with `NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_POOL_ADDRESS`, `NEXT_PUBLIC_TOKEN_ADDRESS`, `NEXT_PUBLIC_RPC_URL`, `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
   - All domain types imported from `@clout/types` (no local redefinitions)
+  - Basic nav layout with links: Home, Challenges, Pools
 - **Dependencies:** NC-G2
-- **Constraints:** `apps/web/` already exists — do NOT run `create-next-app`. Install with `pnpm add @rainbow-me/rainbowkit@2.2.0 wagmi@2.14.16 viem@2.23.10 @tanstack/react-query@5.74.4 --filter @clout/web`. App Router is at `apps/web/src/app/`. **CRITICAL: `layout.tsx` must remain a Server Component — put all wagmi/RainbowKit providers in a separate `Providers.tsx` with `"use client"` at the top.** Verify with `pnpm turbo build` from repo root.
+- **Constraints:** `apps/web/` already exists — do NOT run `create-next-app`. Install with `pnpm add wagmi viem @tanstack/react-query --filter @clout/web`. App Router is at `apps/web/src/app/`. **CRITICAL: `layout.tsx` must remain a Server Component — put all wagmi providers in a separate `Providers.tsx` with `"use client"` at the top. Do NOT install RainbowKit or any wallet UI library.** For `coinbaseWallet` connector, set `preference: 'smartWalletOnly'` to enable account abstraction. Verify with `pnpm turbo build` from repo root.
 
 #### NC-015A [ ] Build PvP Escrow challenge list and create pages
 - **What:** Two pages in `apps/web/src/app/`: `/challenges` (list active challenges — loop `challengeCount`, read each via `getChallenge`, filter by state), `/challenges/create` (form: opponent address, stake amount, game description, resolver address — calls `approve` then `createChallenge`).
@@ -362,7 +365,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
   - Transaction hash shown on success
   - `ChallengeState` from `@clout/types` used for state labels/badges
 - **Dependencies:** NC-014B
-- **Constraints:** Read challenge data directly from contract. Keep UI functional, not polished. Pages at `apps/web/src/app/challenges/` and `apps/web/src/app/challenges/create/`. Verify with `pnpm turbo build` from repo root.
+- **Constraints:** Read challenge data directly from contract. Keep UI functional, not polished. Pages at `apps/web/src/app/challenges/` and `apps/web/src/app/challenges/create/`. **Approve-then-write pattern:** use `useWriteContract` for `approve`, then `useWaitForTransactionReceipt` to wait for confirmation, THEN fire the second `useWriteContract` for `createChallenge`. Do NOT fire both writes simultaneously. For the list page, read `challengeCount` first, then batch-read challenges with `useReadContracts` (multicall). Verify with `pnpm turbo build` from repo root.
 
 #### NC-015B [ ] Build PvP Escrow challenge detail page
 - **What:** `/challenges/[id]` page: reads challenge by ID, shows all fields. Dynamic action buttons per state and connected wallet: Accept (CREATED, caller == opponent), Submit Result (ACCEPTED, caller == creator or opponent), Confirm (SUBMITTED, caller == non-submitter), Dispute (SUBMITTED, caller == non-submitter), Claim (FINALIZED/VOIDED, caller == creator or opponent), Resolve Dispute (DISPUTED, caller == resolver or admin), Appeal (RESOLVED, caller == creator or opponent). Each button calls the corresponding contract function.
@@ -374,7 +377,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
   - Page re-fetches challenge state after successful transaction
   - `ChallengeState` and `Outcome` from `@clout/types` used for state-driven rendering
 - **Dependencies:** NC-015A
-- **Constraints:** State-driven rendering via switch on `ChallengeState`. Page at `apps/web/src/app/challenges/[id]/`. Verify with `pnpm turbo build` from repo root.
+- **Constraints:** State-driven rendering via switch on `ChallengeState`. Page at `apps/web/src/app/challenges/[id]/`. **Approve-then-write for Accept:** the Accept action transfers tokens, so use `approve` → `useWaitForTransactionReceipt` → `acceptChallenge` (same sequential pattern as NC-015A). **Re-fetch after transaction:** after any successful write transaction, re-fetch the challenge data so the UI updates to show new state and correct action buttons. Verify with `pnpm turbo build` from repo root.
 
 #### NC-016A [ ] Build Challenge Pools list and create pages
 - **What:** Two pages in `apps/web/src/app/`: `/pools` (list active pools), `/pools/create` (form: event description, eventStart, eventEnd, resolveBy as datetime inputs, resolver address, per-wallet cap, total cap, host commission bps, initial YES stake — calls `approve` then `createPool`).
@@ -385,7 +388,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
   - Transaction states shown
   - `PoolState` from `@clout/types` used for state labels/badges
 - **Dependencies:** NC-014B
-- **Constraints:** Read pool data directly from contract. Pages at `apps/web/src/app/pools/` and `apps/web/src/app/pools/create/`. Same patterns as NC-015A. Verify with `pnpm turbo build` from repo root.
+- **Constraints:** Read pool data directly from contract. Pages at `apps/web/src/app/pools/` and `apps/web/src/app/pools/create/`. **Same approve-then-write pattern as NC-015A:** `approve` → wait for receipt → `createPool`. Convert datetime inputs to unix timestamps (`Math.floor(new Date(value).getTime() / 1000)`). Read `poolCount` first, batch-read pools with `useReadContracts`. Verify with `pnpm turbo build` from repo root.
 
 #### NC-016B [ ] Build Challenge Pools detail page
 - **What:** `/pools/[id]` page: shows pool state, YES/NO totals, user's current stake, event times, resolver. Action buttons: Stake YES / Stake NO (OPEN, under caps), Resolve (CLOSED, caller == resolver), Flag Dispute (SUBMITTED, caller on losing side), Claim (FINALIZED, caller is staker), Admin Resolve (DISPUTED, caller == admin). Stake buttons show remaining cap.
@@ -397,7 +400,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
   - Transactions show pending/success/error states
   - `PoolState` from `@clout/types` used for state-driven rendering
 - **Dependencies:** NC-016A
-- **Constraints:** Page at `apps/web/src/app/pools/[id]/`. Verify with `pnpm turbo build` from repo root.
+- **Constraints:** Page at `apps/web/src/app/pools/[id]/`. **Losing side detection:** read `getPool(poolId)` for `pool.yesWins` (set after SUBMITTED state) and `getStakes(poolId, connectedAddress)` for the user's `yesStake` and `noStake`. User is on losing side if: `pool.yesWins && noStake > 0` OR `!pool.yesWins && yesStake > 0`. Only show Flag Dispute button for losing-side stakers within 24h of `pool.resolvedAt`. **Stake side:** use `getStakes(poolId, address)` — returns `(yesStake, noStake)` — to determine if user is a staker and which side. Verify with `pnpm turbo build` from repo root.
 
 #### NC-017 [ ] Build home page and wallet record display
 - **What:** Two things: 1) A home page (`/`) that explains what Clout is — brief product description, two cards linking to Challenges and Pools, a connected-wallet stats summary. 2) A wallet record component (reusable) that reads `getWalletRecord(address)` from CloutEscrow and displays: challenges entered, completed, won, disputed, total staked, first/last challenge timestamps. Show this component on the home page for the connected wallet.
