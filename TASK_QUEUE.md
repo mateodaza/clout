@@ -317,7 +317,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 
 ## Phase 5: Deployment Script (Day 6)
 
-#### NC-013 [ ] Create Anvil-verified deployment script
+#### NC-013 [x] Create Anvil-verified deployment script
 - **What:** Foundry deployment script (`packages/contracts/script/Deploy.s.sol`) that deploys: 1) MockStablecoin, 2) CloutEscrow, 3) CloutPool. Then configures: whitelist MockStablecoin on both contracts, set protocol fee to 250 bps, set treasury address. Logs all deployed addresses. Create `DEPLOYMENTS.md` template (at repo root) with placeholders for Fuji addresses. Script must work on local Anvil — this is the Nightcrawler-executable scope. Fuji broadcast is a manual step for Mateo.
 - **Acceptance criteria:**
   - Script deploys all 3 contracts in correct order
