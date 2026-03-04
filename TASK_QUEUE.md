@@ -390,7 +390,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-014B
 - **Constraints:** Read pool data directly from contract. Pages at `apps/web/src/app/pools/` and `apps/web/src/app/pools/create/`. **Same approve-then-write pattern as NC-015A:** `approve` → wait for receipt → `createPool`. Convert datetime inputs to unix timestamps (`Math.floor(new Date(value).getTime() / 1000)`). Read `poolCount` first, batch-read pools with `useReadContracts`. Verify with `pnpm turbo build` from repo root.
 
-#### NC-016B [ ] Build Challenge Pools detail page
+#### NC-016B [x] Build Challenge Pools detail page
 - **What:** `/pools/[id]` page: shows pool state, YES/NO totals, user's current stake, event times, resolver. Action buttons: Stake YES / Stake NO (OPEN, under caps), Resolve (CLOSED, caller == resolver), Flag Dispute (SUBMITTED, caller on losing side), Claim (FINALIZED, caller is staker), Admin Resolve (DISPUTED, caller == admin). Stake buttons show remaining cap.
 - **Acceptance criteria:**
   - Shows all pool fields, YES/NO totals, user's stake
