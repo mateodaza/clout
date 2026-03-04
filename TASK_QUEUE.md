@@ -367,7 +367,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-014B
 - **Constraints:** Read challenge data directly from contract. Keep UI functional, not polished. Pages at `apps/web/src/app/challenges/` and `apps/web/src/app/challenges/create/`. **Approve-then-write pattern:** use `useWriteContract` for `approve`, then `useWaitForTransactionReceipt` to wait for confirmation, THEN fire the second `useWriteContract` for `createChallenge`. Do NOT fire both writes simultaneously. For the list page, read `challengeCount` first, then batch-read challenges with `useReadContracts` (multicall). Verify with `pnpm turbo build` from repo root.
 
-#### NC-015B [ ] Build PvP Escrow challenge detail page
+#### NC-015B [x] Build PvP Escrow challenge detail page
 - **What:** `/challenges/[id]` page: reads challenge by ID, shows all fields. Dynamic action buttons per state and connected wallet: Accept (CREATED, caller == opponent), Submit Result (ACCEPTED, caller == creator or opponent), Confirm (SUBMITTED, caller == non-submitter), Dispute (SUBMITTED, caller == non-submitter), Claim (FINALIZED/VOIDED, caller == creator or opponent), Resolve Dispute (DISPUTED, caller == resolver or admin), Appeal (RESOLVED, caller == creator or opponent). Each button calls the corresponding contract function.
 - **Acceptance criteria:**
   - Shows all challenge fields and current state
