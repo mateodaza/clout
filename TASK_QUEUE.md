@@ -402,7 +402,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-016A
 - **Constraints:** Page at `apps/web/src/app/pools/[id]/`. **Losing side detection:** read `getPool(poolId)` for `pool.yesWins` (set after SUBMITTED state) and `getStakes(poolId, connectedAddress)` for the user's `yesStake` and `noStake`. User is on losing side if: `pool.yesWins && noStake > 0` OR `!pool.yesWins && yesStake > 0`. Only show Flag Dispute button for losing-side stakers within 24h of `pool.resolvedAt`. **Stake side:** use `getStakes(poolId, address)` — returns `(yesStake, noStake)` — to determine if user is a staker and which side. Verify with `pnpm turbo build` from repo root.
 
-#### NC-017 [ ] Build home page and wallet record display
+#### NC-017 [x] Build home page and wallet record display
 - **What:** Two things: 1) A home page (`/`) that explains what Clout is — brief product description, two cards linking to Challenges and Pools, a connected-wallet stats summary. 2) A wallet record component (reusable) that reads `getWalletRecord(address)` from CloutEscrow and displays: challenges entered, completed, won, disputed, total staked, first/last challenge timestamps. Show this component on the home page for the connected wallet.
 - **Acceptance criteria:**
   - Home page renders without wallet connection (shows connect prompt)
