@@ -138,3 +138,4 @@ clutch/
 - **NC-G2** — 2026-03-03 — `1564aa5` — Session: 20260303-023136-clout — ⚠ Committed after soft review rejections cap; local verification passed.
 - **NC-014** — 2026-03-03 — `8db9e02` — Session: 20260303-023136-clout — ⚠ Committed after soft review rejections cap; local verification passed. (SUPERSEDED by turborepo refactor)
 - **NC-013** — 2026-03-04 — `b01d52a` — Session: 20260304-030052-clout — ⚠ Committed after soft review rejections cap; local verification passed.
+- **NC-014B** — 2026-03-04 — `b9279fc` — Session: 20260304-032645-clout

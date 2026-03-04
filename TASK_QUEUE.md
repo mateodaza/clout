@@ -340,7 +340,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 #### NC-014 [x] Initialize Next.js frontend with wallet connection (REPLACED by Mateo's turborepo refactor)
 - **Status:** Mateo scaffolded `apps/web/` with Next.js 16.1.6 during the turborepo refactor. NC-014's original `frontend/` output is superseded. **Nightcrawler: skip this task, proceed to NC-014B.**
 
-#### NC-014B [ ] Set up wagmi + viem + wallet connection in apps/web/
+#### NC-014B [x] Set up wagmi + viem + wallet connection in apps/web/
 - **What:** Install and configure wagmi v2 + viem in the existing `apps/web/` Next.js app. **NO RainbowKit** — use wagmi's built-in connectors: `coinbaseWallet` (Smart Wallet with account abstraction), `walletConnect`, and `injected` (MetaMask). Configure for Avalanche Fuji testnet (chain ID 43113). Extract ABI JSON for CloutEscrow, CloutPool, MockStablecoin from `packages/contracts/out/<Contract>.sol/<Contract>.json` (the `abi` field only) and write them as typed `as const` exports in `apps/web/src/lib/contracts.ts`. Create `apps/web/src/lib/wagmi.ts` with chain config and all 3 connectors. Create `apps/web/src/components/Providers.tsx` (`"use client"`) that wraps children in `WagmiProvider` + `QueryClientProvider`. Import `Providers` in `apps/web/src/app/layout.tsx` (layout stays a Server Component). Build a custom `ConnectWallet` component (`apps/web/src/components/ConnectWallet.tsx`, `"use client"`) using wagmi hooks: `useConnect` (show connector buttons when disconnected), `useAccount` (show truncated address when connected), `useDisconnect` (disconnect button). Add `ConnectWallet` to the layout nav.
 - **Acceptance criteria:**
   - `pnpm turbo build` (from repo root) completes with zero errors
