@@ -4,6 +4,8 @@ import { useReadContract, useReadContracts } from 'wagmi'
 import { PoolState } from '@clout/types'
 import { cloutPoolAbi, POOL_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
+import { Spinner } from '@/components/Spinner'
+import { PoolStateBadge } from '@/components/StateBadge'
 
 const ACTIVE_POOL_STATES = new Set([
   PoolState.OPEN,       // 0
@@ -79,7 +81,7 @@ export default function PoolsPage() {
         <Link href="/pools/create">+ Create Pool</Link>
       </div>
 
-      {isLoading && <p>Loading pools...</p>}
+      {isLoading && <Spinner label="Loading pools..." />}
 
       {!isLoading && activePools.length === 0 && (
         <p>No active pools. <Link href="/pools/create">Create one</Link></p>
@@ -105,7 +107,7 @@ export default function PoolsPage() {
                 <tr key={p.id}>
                   <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{p.id}</td>
                   <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{truncateAddr(p.host)}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{PoolState[p.state]}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}><PoolStateBadge state={p.state} /></td>
                   <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
                     {(Number(p.yesTotal) / 1_000_000).toFixed(2)} USDC
                   </td>

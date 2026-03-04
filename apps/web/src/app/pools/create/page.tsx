@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { isAddress, zeroAddress, parseUnits } from 'viem'
 import { cloutPoolAbi, mockStablecoinAbi, POOL_ADDRESS, TOKEN_ADDRESS } from '@/lib/contracts'
+import { parseRevertReason } from '@/lib/errors'
 
 // Returns unix timestamp (seconds) or null if input is empty / not a valid date.
 function parseDatetime(value: string): number | null {
@@ -368,7 +369,7 @@ export default function CreatePoolPage() {
       {formState === 'error' && (
         <div>
           <p style={{ color: 'red' }}>
-            Error: {(approveError ?? createError)?.message}
+            Error: {parseRevertReason(approveError ?? createError)}
           </p>
           <button onClick={handleReset}>Reset</button>
         </div>

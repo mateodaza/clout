@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { isAddress, toHex, padHex, zeroAddress, parseUnits } from 'viem'
 import { cloutEscrowAbi, mockStablecoinAbi, ESCROW_ADDRESS, TOKEN_ADDRESS } from '@/lib/contracts'
+import { parseRevertReason } from '@/lib/errors'
 
 function validateStake(s: string): string | null {
   try {
@@ -222,7 +223,7 @@ export default function CreateChallengePage() {
       {formState === 'error' && (
         <div>
           <p style={{ color: 'red' }}>
-            Error: {(approveError ?? createError)?.message}
+            Error: {parseRevertReason(approveError ?? createError)}
           </p>
           <button onClick={handleReset}>Reset</button>
         </div>

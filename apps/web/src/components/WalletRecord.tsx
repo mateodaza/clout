@@ -3,6 +3,7 @@
 import { useReadContract } from 'wagmi'
 import { WalletRecord as WalletRecordType } from '@clout/types'
 import { cloutEscrowAbi, ESCROW_ADDRESS } from '@/lib/contracts'
+import { Spinner } from '@/components/Spinner'
 
 function formatTimestamp(ts: bigint): string {
   if (ts === 0n) return 'N/A'
@@ -17,7 +18,7 @@ export function WalletRecord({ address }: { address: `0x${string}` }) {
     args: [address],
   })
 
-  if (isLoading) return <p>Loading wallet record...</p>
+  if (isLoading) return <Spinner label="Loading wallet record..." />
   if (!data) return <p>No record found.</p>
 
   const record = data as unknown as WalletRecordType

@@ -5,6 +5,9 @@ import { zeroAddress } from 'viem'
 import { ChallengeState, Outcome } from '@clout/types'
 import { cloutEscrowAbi, mockStablecoinAbi, ESCROW_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
+import { Spinner } from '@/components/Spinner'
+import { ChallengeStateBadge } from '@/components/StateBadge'
+import { parseRevertReason } from '@/lib/errors'
 
 // --- Local Types ---
 
@@ -290,7 +293,7 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
       </div>
       <h1>Challenge #{id}</h1>
 
-      {isLoading && <p>Loading...</p>}
+      {isLoading && <Spinner />}
 
       {!isLoading && !challengeExists && <p>Challenge not found.</p>}
 
@@ -318,7 +321,7 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
               <tr>
                 <td style={labelStyle}>State</td>
                 <td style={valueStyle}>
-                  <strong>{ChallengeState[challenge.state]}</strong>
+                  <ChallengeStateBadge state={challenge.state} />
                 </td>
               </tr>
               <tr>
@@ -478,7 +481,7 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
               {actionState === 'error' && (
                 <div style={{ marginTop: '0.5rem' }}>
                   <p style={{ color: 'red' }}>
-                    Error: {(approveError ?? mainError)?.message}
+                    Error: {parseRevertReason(approveError ?? mainError)}
                   </p>
                   <button onClick={handleReset}>Reset</button>
                 </div>

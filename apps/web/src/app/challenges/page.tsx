@@ -5,6 +5,8 @@ import { hexToString } from 'viem'
 import { ChallengeState } from '@clout/types'
 import { cloutEscrowAbi, ESCROW_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
+import { Spinner } from '@/components/Spinner'
+import { ChallengeStateBadge } from '@/components/StateBadge'
 
 const ACTIVE_STATES = new Set([
   ChallengeState.CREATED,
@@ -72,7 +74,7 @@ export default function ChallengesPage() {
         <Link href="/challenges/create">+ Create Challenge</Link>
       </div>
 
-      {isLoading && <p>Loading challenges...</p>}
+      {isLoading && <Spinner label="Loading challenges..." />}
 
       {!isLoading && activeChallenges.length === 0 && (
         <p>No active challenges. <Link href="/challenges/create">Create one</Link></p>
@@ -101,7 +103,7 @@ export default function ChallengesPage() {
                   <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
                     {(Number(c.stakeAmount) / 1_000_000).toFixed(2)} USDC
                   </td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{ChallengeState[c.state]}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}><ChallengeStateBadge state={c.state} /></td>
                   <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
                     {hexToString(c.gameId).replace(/\0+$/, '')}
                   </td>

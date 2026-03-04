@@ -15,6 +15,9 @@ import {
   POOL_ADDRESS,
 } from '@/lib/contracts'
 import Link from 'next/link'
+import { Spinner } from '@/components/Spinner'
+import { PoolStateBadge } from '@/components/StateBadge'
+import { parseRevertReason } from '@/lib/errors'
 
 // ─── Local Types ────────────────────────────────────────────────────────────
 
@@ -378,7 +381,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
       </div>
       <h1>Pool #{id}</h1>
 
-      {poolLoading && <p>Loading pool...</p>}
+      {poolLoading && <Spinner />}
 
       {!poolLoading && !poolExists && <p>Pool not found.</p>}
 
@@ -389,7 +392,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
             <tbody>
               <tr>
                 <td style={CELL}><strong>State</strong></td>
-                <td style={CELL}>{PoolState[pool.state]}</td>
+                <td style={CELL}><PoolStateBadge state={pool.state} /></td>
               </tr>
               <tr>
                 <td style={CELL}><strong>Host</strong></td>
@@ -673,7 +676,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                   <div>
                     <p style={{ color: 'red' }}>
                       Error:{' '}
-                      {(approveError ?? mainError)?.message ?? 'Unknown error'}
+                      {parseRevertReason(approveError ?? mainError)}
                     </p>
                     <button onClick={handleReset}>Reset</button>
                   </div>

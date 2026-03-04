@@ -415,7 +415,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-015A
 - **Constraints:** WalletRecord component should be reusable (`apps/web/src/components/WalletRecord.tsx`). Keep the home page minimal — this is an MVP, not a landing page.
 
-#### NC-018 [ ] Global UI polish: loading states, errors, empty states
+#### NC-018 [x] Global UI polish: loading states, errors, empty states
 - **What:** Audit all pages built in NC-015A/B, NC-016A/B, NC-017 and add: 1) Loading skeletons or spinners while contract reads are pending. 2) Error messages when transactions fail (show revert reason if available). 3) Empty state messages when lists are empty ("No challenges yet — create one"). 4) Consistent state badge styling across challenges and pools (color-coded: OPEN=green, SUBMITTED=yellow, DISPUTED=red, FINALIZED=blue, VOIDED=gray). 5) Disable action buttons while a transaction is pending (prevent double-submit).
 - **Acceptance criteria:**
   - All list pages show a loading state while data loads
