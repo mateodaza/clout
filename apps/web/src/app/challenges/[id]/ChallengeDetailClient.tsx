@@ -8,6 +8,7 @@ import { cloutEscrowAbi, mockStablecoinAbi, ESCROW_ADDRESS } from '@/lib/contrac
 import Link from 'next/link'
 import { Skeleton } from '@/components/Skeleton'
 import { ChallengeStateBadge } from '@/components/StateBadge'
+import { ConnectWallet } from '@/components/ConnectWallet'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -544,7 +545,10 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
               )}
             </div>
           ) : (
-            <p>Connect wallet to take actions.</p>
+            <div className="mb-6 p-4 border rounded">
+              <p className="mb-3">Connect your wallet to take actions.</p>
+              <ConnectWallet />
+            </div>
           )}
         </>
       )}

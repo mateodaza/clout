@@ -513,7 +513,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-027
 - **Constraints:** Pure Tailwind — no animation libraries. Keep the skeleton shapes simple (rectangles). One component, reused everywhere.
 
-#### NC-029 [ ] Add "Connect Wallet" prompts on action-gated pages
+#### NC-029 [x] Add "Connect Wallet" prompts on action-gated pages
 - **What:** On detail pages (`/challenges/[id]`, `/pools/[id]`), if the user is not connected, show a clear "Connect your wallet to interact" message where action buttons would normally appear. On create pages (`/challenges/create`, `/pools/create`), show the same prompt above the form with the form inputs disabled. Import and render the existing `ConnectWallet` component inline so the user can connect without scrolling to the nav.
 - **Acceptance criteria:**
   - Disconnected users see a connect prompt instead of action buttons on detail pages

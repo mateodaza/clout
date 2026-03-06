@@ -6,6 +6,7 @@ import { isAddress, toHex, padHex, zeroAddress, parseUnits } from 'viem'
 import { cloutEscrowAbi, mockStablecoinAbi, ESCROW_ADDRESS, TOKEN_ADDRESS } from '@/lib/contracts'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
+import { ConnectWallet } from '@/components/ConnectWallet'
 
 function validateStake(s: string): string | null {
   try {
@@ -182,7 +183,7 @@ export function CreateChallengeClient() {
     createToastId.current = null
   }
 
-  const isDisabled = formState !== 'idle'
+  const isDisabled = !isConnected || formState !== 'idle'
 
   const submitLabel =
     formState === 'idle' ? 'Create Challenge' :
@@ -191,18 +192,16 @@ export function CreateChallengeClient() {
     formState === 'done' ? 'Done!' :
     'Error — try again'
 
-  if (!isConnected) {
-    return (
-      <div>
-        <h1>Create Challenge</h1>
-        <p>Connect wallet to create a challenge.</p>
-      </div>
-    )
-  }
-
   return (
     <div>
       <h1>Create Challenge</h1>
+
+      {!isConnected && (
+        <div className="mb-6 p-4 border rounded">
+          <p className="mb-3">Connect your wallet to create a challenge.</p>
+          <ConnectWallet />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md mt-4">
         <div>

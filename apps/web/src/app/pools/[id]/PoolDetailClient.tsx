@@ -17,6 +17,7 @@ import {
 import Link from 'next/link'
 import { Skeleton } from '@/components/Skeleton'
 import { PoolStateBadge } from '@/components/StateBadge'
+import { ConnectWallet } from '@/components/ConnectWallet'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -510,7 +511,12 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
           <div>
             <h2>Actions</h2>
 
-            {!isConnected && <p>Connect wallet to take actions.</p>}
+            {!isConnected && (
+              <div className="mb-6 p-4 border rounded">
+                <p className="mb-3">Connect your wallet to take actions.</p>
+                <ConnectWallet />
+              </div>
+            )}
 
             {isConnected && (
               <div className="flex flex-col gap-3 max-w-md">

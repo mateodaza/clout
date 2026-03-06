@@ -6,6 +6,7 @@ import { isAddress, zeroAddress, parseUnits } from 'viem'
 import { cloutPoolAbi, mockStablecoinAbi, POOL_ADDRESS, TOKEN_ADDRESS } from '@/lib/contracts'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
+import { ConnectWallet } from '@/components/ConnectWallet'
 
 // Returns unix timestamp (seconds) or null if input is empty / not a valid date.
 function parseDatetime(value: string): number | null {
@@ -258,7 +259,7 @@ export function CreatePoolClient() {
     createToastId.current = null
   }
 
-  const isDisabled = formState !== 'idle'
+  const isDisabled = !isConnected || formState !== 'idle'
 
   const submitLabel =
     formState === 'idle' ? 'Create Pool' :
@@ -267,18 +268,16 @@ export function CreatePoolClient() {
     formState === 'done' ? 'Done!' :
     'Error — try again'
 
-  if (!isConnected) {
-    return (
-      <div>
-        <h1>Create Pool</h1>
-        <p>Connect wallet to create a pool.</p>
-      </div>
-    )
-  }
-
   return (
     <div>
       <h1>Create Pool</h1>
+
+      {!isConnected && (
+        <div className="mb-6 p-4 border rounded">
+          <p className="mb-3">Connect your wallet to create a pool.</p>
+          <ConnectWallet />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md mt-4">
         <div>
