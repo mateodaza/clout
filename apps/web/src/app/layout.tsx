@@ -25,6 +25,7 @@ export default function RootLayout({
               <a href="/" className="font-semibold">Clout</a>
               <a href="/challenges">Challenges</a>
               <a href="/pools">Pools</a>
+              <a href="/faucet">Faucet</a>
               <div className="ml-auto">
                 <ConnectWallet />
               </div>

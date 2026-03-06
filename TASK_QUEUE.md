@@ -581,7 +581,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 
 > **CONTEXT:** Contracts are live on Base Sepolia. Frontend `.env` has real addresses. The app works end-to-end. This phase focuses on making the product feel real — design, UX, missing features, and hardening.
 
-#### NC-031 [ ] Add a faucet / mint page for testnet tokens
+#### NC-031 [x] Add a faucet / mint page for testnet tokens
 - **What:** Create `/faucet` page that lets connected users mint MockStablecoin (mUSDC) to themselves. Form: amount input (default 1000), "Mint" button. Calls `MockStablecoin.mint(connectedAddress, amount * 10^6)`. Shows current mUSDC balance before and after. Include a note: "This is testnet mUSDC — no real value."
 - **Acceptance criteria:**
   - `/faucet` page renders with amount input and mint button

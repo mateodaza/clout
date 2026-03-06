@@ -153,3 +153,4 @@ clutch/
 - **NC-028** — 2026-03-06 — `9fd71f4` — Session: 20260306-130423-clout — ⚠ Committed after soft review rejections cap; local verification passed.
 - **NC-029** — 2026-03-06 — `65d34f0` — Session: 20260306-130423-clout
 - **NC-030** — 2026-03-06 — `4f9e3df` — Session: 20260306-130423-clout
+- **NC-031** — 2026-03-06 — `e16203f` — Session: 20260306-211258-clout
