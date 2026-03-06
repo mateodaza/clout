@@ -17,7 +17,7 @@ The long-term thesis is that reputation-calibrated conviction becomes reusable i
 
 ## Current Scope
 
-This repo currently contains strategy and pitch documentation for Avalanche Build Games (2026).
+This repo currently contains strategy and pitch documentation for internal development.
 
 - `RESEARCH.md`: full strategic + product spec
 - `PITCH_SCRIPT.md`: final 2-minute pitch script
@@ -48,7 +48,7 @@ In scope:
 
 - Rail A end-to-end lifecycle
 - Rail B-lite end-to-end lifecycle
-- USDC collateral on Avalanche Fuji
+- USDC collateral on Base Sepolia
 - basic web app flow for create/join/resolve/claim
 
 Out of scope:

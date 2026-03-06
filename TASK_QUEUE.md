@@ -318,18 +318,18 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 ## Phase 5: Deployment Script (Day 6)
 
 #### NC-013 [x] Create Anvil-verified deployment script
-- **What:** Foundry deployment script (`packages/contracts/script/Deploy.s.sol`) that deploys: 1) MockStablecoin, 2) CloutEscrow, 3) CloutPool. Then configures: whitelist MockStablecoin on both contracts, set protocol fee to 250 bps, set treasury address. Logs all deployed addresses. Create `DEPLOYMENTS.md` template (at repo root) with placeholders for Fuji addresses. Script must work on local Anvil — this is the Nightcrawler-executable scope. Fuji broadcast is a manual step for Mateo.
+- **What:** Foundry deployment script (`packages/contracts/script/Deploy.s.sol`) that deploys: 1) MockStablecoin, 2) CloutEscrow, 3) CloutPool. Then configures: whitelist MockStablecoin on both contracts, set protocol fee to 250 bps, set treasury address. Logs all deployed addresses. Create `DEPLOYMENTS.md` template (at repo root) with placeholders for Base Sepolia addresses. Script must work on local Anvil — this is the Nightcrawler-executable scope. Base Sepolia broadcast is a manual step for Mateo.
 - **Acceptance criteria:**
   - Script deploys all 3 contracts in correct order
   - Constructor args: owner = `vm.envAddress("OWNER_ADDRESS")`, treasury = `vm.envAddress("TREASURY_ADDRESS")`, feeBps = `vm.envUint("FEE_BPS")` (default 250)
   - Configuration calls succeed: whitelist MockStablecoin on both contracts, set protocol fee, set treasury
   - All addresses logged to console
   - Script works on local Anvil: `cd packages/contracts && forge script script/Deploy.s.sol --fork-url http://localhost:8545 --broadcast`
-  - DEPLOYMENTS.md (repo root) has structured placeholders for Fuji addresses, verified-on links, and tx hashes
-  - `packages/contracts/.env.example` created with `OWNER_ADDRESS`, `TREASURY_ADDRESS`, `FEE_BPS`, `PRIVATE_KEY`, `FUJI_RPC_URL` (all placeholder values)
+  - DEPLOYMENTS.md (repo root) has structured placeholders for Base Sepolia addresses, verified-on links, and tx hashes
+  - `packages/contracts/.env.example` created with `OWNER_ADDRESS`, `TREASURY_ADDRESS`, `FEE_BPS`, `PRIVATE_KEY`, `BASE_SEPOLIA_RPC_URL` (all placeholder values)
   - Owner == deployer initially. No ownership transfer in script (Mateo does this manually if needed).
 - **Dependencies:** NC-G2
-- **Constraints:** Use `forge script` with `vm.envAddress`/`vm.envUint` for all configurable values. NEVER hardcode keys or addresses. Anvil testing only — Nightcrawler does NOT broadcast to Fuji. **Path:** all Foundry files are in `packages/contracts/`.
+- **Constraints:** Use `forge script` with `vm.envAddress`/`vm.envUint` for all configurable values. NEVER hardcode keys or addresses. Anvil testing only — Nightcrawler does NOT broadcast to Base Sepolia. **Path:** all Foundry files are in `packages/contracts/`.
 
 ---
 
@@ -341,14 +341,14 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Status:** Mateo scaffolded `apps/web/` with Next.js 16.1.6 during the turborepo refactor. NC-014's original `frontend/` output is superseded. **Nightcrawler: skip this task, proceed to NC-014B.**
 
 #### NC-014B [x] Set up wagmi + viem + wallet connection in apps/web/
-- **What:** Install and configure wagmi v2 + viem in the existing `apps/web/` Next.js app. **NO RainbowKit** — use wagmi's built-in connectors: `coinbaseWallet` (Smart Wallet with account abstraction), `walletConnect`, and `injected` (MetaMask). Configure for Avalanche Fuji testnet (chain ID 43113). Extract ABI JSON for CloutEscrow, CloutPool, MockStablecoin from `packages/contracts/out/<Contract>.sol/<Contract>.json` (the `abi` field only) and write them as typed `as const` exports in `apps/web/src/lib/contracts.ts`. Create `apps/web/src/lib/wagmi.ts` with chain config and all 3 connectors. Create `apps/web/src/components/Providers.tsx` (`"use client"`) that wraps children in `WagmiProvider` + `QueryClientProvider`. Import `Providers` in `apps/web/src/app/layout.tsx` (layout stays a Server Component). Build a custom `ConnectWallet` component (`apps/web/src/components/ConnectWallet.tsx`, `"use client"`) using wagmi hooks: `useConnect` (show connector buttons when disconnected), `useAccount` (show truncated address when connected), `useDisconnect` (disconnect button). Add `ConnectWallet` to the layout nav.
+- **What:** Install and configure wagmi v2 + viem in the existing `apps/web/` Next.js app. **NO RainbowKit** — use wagmi's built-in connectors: `coinbaseWallet` (Smart Wallet with account abstraction), `walletConnect`, and `injected` (MetaMask). Configure for Base Sepolia testnet (chain ID 84532). Extract ABI JSON for CloutEscrow, CloutPool, MockStablecoin from `packages/contracts/out/<Contract>.sol/<Contract>.json` (the `abi` field only) and write them as typed `as const` exports in `apps/web/src/lib/contracts.ts`. Create `apps/web/src/lib/wagmi.ts` with chain config and all 3 connectors. Create `apps/web/src/components/Providers.tsx` (`"use client"`) that wraps children in `WagmiProvider` + `QueryClientProvider`. Import `Providers` in `apps/web/src/app/layout.tsx` (layout stays a Server Component). Build a custom `ConnectWallet` component (`apps/web/src/components/ConnectWallet.tsx`, `"use client"`) using wagmi hooks: `useConnect` (show connector buttons when disconnected), `useAccount` (show truncated address when connected), `useDisconnect` (disconnect button). Add `ConnectWallet` to the layout nav.
 - **Acceptance criteria:**
   - `pnpm turbo build` (from repo root) completes with zero errors
   - `ConnectWallet` component renders in the layout nav
   - Three connector options shown: Coinbase Wallet (Smart Wallet), WalletConnect, MetaMask (injected)
   - Connected state shows truncated address + disconnect button
   - `apps/web/src/lib/contracts.ts` exports typed `as const` ABI constants for all 3 contracts + contract addresses from env vars
-  - `apps/web/src/lib/wagmi.ts` exports wagmi config with Fuji (chain ID 43113) and all 3 connectors
+  - `apps/web/src/lib/wagmi.ts` exports wagmi config with Base Sepolia (chain ID 84532) and all 3 connectors
   - `apps/web/.env.example` with `NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_POOL_ADDRESS`, `NEXT_PUBLIC_TOKEN_ADDRESS`, `NEXT_PUBLIC_RPC_URL`, `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
   - All domain types imported from `@clout/types` (no local redefinitions)
   - Basic nav layout with links: Home, Challenges, Pools
@@ -480,13 +480,13 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
   - `sitemap.xml` accessible at `/sitemap.xml` with all routes
   - `pnpm turbo build` passes
 - **Dependencies:** NC-025
-- **Constraints:** Use Next.js `metadata` export or `generateMetadata` — no `<Head>` components. Keep OG descriptions short and descriptive for Build Games judges. SVG favicon preferred (no image asset needed).
+- **Constraints:** Use Next.js `metadata` export or `generateMetadata` — no `<Head>` components. Keep OG descriptions short and descriptive for external reviewers. SVG favicon preferred (no image asset needed).
 
 ---
 
 ## Phase 6C: UX & Functionality Gaps (Day 8)
 
-> Addressing Codex review feedback + remaining UX gaps before Fuji deployment.
+> Addressing Codex review feedback + remaining UX gaps before Base Sepolia deployment.
 
 #### NC-027 [x] Make challenge/pool list rows clickable links to detail pages
 - **What:** On `/challenges`, wrap each challenge card/row in a `<Link href="/challenges/{id}">` so clicking anywhere on the row navigates to the detail page. Same for `/pools` — each pool card/row links to `/pools/{id}`. Add hover state (subtle background change) to indicate clickability. Cursor should be `pointer` on hover.
@@ -543,18 +543,18 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 > **NOTE:** NC-020 through NC-022 are MANUAL tasks executed by Mateo, not Nightcrawler.
 > Nightcrawler must skip these (they are marked 🚧 MANUAL).
 
-#### NC-020 [🚧] MANUAL — Deploy to Fuji and verify
-- **What:** Mateo deploys using the script from NC-013: `forge script script/Deploy.s.sol --broadcast --rpc-url $FUJI_RPC_URL --private-key $PRIVATE_KEY`. Verify all contracts on Snowtrace. Fund test wallets with Fuji AVAX and MockStablecoin. Record deployed addresses in DEPLOYMENTS.md. Update frontend `.env` with real addresses.
+#### NC-020 [🚧] MANUAL — Deploy to Base Sepolia and verify
+- **What:** Mateo deploys using the script from NC-013: `forge script script/Deploy.s.sol --broadcast --rpc-url $BASE_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY`. Verify all contracts on Basescan. Fund test wallets with Base Sepolia ETH and MockStablecoin. Record deployed addresses in DEPLOYMENTS.md. Update frontend `.env` with real addresses.
 - **Acceptance criteria:**
-  - All 3 contracts deployed and verified on Snowtrace
+  - All 3 contracts deployed and verified on Basescan
   - DEPLOYMENTS.md updated with real addresses and tx hashes
   - Frontend `.env` updated with deployed addresses
   - Test wallets funded
 - **Dependencies:** NC-013, NC-016B
-- **Constraints:** MANUAL — Nightcrawler cannot execute (requires private key and Fuji RPC access). Skip automatically.
+- **Constraints:** MANUAL — Nightcrawler cannot execute (requires private key and Base Sepolia RPC access). Skip automatically.
 
-#### NC-021 [🚧] MANUAL — End-to-end integration testing on Fuji
-- **What:** Mateo tests full lifecycle of both rails through the frontend on Fuji testnet. PvP: create → accept → submit → confirm → claim. Pool: create → stake (multiple wallets) → close → resolve → claim. Document any bugs found in a `BUGS.md` file.
+#### NC-021 [🚧] MANUAL — End-to-end integration testing on Base Sepolia
+- **What:** Mateo tests full lifecycle of both rails through the frontend on Base Sepolia testnet. PvP: create → accept → submit → confirm → claim. Pool: create → stake (multiple wallets) → close → resolve → claim. Document any bugs found in a `BUGS.md` file.
 - **Acceptance criteria:**
   - PvP lifecycle completes without errors through frontend
   - Pool lifecycle completes without errors through frontend
@@ -562,15 +562,304 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
   - No transaction reverts on valid paths
   - BUGS.md created with any issues found
 - **Dependencies:** NC-020
-- **Constraints:** MANUAL — requires browser wallet interaction on Fuji. At least 2 wallet addresses.
+- **Constraints:** MANUAL — requires browser wallet interaction on Base Sepolia. At least 2 wallet addresses.
 
 #### NC-022 [🚧] MANUAL — Bug fixes, demo prep, submission
-- **What:** Fix bugs from NC-021. Prepare demo script. Update README. Final Fuji smoke test. Submit to Build Games.
+- **What:** Fix bugs from NC-021. Prepare demo script. Update README. Final Base Sepolia smoke test. Submit for internal review.
 - **Acceptance criteria:**
   - Critical bugs fixed
   - README complete with setup instructions and deployed addresses
   - Demo script documented
   - `forge test` still passes
-  - Submitted to Build Games Stage 2
+  - Internal review complete
 - **Dependencies:** NC-021
 - **Constraints:** MANUAL — Mateo executes. Nightcrawler may assist with bug fixes if specific fix tasks are added to the queue.
+
+---
+
+## Phase 8: Production Polish + Features (Post-Deploy)
+
+> **CONTEXT:** Contracts are live on Base Sepolia. Frontend `.env` has real addresses. The app works end-to-end. This phase focuses on making the product feel real — design, UX, missing features, and hardening.
+
+#### NC-031 [ ] Add a faucet / mint page for testnet tokens
+- **What:** Create `/faucet` page that lets connected users mint MockStablecoin (mUSDC) to themselves. Form: amount input (default 1000), "Mint" button. Calls `MockStablecoin.mint(connectedAddress, amount * 10^6)`. Shows current mUSDC balance before and after. Include a note: "This is testnet mUSDC — no real value."
+- **Acceptance criteria:**
+  - `/faucet` page renders with amount input and mint button
+  - Minting works and updates displayed balance
+  - Shows current mUSDC balance of connected wallet
+  - Disabled / prompt when not connected
+  - Transaction pending/success/error states
+  - Nav link added: "Faucet"
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Page at `apps/web/src/app/faucet/`. Use `useWriteContract` + `useWaitForTransactionReceipt`. Read balance with `useReadContract` on `balanceOf`. Re-fetch balance after mint. Import `mockStablecoinAbi` and `TOKEN_ADDRESS` from `@/lib/contracts`.
+
+#### NC-032 [ ] Add token balance display to nav and action pages
+- **What:** Show the connected user's mUSDC balance in the nav bar next to the wallet address (e.g., "0x265b…bb32 | 1,000.00 mUSDC"). Also show balance on create pages (`/challenges/create`, `/pools/create`) above the stake input so users know how much they can stake. Format with 2 decimal places and comma separators.
+- **Acceptance criteria:**
+  - Nav shows mUSDC balance next to address when connected
+  - Create pages show balance above stake input
+  - Balance formatted: "1,000.00 mUSDC"
+  - Balance updates after transactions (mint, create, stake)
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-031
+- **Constraints:** Read from `MockStablecoin.balanceOf(address)`. Use `useReadContract` with `watch: true` or refetch after writes. Format with `Intl.NumberFormat`.
+
+#### NC-033 [ ] Add challenge/pool status filters and sorting
+- **What:** On `/challenges` list page, add filter buttons: "All", "Open" (CREATED), "Active" (ACCEPTED/SUBMITTED), "Resolved" (FINALIZED/VOIDED). On `/pools` list page, add filters: "All", "Open", "Closed", "Resolved". Default to "All". Add sort toggle: newest first / oldest first.
+- **Acceptance criteria:**
+  - Filter buttons render on both list pages
+  - Clicking a filter shows only matching items
+  - Active filter is visually highlighted
+  - Sort toggle works (by ID descending/ascending)
+  - "All" is the default
+  - Empty state shown when filter yields no results
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Client-side filtering only (data is already loaded via multicall). Use state for active filter. Keep filter buttons as simple styled buttons, not a dropdown.
+
+#### NC-034 [ ] Add "My Challenges" and "My Pools" views
+- **What:** On `/challenges` page, add a toggle: "All Challenges" / "My Challenges". "My Challenges" filters to challenges where connected wallet is creator OR opponent. On `/pools` page, same toggle: "All Pools" / "My Pools". "My Pools" filters to pools where the user has staked (yesStake > 0 or noStake > 0) — requires reading `getStakes(poolId, address)` for each pool.
+- **Acceptance criteria:**
+  - Toggle renders on both list pages (only when wallet connected)
+  - "My Challenges" shows only challenges where user is creator or opponent
+  - "My Pools" shows only pools where user has a stake
+  - Toggle state preserved when navigating back to list
+  - Shows "You have no challenges/pools yet" empty state
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-033
+- **Constraints:** For "My Pools", batch-read `getStakes` for all pools using `useReadContracts`. Only show toggle when wallet is connected. Works alongside the status filters from NC-033 (both can be active).
+
+#### NC-035 [ ] Add dark mode with system preference detection
+- **What:** Implement dark mode using Tailwind's `dark:` variant. Detect system preference with `prefers-color-scheme` media query. Add a theme toggle button in the nav (sun/moon icon). Persist preference in `localStorage`. Apply dark variants to all existing pages: backgrounds, text, borders, badges, form inputs, buttons.
+- **Acceptance criteria:**
+  - Dark mode applies to all pages consistently
+  - System preference detected on first visit
+  - Toggle button in nav switches between light/dark
+  - Preference persisted in localStorage
+  - State badges retain their color meanings in dark mode
+  - Form inputs and buttons are readable in both modes
+  - No flash of wrong theme on page load
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Use Tailwind `dark:` classes. Add `darkMode: 'class'` to Tailwind config if needed. Theme provider in `Providers.tsx`. Use `suppressHydrationWarning` on `<html>` to prevent hydration mismatch. Inline script in `layout.tsx` `<head>` to set class before render (prevents flash).
+
+#### NC-036 [ ] Improve form validation and UX on create pages
+- **What:** Enhance both create pages (`/challenges/create`, `/pools/create`) with: 1) Real-time validation as user types (debounced). 2) Check if user has sufficient mUSDC balance before allowing submit. 3) Show estimated gas cost. 4) Add "Max" button next to stake input that fills with user's full balance. 5) Disable submit if balance < stake amount. 6) Show allowance status — if already approved, skip approve step.
+- **Acceptance criteria:**
+  - Real-time validation on blur or after 500ms debounce
+  - Insufficient balance warning shown inline
+  - "Max" button fills stake with full mUSDC balance
+  - Submit disabled when balance insufficient
+  - If existing allowance >= stake, skip approve step (read `allowance(user, escrow)`)
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-032
+- **Constraints:** Read `balanceOf` and `allowance` with `useReadContract`. Debounce validation with `setTimeout` (no lodash). Skip approve only when `allowance >= stakeAmount` — otherwise do the full approve-then-write flow.
+
+#### NC-037 [ ] Add transaction history to challenge and pool detail pages
+- **What:** On `/challenges/[id]`, show a timeline of events: "Created by 0x265b…bb32 at Mar 5 3:14 PM", "Accepted by 0x1111…1111 at Mar 5 3:20 PM", etc. Derive from challenge timestamps (createdAt, acceptedAt, submittedAt, disputedAt, resolvedAt, appealedAt). On `/pools/[id]`, show: "Created by host", "Closed at eventStart", "Resolved: YES wins", etc. Style as a vertical timeline.
+- **Acceptance criteria:**
+  - Challenge detail shows chronological event timeline
+  - Pool detail shows chronological event timeline
+  - Only shows events that have occurred (skip zero timestamps)
+  - Timestamps formatted with `formatTimestamp` from utils
+  - Timeline styled as vertical line with dots/markers
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Derive all events from on-chain data (timestamps on the structs). No event log fetching needed. Reuse `formatTimestamp`. Simple vertical timeline with Tailwind — no timeline library.
+
+#### NC-038 [ ] Add share / copy link buttons
+- **What:** On challenge and pool detail pages, add a "Copy Link" button that copies the current URL to clipboard. Add a "Share on X" button that opens a pre-filled tweet: "I just [created/staked on] a challenge on Clout! [URL]". Show a brief "Copied!" tooltip on copy.
+- **Acceptance criteria:**
+  - "Copy Link" button on both detail pages
+  - Copies current URL to clipboard via `navigator.clipboard.writeText`
+  - Shows "Copied!" feedback for 2 seconds
+  - "Share on X" button opens Twitter intent URL in new tab
+  - Tweet text includes challenge/pool context and URL
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Twitter intent URL: `https://twitter.com/intent/tweet?text=...&url=...`. URL-encode the text. Use `encodeURIComponent`.
+
+#### NC-039 [ ] Add comprehensive error boundaries
+- **What:** Create a React error boundary component (`apps/web/src/components/ErrorBoundary.tsx`) that catches render errors and shows a fallback UI: "Something went wrong" with a "Try again" button (calls `reset()`). Wrap each page's client component in an error boundary. Also add specific handling for common contract errors: "User rejected transaction", "Insufficient funds for gas", "Execution reverted" — show user-friendly messages.
+- **Acceptance criteria:**
+  - ErrorBoundary component catches render errors
+  - Fallback UI shows error message and reset button
+  - Each page's client component wrapped in ErrorBoundary
+  - Contract error messages mapped to user-friendly text
+  - "User rejected" shows "Transaction cancelled" (not a scary error)
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Use React class component for error boundary (hooks can't catch render errors). Map error codes in `parseRevertReason` or a new `friendlyError` utility. Keep the fallback UI simple.
+
+#### NC-040 [ ] Add README with setup instructions and architecture overview
+- **What:** Rewrite `README.md` with: 1) One-line description. 2) Architecture diagram (mermaid in markdown). 3) Tech stack list. 4) Local development setup (prerequisites, install, env setup, dev server). 5) Contract deployment instructions. 6) Project structure (monorepo layout). 7) Testing instructions. 8) Deployed addresses (link to DEPLOYMENTS.md).
+- **Acceptance criteria:**
+  - README has all 8 sections
+  - Architecture diagram shows: User → Frontend → wagmi → Base Sepolia → Contracts
+  - Setup instructions work from a clean clone
+  - Prerequisites listed: Node 20+, pnpm, Foundry
+  - `pnpm install && pnpm turbo build` documented
+  - Link to DEPLOYMENTS.md for live addresses
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Keep it concise — README, not a book. Mermaid diagram in markdown (GitHub renders it). Don't include private keys or real secrets in examples.
+
+
+#### NC-041 [ ] Add Basescan links for all on-chain data
+- **What:** Everywhere an address or transaction hash is displayed, make it a clickable link to Basescan. Addresses link to `https://sepolia.basescan.org/address/{addr}`. Tx hashes link to `https://sepolia.basescan.org/tx/{hash}`. Create a utility `basescanUrl(type: 'address' | 'tx', value: string): string` in `apps/web/src/lib/utils.ts`. Apply to: challenge detail (creator, opponent, resolver, token addresses), pool detail (host, resolver), tx hash displays after writes, WalletRecord component.
+- **Acceptance criteria:**
+  - All addresses on detail pages link to Basescan
+  - All tx hashes shown after writes link to Basescan
+  - Links open in new tab (`target="_blank" rel="noopener"`)
+  - Utility function exported from `lib/utils.ts`
+  - Addresses still show truncated but link to full address
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Base Sepolia explorer: `https://sepolia.basescan.org`. Make the base URL configurable via `NEXT_PUBLIC_EXPLORER_URL` env var (default to sepolia basescan). Add this var to `.env.example`.
+
+#### NC-042 [ ] Add 404 and custom error pages
+- **What:** Create custom Next.js error pages: `apps/web/src/app/not-found.tsx` (404) and `apps/web/src/app/error.tsx` (runtime errors). 404 page shows "Page not found" with link back to home. Error page shows "Something went wrong" with retry button. Both should match the app's visual style (nav visible, centered content).
+- **Acceptance criteria:**
+  - `/nonexistent-path` shows custom 404 page
+  - 404 page has link to home
+  - Error page has retry button
+  - Both pages render within the app layout (nav visible)
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-035
+- **Constraints:** `not-found.tsx` is a Server Component. `error.tsx` must be a Client Component with `"use client"`. Follow Next.js 16 conventions.
+
+#### NC-043 [ ] Add pool staking progress bars
+- **What:** On `/pools/[id]` detail page, show visual progress bars for: 1) YES vs NO stake totals (horizontal bar, green=YES, red=NO, proportional width). 2) Total pool fill (current total / total cap, if cap exists). 3) Per-wallet remaining allowance (user's stake / wallet cap). Show percentages next to each bar.
+- **Acceptance criteria:**
+  - YES/NO bar shows proportional split with percentages
+  - Total cap bar shows fill percentage
+  - Per-wallet bar shows user's usage of their cap
+  - Bars use Tailwind (green for YES, red for NO, blue for fill)
+  - Handles edge cases: zero stakes (empty bar), no cap set (hide cap bar)
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Pure Tailwind for bars (colored divs with percentage widths). Calculate percentages in component. Handle division by zero.
+
+#### NC-044 [ ] Add pool event countdown on list and detail pages
+- **What:** On `/pools` list page, show time until eventStart for OPEN pools ("Starts in 2d 5h") and time until eventEnd for CLOSED pools ("Ends in 1d 3h"). On `/pools/[id]` detail page, show countdown for all relevant timestamps: eventStart, eventEnd, resolveBy. Use the existing `Countdown` component from NC-030. Past timestamps show "Started", "Ended", "Resolve deadline passed" respectively.
+- **Acceptance criteria:**
+  - Pool list shows countdown for eventStart/eventEnd per pool state
+  - Pool detail shows countdowns for all three timestamps
+  - Uses existing `Countdown` component
+  - Past events show past-tense labels
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Reuse `Countdown` from NC-030. Pass `targetTimestamp` as BigInt. Component already handles expired state.
+
+#### NC-045 [ ] Add keyboard shortcuts and accessibility improvements
+- **What:** 1) Add keyboard shortcut: `Ctrl/Cmd + K` opens a quick-nav command palette (simple modal listing: Home, Challenges, Pools, Faucet, Create Challenge, Create Pool — clicking navigates). 2) Add `aria-label` attributes to all buttons and links. 3) Add focus-visible outlines for keyboard navigation. 4) Ensure all interactive elements are reachable via Tab.
+- **Acceptance criteria:**
+  - `Cmd+K` / `Ctrl+K` opens command palette overlay
+  - Command palette lists all main navigation targets
+  - Clicking an item navigates and closes palette
+  - `Escape` closes palette
+  - All buttons have `aria-label`
+  - Focus-visible outlines visible on Tab navigation
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-035
+- **Constraints:** Command palette is a simple modal with `<dialog>` or a div with `role="dialog"`. No command palette library. Use `useEffect` for keyboard listener. Clean up on unmount.
+
+#### NC-046 [ ] Add confirmation dialogs for high-stakes actions
+- **What:** Before executing these actions, show a confirmation dialog: 1) Accept Challenge ("You are about to stake X mUSDC. Confirm?"). 2) Dispute Result ("Filing a dispute escalates to resolver/admin. Continue?"). 3) Claim Winnings ("Claim your winnings from this challenge/pool?"). Create a reusable `ConfirmDialog` component that accepts title, message, onConfirm, onCancel.
+- **Acceptance criteria:**
+  - ConfirmDialog component is reusable with title/message/callbacks
+  - Accept, Dispute, and Claim actions show confirmation before executing
+  - Dialog shows the specific amount/context
+  - "Cancel" dismisses without action
+  - "Confirm" proceeds with the transaction
+  - Dialog is accessible (focus trap, Escape to close)
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-039
+- **Constraints:** Use `<dialog>` element or a modal div. No modal library. Keep it simple — not a full design system modal.
+
+#### NC-047 [ ] Add SEO-optimized dynamic metadata for all pages
+- **What:** Ensure every page has proper metadata using Next.js `generateMetadata` or static `metadata` export. Pages to check/add: `/faucet`, `/challenges` (count in description), `/pools` (count in description), `/challenges/[id]` (already done), `/pools/[id]` (add pool description/host). Add `canonical` URL to all pages. Add JSON-LD structured data to home page (WebApplication schema).
+- **Acceptance criteria:**
+  - All pages have `title` and `description` metadata
+  - Dynamic pages include relevant context in description
+  - `canonical` URL set on all pages
+  - Home page has JSON-LD WebApplication schema
+  - No duplicate titles across pages
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-031
+- **Constraints:** Use Next.js metadata API only. JSON-LD via `<script type="application/ld+json">` in a Server Component. Canonical URL from `NEXT_PUBLIC_APP_URL` env var.
+
+#### NC-048 [ ] Add global notification for chain mismatch
+- **What:** If the connected wallet is on the wrong chain (not Base Sepolia, chain ID 84532), show a persistent banner at the top of the page: "Wrong network — please switch to Base Sepolia" with a "Switch Network" button. The button calls `switchChain` from wagmi. Hide the banner when on the correct chain. All action buttons should be disabled when on wrong chain.
+- **Acceptance criteria:**
+  - Banner shows when connected to wrong chain
+  - "Switch Network" button calls `useSwitchChain` from wagmi
+  - Banner hides when on correct chain or disconnected
+  - Action buttons disabled when on wrong chain
+  - Banner is visually prominent (yellow/orange background)
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-030
+- **Constraints:** Use `useChainId` and `useSwitchChain` from wagmi. Target chain ID: 84532 (Base Sepolia). Banner component in layout, outside of `<main>`.
+
+#### NC-049 [ ] Add recent activity feed to home page
+- **What:** On the home page, below the WalletRecord, show a "Recent Activity" section. Read the last 5 challenges and last 5 pools (by ID, newest first) and display them as a combined feed sorted by creation time. Each entry shows: type (Challenge/Pool), ID, creator/host, stake/total, state badge, relative time ("2 hours ago"). Each entry links to its detail page.
+- **Acceptance criteria:**
+  - Home page shows "Recent Activity" section
+  - Last 5 challenges + last 5 pools loaded and merged by time
+  - Each entry shows type, ID, key info, state badge, relative time
+  - Entries link to detail pages
+  - Loading skeleton while fetching
+  - Empty state if no challenges or pools exist
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-033
+- **Constraints:** Read `challengeCount` and `poolCount`, then batch-read the last 5 of each with `useReadContracts`. Merge and sort by timestamp. Relative time: use manual calculation ("Xh ago", "Xd ago") — no library.
+
+
+#### NC-051 [ ] Add contract verification script for Basescan
+- **What:** Create `packages/contracts/script/Verify.sh` that runs `forge verify-contract` for all 3 contracts on Base Sepolia. Use Basescan API. Script reads addresses from environment or accepts them as arguments. Document the verify command in `DEPLOYMENTS.md`. Add `BASESCAN_API_KEY` to `.env.example`.
+- **Acceptance criteria:**
+  - `Verify.sh` runs `forge verify-contract` for MockStablecoin, CloutEscrow, CloutPool
+  - Uses `--chain base-sepolia` and `--etherscan-api-key`
+  - `BASESCAN_API_KEY` added to `.env.example`
+  - `DEPLOYMENTS.md` updated with verification instructions
+  - Script is executable (`chmod +x`)
+- **Dependencies:** NC-030
+- **Constraints:** Use `forge verify-contract --chain base-sepolia --etherscan-api-key $BASESCAN_API_KEY`. Basescan uses the same API as Etherscan. Contract addresses should be read from env vars or passed as args.
+
+#### NC-052 [ ] Add 18+ age gate on first visit
+- **What:** On first visit, show a fullscreen modal: "You must be 18 or older to use Clout. This platform involves wagering with real digital assets." Two buttons: "I am 18+" (dismisses, sets `localStorage` flag) and "Exit" (redirects to google.com). The gate blocks ALL interaction until acknowledged. On subsequent visits, check `localStorage` — if already confirmed, don't show again.
+- **Acceptance criteria:**
+  - Fullscreen modal on first visit, blocks all content
+  - "I am 18+" sets localStorage flag and dismisses
+  - "Exit" redirects away from the site
+  - Subsequent visits skip the gate (localStorage check)
+  - Modal is not dismissible by clicking outside or pressing Escape
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-035
+- **Constraints:** Component at `apps/web/src/components/AgeGate.tsx` (`"use client"`). Render in `Providers.tsx` or layout. Use `localStorage.getItem('clout-age-verified')`. The modal must render ABOVE everything (z-50+). No scroll on body while modal is open.
+
+#### NC-053 [ ] Add responsible gambling disclosures
+- **What:** 1) Add a footer to the layout with: "Clout is a skill-based competition platform. Not available in all jurisdictions. 18+ only. Please wager responsibly." 2) On `/challenges/create` and `/pools/create` pages, add a small disclaimer below the submit button: "By creating this challenge/pool, you confirm you are 18+ and understand you may lose your staked tokens." 3) Add a `/terms` page with basic terms of use (not legal advice — placeholder structure).
+- **Acceptance criteria:**
+  - Footer visible on all pages with disclaimer text
+  - Create pages show disclaimer below submit button
+  - `/terms` page exists with placeholder ToS structure
+  - Footer links to `/terms`
+  - Footer styled subtly (small text, muted color)
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-052
+- **Constraints:** Footer in `layout.tsx` outside `<main>`. Terms page at `apps/web/src/app/terms/page.tsx` (Server Component with static content). Keep disclaimers factual and short — this is not legal counsel.
+
+#### NC-054 [ ] Build a proper landing/hero section on home page
+- **What:** Replace the current minimal home page with a proper hero section: 1) Large heading: "The conviction market for the creator economy". 2) Subheading: "Stake on outcomes. Build your track record. Prove your edge." 3) Two CTA buttons: "Browse Challenges" → `/challenges`, "Explore Pools" → `/pools`. 4) Below hero: stats section showing total challenges, total pools, total volume staked (read from contracts). 5) Keep WalletRecord section below for connected users.
+- **Acceptance criteria:**
+  - Hero section with heading, subheading, two CTA buttons
+  - Stats section reads `challengeCount` from CloutEscrow and `poolCount` from CloutPool
+  - Stats show: "X Challenges", "Y Pools" (volume requires summing stakes — skip if too complex, just show counts)
+  - Responsive layout (stacks on mobile)
+  - WalletRecord section preserved below for connected users
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-035
+- **Constraints:** No images or illustrations — text + layout only. Use Tailwind for all styling. Hero should feel bold but clean — large text, generous whitespace. Dark mode compatible.
+

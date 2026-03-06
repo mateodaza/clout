@@ -177,15 +177,15 @@ Source: GLOBAL_PLAN.md + RESEARCH.md
 
 ## Deployment
 
-#### NC-017 [ ] MANUAL — Fuji deployment script and contract verification
+#### NC-017 [ ] MANUAL — Base Sepolia deployment script and contract verification
 - **Dependencies:** NC-016
 - **Acceptance criteria:**
   - Forge deployment script: MockStablecoin → CloutEscrow → CloutPool
   - Configure: whitelist mock stablecoin, set protocol fee 250 bps, set treasury
-  - Deploy to Fuji via `forge script --broadcast --rpc-url fuji`
-  - Verify all contracts on Snowtrace
+  - Deploy to Base Sepolia via `forge script --broadcast --rpc-url base-sepolia`
+  - Verify all contracts on Basescan
   - Record addresses in DEPLOYMENTS.md
-  - Fund test wallets with Fuji AVAX and mock stablecoins
+  - Fund test wallets with Base Sepolia ETH and mock stablecoins
 - **Constraints:** Requires RPC endpoint and deployer private key — MANUAL only
 
 ---
@@ -198,7 +198,7 @@ Source: GLOBAL_PLAN.md + RESEARCH.md
   - Next.js + Tailwind + wagmi + viem
   - Wallet connection via RainbowKit (Core wallet, MetaMask, injected)
   - ABI generation from Foundry artifacts
-  - Fuji network configuration
+  - Base Sepolia network configuration
 - **Constraints:** MANUAL — frontend is Mateo's domain
 
 #### NC-019 [ ] MANUAL — Challenge list and create challenge UI
@@ -222,17 +222,17 @@ Source: GLOBAL_PLAN.md + RESEARCH.md
   - Stake YES/NO, resolve (for resolver), claim
 - **Constraints:** MANUAL
 
-#### NC-022 [ ] MANUAL — End-to-end Fuji integration testing
+#### NC-022 [ ] MANUAL — End-to-end Base Sepolia integration testing
 - **Dependencies:** NC-020, NC-021
 - **Acceptance criteria:**
-  - Full PvP lifecycle through frontend on Fuji
-  - Full Pool lifecycle through frontend on Fuji
+  - Full PvP lifecycle through frontend on Base Sepolia
+  - Full Pool lifecycle through frontend on Base Sepolia
 - **Constraints:** MANUAL
 
-#### NC-023 [ ] MANUAL — Demo prep and Build Games submission
+#### NC-023 [ ] MANUAL — Demo prep and demo prep
 - **Dependencies:** NC-022
 - **Acceptance criteria:**
   - Demo script, video material, README with setup instructions
-  - Final Fuji smoke test
-  - Submit to Build Games Stage 2
+  - Final Base Sepolia smoke test
+  - Submit to internal review
 - **Constraints:** MANUAL — deadline March 9

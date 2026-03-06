@@ -3,9 +3,9 @@
 > The conviction market for the creator economy. Gaming is the wedge.
 
 **Last updated**: February 22, 2026 (fact-checked, audited, philosophically stress-tested)
-**Competition**: Avalanche Build Games ($1M prize pool)
+
 **Domain**: clout.ac
-**Chain**: Avalanche C-Chain
+**Chain**: Base (Coinbase L2)
 
 ---
 
@@ -22,7 +22,7 @@
 9. [Agent Compatibility](#9-agent-compatibility)
 10. [Resolution Strategy](#10-resolution-strategy)
 11. [Risk Register](#11-risk-register)
-12. [Build Games Timeline](#12-build-games-timeline)
+12. [internal milestone Timeline](#12-build-games-timeline)
 13. [Pitch Strategy](#13-pitch-strategy)
 14. [Intellectual Lineage](#14-intellectual-lineage)
 15. [Key Data Points](#15-key-data-points)
@@ -56,7 +56,7 @@
 ### The Gap
 Gamers wager billions through trust-based channels: Discord middlemen, skin gambling sites, play-money Twitch predictions, and off-chain platforms like CheckMate Gaming ($211M+ paid out). None of this settles on-chain. None of it builds verifiable reputation. Almost none of it monetizes creators — Duelmasters.io is the closest (7.5% streamer commission), but it's early-stage and lacks robust settlement.
 
-Meanwhile, Avalanche has one of the largest Web3 gaming ecosystems but zero prediction/wagering infrastructure.
+Base has native USDC (Circle CCTP), sub-cent fees, and Coinbase Smart Wallet for seamless onboarding — ideal infrastructure for conviction markets.
 
 ### The Insight
 Prediction market UX applied to gaming topics doesn't work (Forkast: near-zero traction, token failed). But PvP wager match platforms DO work (CheckMate Gaming: $211M+, 16M+ matches). The difference: gamers want to stake on themselves and their matches, not spectate binary YES/NO markets.
@@ -88,8 +88,8 @@ The signal isn't just probability or even willingness to bet. It's strength + du
 | Stake.com monthly deposits | $1.1B (centralized) | BlockchainMagazine |
 | Polymarket esports volume | ~$9M out of ~$13B (2025) = ~0.07% | Polymarket, Paradigm (notes double-counting in raw data) |
 | On-chain esports wagering (all platforms) | <$50M total | Estimate based on SX Bet, Azuro, WINR esports segments |
-| Prediction markets on Avalanche | Zero | DappRadar |
-| USDC on Avalanche | ~$604M native (was $784M Q3 2025) | usdc.cool (live, Feb 22 2026) |
+| Prediction markets on Base | Zero | DappRadar |
+| USDC on Base | ~$604M native (was $784M Q3 2025) | usdc.cool (live, Feb 22 2026) |
 
 ### Streaming/Creator Economy
 
@@ -178,8 +178,8 @@ No competitor offers more than 2 of these 5 elements together:
 
 | Rail | What | Users | When |
 |------|------|-------|------|
-| **Rail A: PvP Escrow** | Head-to-head match stakes | Player vs player (or player vs agent) | MVP (Build Games) |
-| **Rail B: Challenge Pools** | 1-to-many stake pools | Host + audience | MVP-lite (Build Games) |
+| **Rail A: PvP Escrow** | Head-to-head match stakes | Player vs player (or player vs agent) | MVP (internal milestone) |
+| **Rail B: Challenge Pools** | 1-to-many stake pools | Host + audience | MVP-lite (internal milestone) |
 | **Rail C: Open Markets** | CTF-based tournament/event markets | Spectators | v2 |
 
 ### Rail A: PvP Escrow (MVP)
@@ -258,10 +258,10 @@ VOIDED                              VOIDED                    FINALIZED
 - Event constraints are validation-only (manual evidence + manual settlement), not oracle automation
 
 ### Rail C: Open Markets (v2)
-- Gnosis CTF (needs deployment on Avalanche)
+- Gnosis CTF (needs deployment on Base)
 - Tournament brackets, esports event outcomes
 - LMSR or simple AMM for pricing
-- Deferred to post-Build Games
+- Deferred to post-internal milestone
 
 **Rail C philosophy alignment (non-negotiable)**:
 - Identity-linked participation stays visible (wallet continuity, public history)
@@ -271,7 +271,7 @@ VOIDED                              VOIDED                    FINALIZED
 
 ### Wedge Expansion
 Each vertical is a wedge using the same protocol:
-- Gaming (Build Games MVP)
+- Gaming (internal milestone MVP)
 - Finance/Crypto (CT predictions, Chainlink-resolvable)
 - Creator milestones ("This video hits 1M views")
 - Future verticals as verification matures
@@ -302,10 +302,10 @@ MVP uses minimal, purpose-built contracts — no proxy, no facets, no upgradeabi
 Two contracts because the mechanics differ: escrow is 1v1 symmetric, pools are 1-to-many asymmetric. Both share the same stablecoin integration, admin roles, and fee routing.
 
 **Dependencies**: OpenZeppelin `IERC20`, `ReentrancyGuard`, `Ownable`.
-**Supported stablecoins** (both natively issued on Avalanche, both 6 decimals):
-- **USDT**: `0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7` (native, 6 decimals). No EIP-2612 permit() on legacy contract. Tether is a Build Games partner (mentor: Raquel Raigal). Tether WDK provides wallet infrastructure.
-- **USDC**: `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` (native, 6 decimals). Supports EIP-2612 `permit()`. Higher DeFi liquidity on Avalanche (~$572M).
-- Fuji testnet: Deploy mock ERC-20 with 6 decimals (`MockStablecoin.sol`). MVP develops against Fuji.
+**Supported stablecoins** (both natively issued on Base, both 6 decimals):
+- **USDT**: `0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7` (native, 6 decimals). No EIP-2612 permit() on legacy contract. Tether is a internal milestone partner (mentor: Raquel Raigal). Tether WDK provides wallet infrastructure.
+- **USDC**: `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` (native, 6 decimals). Supports EIP-2612 `permit()`. Higher DeFi liquidity on Base (~$572M).
+- Base Sepolia testnet: Deploy mock ERC-20 with 6 decimals (`MockStablecoin.sol`). MVP develops against Base Sepolia.
 - Contract accepts any `IERC20` address — stablecoin is a parameter, not hardcoded.
 
 **Core functions**:
@@ -370,7 +370,7 @@ enum Outcome { NONE, CREATOR_WIN, OPPONENT_WIN, DRAW, INVALID }
 - **Submit → confirm/dispute flow**: One party submits the outcome, the other confirms or disputes. Only the non-submitting party can dispute. This prevents both parties submitting contradictory results.
 - **Manual settlement + designated resolver v1**: Mutual agreement primary, optional third-party resolver, admin fallback (fast to ship, flexible)
 - **Commit-reveal v2**: Community voting for decentralized dispute resolution
-- **UMA OOv3 v3**: Optional integration when Avalanche support matures
+- **UMA OOv3 v3: Optional integration when Base support matures
 - **No governance token**: No DAO, no voting token, no DeFi complexity
 - **No PLAYING state in contract**: Match happens off-chain. Contract tracks escrow state only (ACCEPTED → SUBMITTED).
 
@@ -460,7 +460,7 @@ Game publisher Terms of Service constrain which games can be supported and how. 
 
 | Game | Wagering in ToS | Blockchain Ban | API for Wagering | Enforcement | Risk |
 |------|----------------|---------------|-----------------|-------------|------|
-| **Off The Grid** | Game IS blockchain. Cash tournaments (paused). | NO — Avalanche subnet | No public API. No match data on-chain. | None | **LOW** (ToS) / **HIGH** (integration — battle royale, not 1v1) |
+| **Off The Grid** | Game IS blockchain. Cash tournaments (paused). | NO — custom subnet | No public API. No match data on-chain. | None | **LOW** (ToS) / **HIGH** (integration — battle royale, not 1v1) |
 | **CS2** | Steam ToS prohibits gambling | Not explicit | Limited API | 40+ C&D letters (skin gambling, not cash) | MODERATE |
 | **League of Legends** | Not explicit in player ToS | **YES — absolute** ("no crypto/blockchain/NFTs whatsoever") | **Prohibited** for gambling | No action on external platforms yet | HIGH |
 | **Valorant** | Same as LoL | **YES — same policy** | **Prohibited** | Same as LoL | HIGH |
@@ -487,13 +487,13 @@ This is the proven model for non-blockchain-native games.
 
 ### Off The Grid: Why It's Not a Launch Title
 
-Off The Grid is the most prominent Avalanche-native game, but it's **incompatible with Clout's PvP escrow design**:
+Off The Grid is a blockchain-native game, but it's **incompatible with Clout's PvP escrow design**:
 - **Battle royale** (150 players, 3-player squads) — not head-to-head 1v1
 - **No public API** for match data or results. GUNZ blockchain tracks NFT/asset extraction, not match outcomes.
 - **"Clash for Cash" paused** since April 10, 2025 — leaderboard tournament, not PvP escrow
 - **Player count declining**: ~7,300 concurrent Steam (52% drop from Dec 2025 peak)
 
-OTG remains valid **ecosystem evidence** (proves Avalanche has gaming) but is not a game Clout can launch on. Would require a custom matching layer for squad-based challenges — months of work, not weeks.
+OTG remains valid **ecosystem evidence** (blockchain gaming exists) but is not a game Clout can launch on. Would require a custom matching layer for squad-based challenges — months of work, not weeks.
 
 ### Game Priority (Updated)
 
@@ -563,7 +563,7 @@ HTTP payment protocol by Coinbase. Activates the dormant HTTP 402 "Payment Requi
 | What we build | Cost | What agents can do |
 |---------------|------|-------------------|
 | REST API for challenges | Needed anyway | Discover, create, accept challenges |
-| x402 payment header support | ~1-3 days (depends on Avalanche facilitator support) | Pay to stake autonomously |
+| x402 payment header support | ~1-3 days (depends on Base facilitator support) | Pay to stake autonomously |
 | Public resolution endpoint | Minimal | Submit resolution evidence |
 
 ### Three-Way Arena
@@ -584,7 +584,7 @@ Grok 5 vs T1 (League of Legends) is the most anticipated human-vs-AI gaming even
 
 ## 10. Resolution Strategy
 
-### V1: Manual Settlement + Designated Resolver (Build Games MVP)
+### V1: Manual Settlement + Designated Resolver (internal milestone MVP)
 
 **Three resolution paths** (in order of priority):
 
@@ -622,7 +622,7 @@ Grok 5 vs T1 (League of Legends) is the most anticipated human-vs-AI gaming even
 | INVALID | Full refund | Full refund | No (not players' fault) |
 | VOIDED (timeout) | Full refund | Full refund | No |
 
-**Why this model**: Mutual agreement resolves 85%+ of PvP wagers (CMG data). Designated resolver adds flexibility for organized play. Admin fallback is the safety net. CMG has processed $211M+ with a simpler version of this. UMA OOv3 on Avalanche is "unmonitored" (multi-sig relay, not full DVM). This is honest and functional for testnet.
+**Why this model**: Mutual agreement resolves 85%+ of PvP wagers (CMG data). Designated resolver adds flexibility for organized play. Admin fallback is the safety net. CMG has processed $211M+ with a simpler version of this. UMA OOv3 availability on Base TBD (multi-sig relay, not full DVM). This is honest and functional for testnet.
 
 ### Common Dispute Scenarios
 
@@ -642,16 +642,16 @@ Grok 5 vs T1 (League of Legends) is the most anticipated human-vs-AI gaming even
 - **Admin appeal**: After resolver decision (RESOLVED state), either player can call `appealResolution()` within 24h to escalate to admin. If no appeal, resolver decision auto-finalizes
 - **Reputation cost**: Resolvers with high dispute rates or one-sided patterns get flagged in the frontend
 
-### V2: Commit-Reveal Voting (Post-Build Games)
+### V2: Commit-Reveal Voting (Post-internal milestone)
 - Commit-reveal voting pattern
 - Community of stakers vote on disputed outcomes
 - Two-phase: commit hashed vote → reveal vote
 - Winner determined by majority
 - Bond/slashing for incorrect voters
 
-### V3: UMA OOv3 Integration (If/When Avalanche Support Matures)
+### V3: UMA OOv3 Integration (If/When Base Support Matures)
 - UMA OOv3 deployed at `0xa4199d73ae206d49c966cF16c58436851f87d47F`
-- Currently "unmonitored" on Avalanche
+- Availability on Base TBD
 - Optimistic assertion → challenge window → DVM fallback
 - Better for open markets (Rail C) than PvP escrow
 
@@ -687,21 +687,21 @@ interface IResolutionAdapter {
 | 3 | **Dispute volume overwhelms system** — UMA bonds exceed wager amounts for small stakes | High | Mutual agreement is primary path (no oracle needed). Manual fallback. Minimum wager threshold. Reputation system for repeat disputers. |
 | 4 | **Abuse/collusion** — smurf accounts, match throwing, creator self-dealing | High | No volume-based rewards. Stake-to-create. Per-wallet caps. Public match history. Skill-based matchmaking. Identity signals (Discord/game ID). |
 | 5 | **Nobody comes** — Forkast built gaming prediction market, got zero users | High | Ship INTO existing communities (Discord wager servers). Challenge link sharing = viral loop. Kill metric: 50 active wagers in week 1 or pivot. |
-| 6 | **Build Games timeline** — 6 weeks, video due Feb 25 | High | PvP escrow is simple contract. Reuse proven patterns. ONE game, ONE contract, ONE flow for demo. |
+| 6 | **internal milestone timeline** — 6 weeks, video due Feb 25 | High | PvP escrow is simple contract. Reuse proven patterns. ONE game, ONE contract, ONE flow for demo. |
 | 7 | **Twitch/Kick TOS** — real-money wagering on stream violates TOS | Medium | Clout exists as independent app. Streamers link to it, viewers stake off-platform. Stream = viewing layer, not transaction layer. |
 | 8 | **Streamer match-fixing** — intentional failure for friends on NO side | Medium | Public challenge history. Stake limits. Anomaly detection. Creator must lock own USDC too. UMA dispute path. |
 | 9 | **Addiction backlash** — real money in entertainment = controversy | Medium | Loss limits. Cool-down periods. Transparent odds. Responsible gambling disclosures. Don't market to minor audiences. |
-| 10 | **UMA unmonitored on Avalanche** — multi-sig relay, not full DVM | Medium | Use manual settlement for v1. Commit-reveal voting for v2. UMA integration when support matures. |
+| 10 | **UMA unmonitored on Base** — multi-sig relay, not full DVM | Medium | Use manual settlement for v1. Commit-reveal voting for v2. UMA integration when support matures. |
 | 11 | **Designated resolver collusion** — resolver + one player steal from the other | Medium | Public on-chain resolver history (anyone can audit win rates). Admin appeal within 24h. Anomaly detection flags resolvers with >70% one-sided outcomes. Reputation cost. See Section 10. |
 
 ---
 
-## 12. Build Games Timeline
+## 12. internal milestone Timeline
 
 | Stage | Date | Deliverable | What We Ship |
 |-------|------|-------------|-------------|
 | **Stage 1: Idea** | Feb 25 | 2-min video | Problem, solution, value prop, demo concept |
-| **Stage 2: MVP** | Mar 9 | Working prototype + demo + code | PvP escrow + challenge pool (MVP-lite) on Avalanche Fuji, basic web app, one complete wager lifecycle per rail |
+| **Stage 2: MVP** | Mar 9 | Working prototype + demo + code | PvP escrow + challenge pool (MVP-lite) on Base Sepolia, basic web app, one complete wager lifecycle per rail |
 | **Stage 3: GTM & Vision** | Mar 19 | Go-to-market plan | Creator economy expansion, agent compatibility, wedge strategy |
 | **Stage 4: Finals** | Mar 27 | Live showcase | End-to-end demo, community traction evidence |
 
@@ -709,7 +709,7 @@ interface IResolutionAdapter {
 - **Builder Drive**: Energy, follow-through, ship in 6 weeks
 - **Execution**: Actually delivering working product
 - **Crypto Culture**: Authentically crypto-native
-- **Long-Term Intent**: Genuine commitment to Avalanche
+- **Long-Term Intent**: Chain-agnostic — Base for MVP
 
 ### MVP Scope (For Stage 2: March 9)
 **In scope**:
@@ -718,7 +718,7 @@ interface IResolutionAdapter {
 - Timeout specifications (acceptance 48h, submission 48h, confirmation 24h, resolver 48h, admin 48h)
 - Payout logic: DRAW (split minus fee), INVALID (full refund, no fee), VOIDED (full refund)
 - Challenge Pools MVP-lite (YES/NO stake pool with fixed close time, event window constraints, capped participation, manual resolution)
-- USDT + USDC collateral on Avalanche Fuji testnet (whitelisted stablecoins, token as parameter)
+- USDT + USDC collateral on Base Sepolia testnet (whitelisted stablecoins, token as parameter)
 - Basic web app (duels + challenge pools: create, join, submit result, claim winnings)
 - Manual dispute resolution + designated resolver fallback
 - One complete lifecycle demo for each in-scope rail
@@ -736,7 +736,7 @@ interface IResolutionAdapter {
 
 ## 13. Pitch Strategy
 
-### Evaluation Criteria (From Build Games)
+### Evaluation Criteria (From internal milestone)
 - Clarity of idea
 - Problem-solution fit
 - Innovation
@@ -751,9 +751,9 @@ One continuous story — not 5 slides. Causal transitions throughout. Face to ca
 |------|------|---------|
 | 0:00-0:15 | **Thesis (broad)** | "Every opinion online is free. You can call any outcome, predict any result, and if you're wrong — nothing happens." |
 | 0:15-0:40 | **Narrow to gaming** | Discord trash talk, calls on stream, none on the record. $5B skin gambling economy, hundreds of millions in PvP wagers on Discord middlemen. No escrow, no accountability, no record. |
-| 0:40-0:55 | **Product intro** | "So we built Clout — a conviction market." Stake USDC, public stakes, permanent track record, reputation over time. Match stakes, challenge pools, audience predictions — all on Avalanche. |
+| 0:40-0:55 | **Product intro** | "So we built Clout — a conviction market." Stake USDC, public stakes, permanent track record, reputation over time. Match stakes, challenge pools, audience predictions — all on Base. |
 | 0:55-1:15 | **How it works** | *(Flow animation/mockup)* Create challenge → opponent accepts → lock USDC → play → submit result → winner claims pot. One contract, on-chain escrow. |
-| 1:15-1:35 | **Why Avalanche** | One of the biggest gaming ecosystems in Web3 (OTG, MapleStory, Shrapnel) but no way to stake on outcomes. Sub-two-second finality, native USDC, any wallet (human or AI). "The infrastructure is ready. Nobody's built this layer." |
+| 1:15-1:35 | **Why Base** | One of the biggest Native USDC via Circle CCTP, sub-cent fees, Coinbase Smart Wallet baked in, any wallet (human or AI). "The infrastructure is ready. Nobody's built this layer." |
 | 1:35-1:50 | **Expand back out** | "Gaming is where we start — because gamers already back their calls and outcomes are verifiable. But this works for any creator, any audience, any outcome worth staking on." |
 | 1:50-2:00 | **Close (echoes opener)** | "Right now opinions are free and conviction is cheap. We're building the place where that changes." Logo + clout.ac. |
 
@@ -763,7 +763,7 @@ One continuous story — not 5 slides. Causal transitions throughout. Face to ca
 - "Gaming is where we start" — signals bigger thinking without scope creep
 - "Any wallet, human or AI" — innovation signal, not a buzzword
 - $5B skin economy — market-level data, no company names
-- "Nobody's built this layer" — Avalanche whitespace
+- "Nobody's built this layer" — Base whitespace
 
 ### What NOT to Do
 - Don't say "prediction market" — judges lump you with Polymarket clones
@@ -915,7 +915,7 @@ Conviction markets are not universal. These are the conditions under which the p
 |-------------|-------------|--------------|
 | **Large anonymous pools** | Identity signal dissolves. Individual conviction is noise in aggregate volume. | Collapses into a prediction market. Rail C (open markets) is in this zone by design — position it accordingly. |
 | **Plutocratic manipulation** | Wealthy actor stakes large to anchor perception (Kahneman) and trigger cascades (Keynes). | Conviction Score mitigates but doesn't prevent. Off-chain influence (media, social) can amplify. See billionaire attack analysis above. |
-| **Resolution capture** | The resolution mechanism (admin in v1, voters in v2) is compromised or colluded against. | In v1, admin is a single point of trust. In v2, commit-reveal voting is exploitable if voter pool is small. UMA OOv3 is strongest but unmonitored on Avalanche. |
+| **Resolution capture** | The resolution mechanism (admin in v1, voters in v2) is compromised or colluded against. | In v1, admin is a single point of trust. In v2, commit-reveal voting is exploitable if voter pool is small. UMA OOv3 is strongest but unmonitored on Base. |
 | **Chilling effect** | Social pressure prevents counter-staking even when evidence exists. | Financial incentive to counter-stake exists but social cost may outweigh it. Protocol can't fix off-chain power dynamics. |
 | **Low liquidity / thin markets** | Too few participants → reputation signal is noisy, score distributions are meaningless. | Below ~500 resolved challenges system-wide, conviction scores don't differentiate. Need critical mass. |
 | **Outcome ambiguity** | Outcome is genuinely subjective (not just hard to verify — actually contested). | Neither side is "wrong." Resolution becomes political. Works in PvP gaming (clear winner). Fails in debate/opinion markets without robust jury design. |
@@ -953,16 +953,16 @@ Conviction markets are not universal. These are the conditions under which the p
 | Polymarket 2025 volume | ~$13B (adjusted; raw data double-counted per Paradigm) | Paradigm, Token Terminal |
 | Creator economy (2025) | $250B | Goldman Sachs Research |
 
-### Avalanche
+### Base
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| USDC on Avalanche | ~$604M native (was $784M Q3 2025) | usdc.cool (live, Feb 22 2026) |
+| USDC on Base | ~$604M native (was $784M Q3 2025) | usdc.cool (live, Feb 22 2026) |
 | TVL | ~$2.1B | DeFiLlama |
 | C-Chain cumulative transactions | 1B+ | Team1 Blog |
-| Prediction markets on Avalanche | Zero | DappRadar |
+| Prediction markets on Base | Zero | DappRadar |
 | UMA OOv3 address | 0xa4199d73ae206d49c966cF16c58436851f87d47F | UMA docs |
-| Gnosis CTF on Avalanche | Not deployed (needs fresh deploy) | GitHub |
+| Gnosis CTF on Base | Not deployed (needs fresh deploy) | GitHub |
 | Off The Grid wallets | 17.3M (7-13K Steam concurrent) | ActivePlayer.io |
 | MapleStory accounts | 1.75M (70K daily wallets) | BlockchainGamerBiz |
 
@@ -1016,8 +1016,8 @@ Conviction markets are not universal. These are the conditions under which the p
 - [Twitch Channel Points](https://help.twitch.tv/s/article/channel-points-guide)
 - [Kick Predictions](https://help.kick.com/en/articles/11182854-guide-to-predictions-for-streamers)
 
-### Avalanche
-- [Build Games](https://build.avax.network/build-games)
+### Base
+- [internal milestone](https://build.avax.network/build-games)
 - [usdc.cool/avalanche](https://usdc.cool/avalanche)
 - [UMA Network Addresses](https://docs.uma.xyz/resources/network-addresses)
 - [DeFiLlama - Avalanche](https://defillama.com/chain/avalanche)

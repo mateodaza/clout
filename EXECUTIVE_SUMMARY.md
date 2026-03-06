@@ -1,6 +1,6 @@
 # Clout — Executive Summary
 
-**One line**: On-chain wagering for gamers, built on Avalanche. Gaming is the wedge — the protocol is a conviction market primitive that works for any creator and any audience.
+**One line**: On-chain wagering for gamers, built on Base. Gaming is the wedge — the protocol is a conviction market primitive that works for any creator and any audience.
 
 **Domain**: clout.ac
 
@@ -10,7 +10,7 @@
 
 Gamers wager billions through trust-based channels — Discord middlemen, skin gambling sites (~$5B economy), play-money Twitch predictions, off-chain platforms like CheckMate Gaming ($211M+ paid out). None of it settles on-chain. None of it builds verifiable reputation. Almost none of it monetizes creators.
 
-Meanwhile, Avalanche has one of the biggest Web3 gaming ecosystems (Off The Grid, MapleStory, Shrapnel) but zero wagering infrastructure.
+Meanwhile, Base provides native USDC, sub-cent fees, and Coinbase Smart Wallet for seamless onboarding.
 
 ## The Insight
 
@@ -27,7 +27,7 @@ A conviction market — you stake USDC on your match or your call. That stake is
 
 ## Tech
 
-Single `CloutEscrow.sol` contract (~400-500 lines), Avalanche C-Chain, USDC (native, 6 decimals, supports permit), Foundry, OpenZeppelin. Sub-2-second finality. Any wallet can interact — human or AI. Adults only, non-custodial — no house, no odds, no custody.
+Single `CloutEscrow.sol` contract (~400-500 lines), Base, USDC (native via Circle CCTP, 6 decimals), Foundry, OpenZeppelin. Sub-second finality. Any wallet can interact — human or AI. Adults only, non-custodial — no house, no odds, no custody.
 
 **Resolution**: Manual settlement v1 → commit-reveal voting v2 → UMA Optimistic Oracle v3.
 
@@ -37,4 +37,4 @@ The core primitive — "creator stakes a claim, audience stakes conviction, escr
 
 ## Competition
 
-Avalanche Build Games ($1M prize pool). Stage 1 pitch video due Feb 25. Stage 2 working prototype on Fuji due March 9.
+Independent project. MVP target: working prototype on Base Sepolia.

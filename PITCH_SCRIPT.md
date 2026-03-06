@@ -1,6 +1,6 @@
 # Clout — 2-Minute Pitch Video Script
 
-> **Competition**: Avalanche Build Games ($1M prize pool)
+> **Context**: Independent conviction market project
 > **Stage 1 Deadline**: February 25, 2026
 > **Format**: 2-minute video
 > **Judging**: Clarity, problem-solution fit, innovation, presentation quality, market impact
@@ -45,9 +45,9 @@ _(Cut to flow animation or mockup. Voiceover. Let the visuals breathe.)_
 
 > You set a stake, your opponent matches it, and both lock USDT into a smart contract. After you play the match you submit the result and the winner claims the pot. The contract settles it — nobody else touches the money.
 
-_(Back to camera. Build momentum — this is why Avalanche, not a generic chain pitch.)_
+_(Back to camera. Build momentum — this is why Base.)_
 
-> We're building Clout on Avalanche because it has one of the biggest gaming ecosystems in Web3 — Off The Grid, MapleStory, Shrapnel — and no wagering infrastructure yet. Transactions settle in about two seconds with native USDT already there, and any wallet can interact — human or AI. Nobody has built this layer yet.
+> We're building Clout on Base because it has native USDC, sub-cent fees, and Coinbase Smart Wallet baked in — so anyone can onboard without a seed phrase or browser extension. Sub-second finality, any wallet can interact — human or AI. Nobody has built this layer yet.
 
 _(Slow down. This is the vision beat — expand back out from gaming to the bigger picture.)_
 
@@ -67,7 +67,7 @@ _(Logo + domain on screen. Echo the opener. Land it.)_
 - **Opens broad** ("every opinion online is free") → **narrows to gaming** (the wedge) → **shows the product** → **expands back out** (bigger than gaming) → **echoes the opener** ("opinions are free / conviction is cheap")
 - The audience hears the thesis twice: once as the problem (opinions are free), once as the solution (conviction has cost). The close resolves what the open set up.
 - No "That's [Product Name]." No "it's not X, it's Y." Product earns its introduction through the problem.
-- Transitions are causal: "this plays out constantly" → "so we built" → "we're building on Avalanche because" → "gaming is where we start because." Each beat follows from the last.
+- Transitions are causal: "this plays out constantly" → "so we built" → "we're building on Base because" → "gaming is where we start because." Each beat follows from the last.
 - Gaming is clearly the wedge, but the opening and closing frames make it obvious the primitive is bigger.
 
 ---
@@ -81,7 +81,7 @@ _(Logo + domain on screen. Echo the opener. Land it.)_
 - [x] **"Gaming is where we start"** — signals bigger thinking without scope creep
 - [x] **"Any wallet, human or AI"** — innovation signal, not a buzzword
 - [x] **$5B skin economy** — market-level data, no company names
-- [x] **"Nobody's built this layer"** — Avalanche whitespace
+- [x] **"Nobody's built this layer"** — Base whitespace
 
 ### Avoid
 

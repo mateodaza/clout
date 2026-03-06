@@ -44,7 +44,7 @@
   - Foundry project structure conventions
   - OZ v5 import patterns
   - Common Solidity 0.8.24 gotchas
-  - Avalanche C-Chain specifics (gas, precompiles)
+  - Base specifics (gas, L2 considerations)
   - Testing patterns (forge test, fuzz, invariant)
 
 ### No rollback skill

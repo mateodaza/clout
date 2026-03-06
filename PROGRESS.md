@@ -59,8 +59,8 @@ Phase 6: Frontend (Days 7-8)
 - [ ] NC-018: Global UI polish (loading, errors, empty states)
 
 ### Phase 7: Manual Integration + Demo (Day 9) — MATEO-ONLY
-- [🚧] NC-020: Deploy to Fuji + verify (MANUAL)
-- [🚧] NC-021: E2E integration testing on Fuji (MANUAL)
+- [🚧] NC-020: Deploy to Base Sepolia + verify (MANUAL)
+- [🚧] NC-021: E2E integration testing on Base Sepolia (MANUAL)
 - [🚧] NC-022: Bug fixes + demo prep + submission (MANUAL)
 
 ## Gate Status

@@ -4,8 +4,8 @@
 **Date:** February 28, 2026
 **Developer:** Mateo (solo — smart contracts, web app, deployment)
 **Duration:** 9 days (Feb 28 → Mar 9)
-**Competition:** Avalanche Build Games ($1M prize pool)
-**Target:** Working MVP on Avalanche Fuji testnet — PvP escrow + challenge pools, basic web app, one complete lifecycle per rail
+**Target:** Internal MVP on Base Sepolia
+**Target:** Working MVP on Base Sepolia testnet — PvP escrow + challenge pools, basic web app, one complete lifecycle per rail
 
 ---
 
@@ -19,7 +19,7 @@ All implementation references point to this document in the clutch repo:
 | `GLOBAL_PLAN.md` | This file. What to build WHEN. Nightcrawler's primary input. |
 | `TASK_QUEUE.md` | Ordered tasks with NC-xxx IDs. Nightcrawler consumes this. |
 
-This plan defines **what to build WHEN**. RESEARCH.md is the complete vision; this plan is the Fuji-testnet-first build order with accepted simplifications.
+This plan defines **what to build WHEN**. RESEARCH.md is the complete vision; this plan is the Base-Sepolia-testnet-first build order with accepted simplifications.
 
 ---
 
@@ -35,18 +35,18 @@ This plan defines **what to build WHEN**. RESEARCH.md is the complete vision; th
 
 **Where things will slip first:** Frontend polish and CloutPool. If behind, cut CloutPool features to absolute minimum (create + stake + resolve + claim) and polish the PvP escrow demo.
 
-**The hard deadline:** March 9 is Stage 2 (MVP). No extensions. If it doesn't work on Fuji by then, it doesn't ship.
+**The hard deadline:** March 9 is Stage 2 (MVP). No extensions. If it doesn't work on Base Sepolia by then, it doesn't ship.
 
 ---
 
 ## The 7 Simplifications
 
-Every simplification reduces complexity while keeping both Rails in scope. Nothing is deleted — complexity is deferred to post-Build Games.
+Every simplification reduces complexity while keeping both Rails in scope. Nothing is deleted — complexity is deferred to post-MVP.
 
-| # | Simplification | Build Now | Defer to Post-Build Games | RESEARCH.md Ref |
+| # | Simplification | Build Now | Defer to Later | RESEARCH.md Ref |
 |---|---------------|-----------|--------------------------|-----------------|
 | S1 | **Resolution: Manual only** | Submit/confirm/dispute + designated resolver + admin fallback. No auto-resolution. | Game API keepers, commit-reveal voting, UMA OOv3 | §10 |
-| S2 | **Stablecoin: Mock ERC-20** | Deploy MockStablecoin.sol (6 decimals) on Fuji. Accept any whitelisted IERC20. | Real USDT + USDC on mainnet | §7 |
+| S2 | **Stablecoin: Mock ERC-20** | Deploy MockStablecoin.sol (6 decimals) on Base Sepolia. Accept any whitelisted IERC20. | Real USDT + USDC on mainnet | §7 |
 | S3 | **Access control: Ownable** | Single owner for admin functions. Lightweight. | OpenZeppelin AccessControl with roles, multisig | §7 |
 | S4 | **No conviction score on-chain** | Store WalletRecord struct (counters only). Score computed off-chain by frontend. | On-chain scoring, soulbound token, gating | §7 |
 | S5 | **Pool mechanics: Minimal** | Fixed close time, per-wallet cap, total pool cap, proportional split, manual resolve. No AMM. | Uncapped pools, AMM pricing, automated resolution, discovery | §6 Rail B |
@@ -59,7 +59,7 @@ Every simplification reduces complexity while keeping both Rails in scope. Nothi
 
 Regardless of which gate is missed, these items must be delivered by March 9:
 
-1. `CloutEscrow.sol` deployed on Fuji — create, accept, submit, confirm, dispute, resolve, claim, void
+1. `CloutEscrow.sol` deployed on Base Sepolia — create, accept, submit, confirm, dispute, resolve, claim, void
 2. Full PvP lifecycle demo: create challenge → accept → submit result → confirm → claim winnings
 3. At least one dispute flow demonstrated: dispute → resolver decides → finalized
 4. All timeout paths functional (48h create, 48h accept, 24h confirm, 48h resolver, 24h appeal, 48h admin)
@@ -85,18 +85,18 @@ Day 5:    CloutPool.sol (create, stake, close, resolve, claim)
             │
          ══ GATE 2: Both contracts pass tests locally ══
             │
-Day 6:    Fuji deployment + verification
+Day 6:    Base Sepolia deployment + verification
             │
 Day 7:    Frontend shell (connect wallet, create challenge, lifecycle)
             │
-Day 8:    Frontend CloutPool + integration testing on Fuji
+Day 8:    Frontend CloutPool + integration testing on Base Sepolia
             │
 Day 9:    Bug fixes, demo prep, submission
             │
-         ══ GATE 3: MVP live on Fuji, demo ready ══
+         ══ GATE 3: MVP live on Base Sepolia, demo ready ══
 ```
 
-**Critical path:** CloutEscrow → CloutPool → Fuji deploy → Frontend → Demo
+**Critical path:** CloutEscrow → CloutPool → Base Sepolia deploy → Frontend → Demo
 
 ---
 
@@ -134,7 +134,7 @@ Day 9:    Bug fixes, demo prep, submission
 ### Gate 3 — End of Day 9
 
 **Pass criteria:**
-1. Both contracts deployed and verified on Fuji (Snowtrace)
+1. Both contracts deployed and verified on Base Sepolia (Basescan)
 2. Frontend connects wallet, creates challenge, shows lifecycle
 3. One complete PvP demo: create → accept → submit → confirm → claim
 4. One complete Pool demo: create → stake → close → resolve → claim
@@ -238,25 +238,25 @@ Day 9:    Bug fixes, demo prep, submission
 | VOIDED paths: timeout, no stakers | §6 Rail B | 1 |
 | Tests: full pool lifecycle, host constraints, caps, commission, dispute threshold | — | 3 |
 
-**GATE 2 CHECKPOINT:** Both contracts compile and pass tests. Ready for Fuji deployment.
+**GATE 2 CHECKPOINT:** Both contracts compile and pass tests. Ready for Base Sepolia deployment.
 
 ---
 
-### Day 6 (Mar 5) — Fuji Deployment
+### Day 6 (Mar 5) — Base Sepolia Deployment
 
-**Goal:** Contracts live on Avalanche Fuji. Verified on Snowtrace.
+**Goal:** Contracts live on Base Sepolia. Verified on Basescan.
 
 | Task | RESEARCH.md Ref | Est. Hours |
 |------|----------------|------------|
 | Deployment script: MockStablecoin → CloutEscrow → CloutPool | §7 | 2 |
 | Configure: set admin, whitelist mock stablecoin, set protocol fee (250 bps = 2.5%) | §7 | 1 |
-| Deploy to Fuji via `forge script --broadcast --rpc-url fuji` | — | 1 |
-| Verify all contracts on Snowtrace | — | 1 |
-| Smoke test on Fuji: create challenge → accept → submit → confirm → claim | — | 2 |
+| Deploy to Base Sepolia via `forge script --broadcast --rpc-url base-sepolia` | — | 1 |
+| Verify all contracts on Basescan | — | 1 |
+| Smoke test on Base Sepolia: create challenge → accept → submit → confirm → claim | — | 2 |
 | Record deployed addresses in `DEPLOYMENTS.md` | — | 0.5 |
-| Fund test wallets with Fuji AVAX and mock stablecoins | — | 0.5 |
+| Fund test wallets with Base Sepolia ETH and mock stablecoins | — | 0.5 |
 
-**Risk:** Low. Fuji is stable. Foundry's forge script handles deployment well.
+**Risk:** Low. Base Sepolia is stable. Foundry's forge script handles deployment well.
 
 ---
 
@@ -280,7 +280,7 @@ Day 9:    Bug fixes, demo prep, submission
 
 ### Day 8 (Mar 7) — Frontend Pools + Integration
 
-**Goal:** Pool UI works. Full integration tested on Fuji.
+**Goal:** Pool UI works. Full integration tested on Base Sepolia.
 
 | Task | RESEARCH.md Ref | Est. Hours |
 |------|----------------|------------|
@@ -288,8 +288,8 @@ Day 9:    Bug fixes, demo prep, submission
 | `/pools/create` page: create pool form | §6 | 2 |
 | `/pools/[id]` page: show pool state, stake YES/NO, claim | §6 | 3 |
 | Pool action components: Stake, Resolve (for resolver), Claim | §6 | 2 |
-| End-to-end Fuji test: full PvP lifecycle through frontend | — | 2 |
-| End-to-end Fuji test: full Pool lifecycle through frontend | — | 2 |
+| End-to-end Base Sepolia test: full PvP lifecycle through frontend | — | 2 |
+| End-to-end Base Sepolia test: full Pool lifecycle through frontend | — | 2 |
 | Fix bugs found during integration | — | 2 |
 
 ---
@@ -303,9 +303,9 @@ Day 9:    Bug fixes, demo prep, submission
 | Bug fixes from Day 8 testing | — | 3 |
 | Demo script: step-by-step walkthrough of both rails | — | 1 |
 | Record/prepare demo video material | §12 | 2 |
-| Final Fuji smoke test | — | 1 |
+| Final Base Sepolia smoke test | — | 1 |
 | Update README with setup instructions, deployed addresses | — | 1 |
-| Submit to Build Games Stage 2 | §12 | 1 |
+| Submit to internal review | §12 | 1 |
 
 ---
 
@@ -399,9 +399,9 @@ VOIDED                  VOIDED                  FINALIZED
 
 | Network | Token | Address | Decimals |
 |---------|-------|---------|----------|
-| Fuji (testnet) | MockStablecoin | To be deployed | 6 |
-| Avalanche mainnet | USDT | `0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7` | 6 |
-| Avalanche mainnet | USDC | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` | 6 |
+| Base Sepolia (testnet) | MockStablecoin | To be deployed | 6 |
+| Base mainnet | USDT | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 |
+| Base mainnet | USDC | `0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA` | 6 |
 
 Contract accepts any whitelisted `IERC20` — token address is a parameter per challenge/pool.
 
@@ -413,14 +413,14 @@ Contract accepts any whitelisted `IERC20` — token address is a parameter per c
 |------|------|--------|------------|-----|
 | CloutEscrow takes longer than 4 days | MED | HIGH | Cut CloutPool (Gate 1 fallback). PvP escrow alone is a valid submission. | 1-4 |
 | Frontend slips past Day 8 | HIGH | MED | Record Foundry script demo as backup. Contract interactions prove the MVP works. | 7-8 |
-| Fuji deployment issues | LOW | MED | Budget 2h for debugging. Foundry forge script is reliable. | 6 |
+| Base Sepolia deployment issues | LOW | MED | Budget 2h for debugging. Foundry forge script is reliable. | 6 |
 | Timeout logic has edge cases | MED | HIGH | Test every timeout path explicitly. Each one is a separate test. | 3-4 |
 | Appeal chain creates reentrancy risk | LOW | HIGH | ReentrancyGuard on all external calls. No ETH transfers — ERC-20 only. | 3 |
 | MockStablecoin doesn't behave like real USDT | LOW | LOW | 6 decimals, standard ERC-20. Good enough for demo. | 1 |
 
 ---
 
-## Post-Build Games Roadmap (Not In Scope)
+## Post-MVP Roadmap (Not In Scope)
 
 These are scoped in RESEARCH.md but explicitly deferred:
 
@@ -464,5 +464,5 @@ This plan is structured for Nightcrawler consumption:
 
 ---
 
-_Clout — 9-day MVP plan for Build Games Stage 2. PvP escrow + challenge pools on Avalanche Fuji._
+_Clout — 9-day MVP plan for internal review. PvP escrow + challenge pools on Base Sepolia._
 _Derived from RESEARCH.md + Daebak Markets plan structure._

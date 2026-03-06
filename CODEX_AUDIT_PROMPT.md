@@ -4,8 +4,8 @@ You are auditing two documents for an autonomous implementation orchestrator cal
 
 ## Context
 
-**Project:** Clout — a conviction market protocol for competitive gaming on Avalanche.
-**Competition:** Avalanche Build Games ($1M prize pool). MVP deadline: March 9, 2026.
+**Project:** Clout — a conviction market protocol for competitive gaming on Base.
+**Competition:** Independent project.
 **Execution model:** Nightcrawler picks tasks from TASK_QUEUE.md in order, respecting dependencies. For each task, Claude Opus writes a mini-plan, Codex audits the plan, Claude Sonnet implements, Codex reviews the code. If the loop gets stuck (3 iterations or repeated feedback), it escalates to WhatsApp.
 **Developer:** Solo (Mateo). Contracts + frontend + deployment.
 
@@ -80,8 +80,8 @@ For each finding, report:
 ### 5. Risk and Failure Modes
 - If Gate 1 is missed, the plan says "cut CloutPool entirely." But NC-011 and NC-012 depend only on NC-001 and NC-002 — the orchestrator would still attempt them. Is there a mechanism to enforce gate failures?
 - If a task LOCKs early (e.g., NC-003), the dependency chain blocks NC-004 through NC-010. Is the blast radius acceptable?
-- Frontend tasks (NC-014 through NC-016) depend on NC-013 (deployment script). But NC-013 deploys to Fuji, which requires a private key and RPC. Nightcrawler's rules say "NEVER interact with deployed contracts or mainnet/testnet RPCs" at the project code layer. How is deployment handled?
-- NC-017 (E2E testing on Fuji) requires interacting with deployed contracts through a browser. This is outside Nightcrawler's capability. Is this task actually for Mateo, not Nightcrawler?
+- Frontend tasks (NC-014 through NC-016) depend on NC-013 (deployment script). But NC-013 deploys to Base Sepolia, which requires a private key and RPC. Nightcrawler's rules say "NEVER interact with deployed contracts or mainnet/testnet RPCs" at the project code layer. How is deployment handled?
+- NC-017 (E2E testing on Base Sepolia) requires interacting with deployed contracts through a browser. This is outside Nightcrawler's capability. Is this task actually for Mateo, not Nightcrawler?
 
 ## Output Format
 

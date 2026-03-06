@@ -4,6 +4,7 @@ node_modules/
 # Foundry build artifacts
 out/
 cache/
+broadcast/
 
 # Next.js
 .next/

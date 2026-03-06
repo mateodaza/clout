@@ -1,4 +1,4 @@
-# Build Games — Stage 1 Form Answers
+# Stage 1 Form Answers (Historical — Build Games, now independent)
 
 > Submitted February 25, 2026.
 
@@ -10,13 +10,13 @@
 
 **One sentence (max 280 chars)**:
 
-> Competitive gamers stake USDT via smart contract escrow on Avalanche. Every outcome builds a permanent conviction record, because strong convictions deserve more than words. Gaming is the wedge; anywhere people have skin-in-the-game opinions, Clout gives them a place to prove it.
+> Competitive gamers stake USDT via smart contract escrow on Base. Every outcome builds a permanent conviction record, because strong convictions deserve more than words. Gaming is the wedge; anywhere people have skin-in-the-game opinions, Clout gives them a place to prove it.
 
 **Category**: Gaming
 
 **Subcategory**: Gaming Infrastructure / Tooling
 
-**Started before Build Games?**: No — new idea
+**Started before hackathon?**: No — new idea
 
 ---
 
@@ -26,7 +26,7 @@
 
 > Gamers wager billions every year through trust-based channels: Discord middlemen, skin gambling sites (~$5B economy), play-money predictions on streaming platforms, and off-chain skill-based competition platforms that have paid out hundreds of millions. None of it settles on-chain. None of it builds a verifiable, portable reputation. Players trust strangers to hold their money, and if someone doesn't pay out, there's no recourse.
 >
-> Meanwhile, Avalanche has one of the biggest gaming ecosystems in Web3 but zero infrastructure for staking on outcomes. The games are here. The wagering layer isn't.
+> Meanwhile, Base has native USDC, sub-cent fees, and Coinbase Smart Wallet — ideal infrastructure for conviction markets. The users are here. The wagering layer isn't.
 
 **Describe your primary user persona. What needs do they have? Is it B2B or B2C?**
 
