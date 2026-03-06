@@ -68,8 +68,8 @@ export default function ChallengesPage() {
     .filter((c): c is ChallengeRow => c !== null && ACTIVE_STATES.has(c.state))
 
   return (
-    <div style={{ padding: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h1>Challenges</h1>
         <Link href="/challenges/create">+ Create Challenge</Link>
       </div>
@@ -83,34 +83,55 @@ export default function ChallengesPage() {
       {!isLoading && activeChallenges.length > 0 && (
         <>
           <p>Showing active challenges ({activeChallenges.length} of {count})</p>
-          <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>ID</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Creator</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Opponent</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Stake</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>State</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Game</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeChallenges.map((c) => (
-                <tr key={c.id}>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{c.id}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{truncateAddr(c.creator)}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{truncateAddr(c.opponent)}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
-                    {(Number(c.stakeAmount) / 1_000_000).toFixed(2)} USDC
-                  </td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}><ChallengeStateBadge state={c.state} /></td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
-                    {hexToString(c.gameId).replace(/\0+$/, '')}
-                  </td>
+
+          {/* Mobile card list */}
+          <div className="flex flex-col gap-3 md:hidden mt-3">
+            {activeChallenges.map((c) => (
+              <div key={c.id} className="border rounded p-3 flex flex-col gap-1">
+                <div className="flex justify-between">
+                  <span className="font-semibold">#{c.id}</span>
+                  <ChallengeStateBadge state={c.state} />
+                </div>
+                <div className="text-sm">Creator: {truncateAddr(c.creator)}</div>
+                <div className="text-sm">Opponent: {truncateAddr(c.opponent)}</div>
+                <div className="text-sm">Stake: {(Number(c.stakeAmount) / 1_000_000).toFixed(2)} USDC</div>
+                <div className="text-sm">Game: {hexToString(c.gameId).replace(/\0+$/, '')}</div>
+                <Link href={`/challenges/${c.id}`} className="text-sm text-blue-600">View →</Link>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto mt-3">
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+              <thead>
+                <tr>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>ID</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Creator</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Opponent</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Stake</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>State</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Game</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {activeChallenges.map((c) => (
+                  <tr key={c.id}>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{c.id}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{truncateAddr(c.creator)}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{truncateAddr(c.opponent)}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
+                      {(Number(c.stakeAmount) / 1_000_000).toFixed(2)} USDC
+                    </td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}><ChallengeStateBadge state={c.state} /></td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
+                      {hexToString(c.gameId).replace(/\0+$/, '')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>

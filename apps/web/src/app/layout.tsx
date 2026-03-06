@@ -15,15 +15,17 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Providers>
-          <header>
-            <nav>
-              <a href="/">Home</a>
+          <header className="border-b px-4 py-3">
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <a href="/" className="font-semibold">Clout</a>
               <a href="/challenges">Challenges</a>
               <a href="/pools">Pools</a>
-              <ConnectWallet />
+              <div className="ml-auto">
+                <ConnectWallet />
+              </div>
             </nav>
           </header>
-          <main>{children}</main>
+          <main className="px-4 py-6 max-w-4xl mx-auto">{children}</main>
         </Providers>
       </body>
     </html>

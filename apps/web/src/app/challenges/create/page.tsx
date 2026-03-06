@@ -193,7 +193,7 @@ export default function CreateChallengePage() {
 
   if (!isConnected) {
     return (
-      <div style={{ padding: '1rem' }}>
+      <div>
         <h1>Create Challenge</h1>
         <p>Connect wallet to create a challenge.</p>
       </div>
@@ -201,65 +201,65 @@ export default function CreateChallengePage() {
   }
 
   return (
-    <div style={{ padding: '1rem' }}>
+    <div>
       <h1>Create Challenge</h1>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '480px' }}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md mt-4">
         <div>
-          <label htmlFor="opponent">Opponent address</label>
-          <br />
+          <label htmlFor="opponent" className="block text-sm font-medium mb-1">Opponent address</label>
           <input
             id="opponent"
             value={opponent}
             onChange={(e) => setOpponent(e.target.value)}
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.opponent && <p style={{ color: 'red' }}>{errors.opponent}</p>}
+          {errors.opponent && <p className="text-red-500 text-sm mt-1">{errors.opponent}</p>}
         </div>
 
         <div>
-          <label htmlFor="stakeStr">Stake amount (USDC)</label>
-          <br />
+          <label htmlFor="stakeStr" className="block text-sm font-medium mb-1">Stake amount (USDC)</label>
           <input
             id="stakeStr"
             value={stakeStr}
             onChange={(e) => setStakeStr(e.target.value)}
             placeholder="5.00"
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.stakeStr && <p style={{ color: 'red' }}>{errors.stakeStr}</p>}
+          {errors.stakeStr && <p className="text-red-500 text-sm mt-1">{errors.stakeStr}</p>}
         </div>
 
         <div>
-          <label htmlFor="gameDesc">Game description (≤32 bytes)</label>
-          <br />
+          <label htmlFor="gameDesc" className="block text-sm font-medium mb-1">Game description (≤32 bytes)</label>
           <input
             id="gameDesc"
             value={gameDesc}
             onChange={(e) => setGameDesc(e.target.value)}
             placeholder="e.g. Chess match"
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.gameDesc && <p style={{ color: 'red' }}>{errors.gameDesc}</p>}
+          {errors.gameDesc && <p className="text-red-500 text-sm mt-1">{errors.gameDesc}</p>}
         </div>
 
         <div>
-          <label htmlFor="resolver">Resolver address (optional)</label>
-          <br />
+          <label htmlFor="resolver" className="block text-sm font-medium mb-1">Resolver address (optional)</label>
           <input
             id="resolver"
             value={resolver}
             onChange={(e) => setResolver(e.target.value)}
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.resolver && <p style={{ color: 'red' }}>{errors.resolver}</p>}
+          {errors.resolver && <p className="text-red-500 text-sm mt-1">{errors.resolver}</p>}
         </div>
 
-        <button type="submit" disabled={isDisabled}>
+        <button
+          type="submit"
+          disabled={isDisabled}
+          className="w-full py-2.5 px-4 border rounded font-medium disabled:opacity-50"
+        >
           {submitLabel}
         </button>
       </form>
@@ -273,15 +273,15 @@ export default function CreateChallengePage() {
       )}
 
       {formState === 'done' && (
-        <p style={{ color: 'green' }}>Challenge created successfully!</p>
+        <p className="text-green-600 mt-2">Challenge created successfully!</p>
       )}
 
       {formState === 'error' && (
-        <div>
-          <p style={{ color: 'red' }}>
+        <div className="mt-2">
+          <p className="text-red-500">
             Error: {parseRevertReason(approveError ?? createError)}
           </p>
-          <button onClick={handleReset}>Reset</button>
+          <button onClick={handleReset} className="w-full py-2 mt-2 border rounded">Reset</button>
         </div>
       )}
     </div>

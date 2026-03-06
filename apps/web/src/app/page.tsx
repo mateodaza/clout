@@ -8,16 +8,16 @@ export default function Home() {
   const { address, isConnected } = useAccount()
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <div>
       <h1>Clout</h1>
       <p>On-chain performance challenges: stake, compete, and prove your edge.</p>
 
-      <div style={{ display: 'flex', gap: '1rem', margin: '2rem 0' }}>
-        <Link href="/challenges" style={{ display: 'block', padding: '1rem', border: '1px solid #ccc' }}>
+      <div className="flex flex-col sm:flex-row gap-4 my-8">
+        <Link href="/challenges" className="flex-1 p-4 border rounded">
           <strong>Challenges</strong>
           <p>Browse, create, and manage PvP escrow challenges.</p>
         </Link>
-        <Link href="/pools" style={{ display: 'block', padding: '1rem', border: '1px solid #ccc' }}>
+        <Link href="/pools" className="flex-1 p-4 border rounded">
           <strong>Pools</strong>
           <p>Explore multi-participant challenge pools.</p>
         </Link>

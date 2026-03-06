@@ -457,7 +457,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-023
 - **Constraints:** No external toast library — keep it lightweight. Use Tailwind for styling. Context provider goes inside the existing `Providers.tsx` wrapper.
 
-#### NC-025 [ ] Mobile-responsive pass on all pages
+#### NC-025 [x] Mobile-responsive pass on all pages
 - **What:** Audit all pages (home, challenges list/create/detail, pools list/create/detail) for mobile viewport (375px width). Fix: nav collapse to hamburger or stacked layout, form inputs full-width on mobile, list cards stack vertically, action buttons full-width on mobile, table-like layouts become card layouts on small screens. Use Tailwind responsive prefixes (`sm:`, `md:`).
 - **Acceptance criteria:**
   - All pages render without horizontal overflow at 375px viewport width

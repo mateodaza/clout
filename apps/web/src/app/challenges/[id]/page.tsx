@@ -343,8 +343,8 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
   // --- Render ---
 
   return (
-    <div style={{ padding: '1rem' }}>
-      <div style={{ marginBottom: '1rem' }}>
+    <div>
+      <div className="mb-4">
         <Link href="/challenges">← Back to Challenges</Link>
       </div>
       <h1>Challenge #{id}</h1>
@@ -356,99 +356,63 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
       {challengeExists && challenge && (
         <>
           {/* Fields section */}
-          <table style={{ borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
-            <tbody>
-              <tr>
-                <td style={labelStyle}>Creator</td>
-                <td style={valueStyle}>{challenge.creator}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Opponent</td>
-                <td style={valueStyle}>{challenge.opponent}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Stake</td>
-                <td style={valueStyle}>{formatStake(challenge.stakeAmount, challenge.token)}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Token</td>
-                <td style={valueStyle}>{challenge.token}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>State</td>
-                <td style={valueStyle}>
-                  <ChallengeStateBadge state={challenge.state} />
-                </td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Game ID</td>
-                <td style={valueStyle}>{challenge.gameId}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Match ID</td>
-                <td style={valueStyle}>{challenge.matchId}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Designated Resolver</td>
-                <td style={valueStyle}>
-                  {challenge.designatedResolver === zeroAddress
-                    ? 'None (admin only)'
-                    : challenge.designatedResolver}
-                </td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Submitted Result</td>
-                <td style={valueStyle}>{outcomeLabel(challenge.submittedResult)}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Submitted By</td>
-                <td style={valueStyle}>
-                  {challenge.submittedBy === zeroAddress
-                    ? '—'
-                    : truncateAddr(challenge.submittedBy)}
-                </td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Claimed</td>
-                <td style={valueStyle}>{challenge.claimed ? 'Yes' : 'No'}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Appealed</td>
-                <td style={valueStyle}>{challenge.appealed ? 'Yes' : 'No'}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Created At</td>
-                <td style={valueStyle}>{formatTs(challenge.createdAt)}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Accepted At</td>
-                <td style={valueStyle}>{formatTs(challenge.acceptedAt)}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Submitted At</td>
-                <td style={valueStyle}>{formatTs(challenge.submittedAt)}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Disputed At</td>
-                <td style={valueStyle}>{formatTs(challenge.disputedAt)}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Resolved At</td>
-                <td style={valueStyle}>{formatTs(challenge.resolvedAt)}</td>
-              </tr>
-              <tr>
-                <td style={labelStyle}>Appealed At</td>
-                <td style={valueStyle}>{formatTs(challenge.appealedAt)}</td>
-              </tr>
-            </tbody>
-          </table>
+          <dl className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-6 gap-y-1 mb-6 mt-4">
+            <dt className="font-semibold py-1">Creator</dt>
+            <dd className="py-1 break-all">{challenge.creator}</dd>
+            <dt className="font-semibold py-1">Opponent</dt>
+            <dd className="py-1 break-all">{challenge.opponent}</dd>
+            <dt className="font-semibold py-1">Stake</dt>
+            <dd className="py-1">{formatStake(challenge.stakeAmount, challenge.token)}</dd>
+            <dt className="font-semibold py-1">Token</dt>
+            <dd className="py-1 break-all">{challenge.token}</dd>
+            <dt className="font-semibold py-1">State</dt>
+            <dd className="py-1"><ChallengeStateBadge state={challenge.state} /></dd>
+            <dt className="font-semibold py-1">Game ID</dt>
+            <dd className="py-1 break-all">{challenge.gameId}</dd>
+            <dt className="font-semibold py-1">Match ID</dt>
+            <dd className="py-1 break-all">{challenge.matchId}</dd>
+            <dt className="font-semibold py-1">Designated Resolver</dt>
+            <dd className="py-1 break-all">
+              {challenge.designatedResolver === zeroAddress
+                ? 'None (admin only)'
+                : challenge.designatedResolver}
+            </dd>
+            <dt className="font-semibold py-1">Submitted Result</dt>
+            <dd className="py-1">{outcomeLabel(challenge.submittedResult)}</dd>
+            <dt className="font-semibold py-1">Submitted By</dt>
+            <dd className="py-1">
+              {challenge.submittedBy === zeroAddress
+                ? '—'
+                : truncateAddr(challenge.submittedBy)}
+            </dd>
+            <dt className="font-semibold py-1">Claimed</dt>
+            <dd className="py-1">{challenge.claimed ? 'Yes' : 'No'}</dd>
+            <dt className="font-semibold py-1">Appealed</dt>
+            <dd className="py-1">{challenge.appealed ? 'Yes' : 'No'}</dd>
+            <dt className="font-semibold py-1">Created At</dt>
+            <dd className="py-1">{formatTs(challenge.createdAt)}</dd>
+            <dt className="font-semibold py-1">Accepted At</dt>
+            <dd className="py-1">{formatTs(challenge.acceptedAt)}</dd>
+            <dt className="font-semibold py-1">Submitted At</dt>
+            <dd className="py-1">{formatTs(challenge.submittedAt)}</dd>
+            <dt className="font-semibold py-1">Disputed At</dt>
+            <dd className="py-1">{formatTs(challenge.disputedAt)}</dd>
+            <dt className="font-semibold py-1">Resolved At</dt>
+            <dd className="py-1">{formatTs(challenge.resolvedAt)}</dd>
+            <dt className="font-semibold py-1">Appealed At</dt>
+            <dd className="py-1">{formatTs(challenge.appealedAt)}</dd>
+          </dl>
 
           {/* Actions section */}
           {isConnected ? (
-            <div>
+            <div className="flex flex-col gap-3 max-w-md">
               {/* CREATED: Accept */}
               {challenge.state === ChallengeState.CREATED && isOpponent && (
-                <button onClick={handleAccept} disabled={inProgress}>
+                <button
+                  onClick={handleAccept}
+                  disabled={inProgress}
+                  className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                >
                   {actionState === 'approving'
                     ? 'Approving token...'
                     : actionState === 'accepting'
@@ -459,13 +423,17 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
 
               {/* ACCEPTED: Submit Result */}
               {challenge.state === ChallengeState.ACCEPTED && isParticipant && (
-                <div>
+                <div className="flex flex-col gap-2">
                   <OutcomeSelector
                     value={selectedOutcome}
                     onChange={setSelectedOutcome}
                     includeInvalid={false}
                   />
-                  <button onClick={handleSubmitResult} disabled={inProgress}>
+                  <button
+                    onClick={handleSubmitResult}
+                    disabled={inProgress}
+                    className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                  >
                     {actionState === 'submitting' ? 'Submitting...' : 'Submit Result'}
                   </button>
                 </div>
@@ -473,11 +441,19 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
 
               {/* SUBMITTED: Confirm or Dispute */}
               {challenge.state === ChallengeState.SUBMITTED && isNonSubmitter && (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={handleConfirm} disabled={inProgress}>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={handleConfirm}
+                    disabled={inProgress}
+                    className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                  >
                     {actionState === 'confirming' ? 'Confirming...' : 'Confirm Result'}
                   </button>
-                  <button onClick={handleDispute} disabled={inProgress}>
+                  <button
+                    onClick={handleDispute}
+                    disabled={inProgress}
+                    className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                  >
                     {actionState === 'disputing' ? 'Disputing...' : 'Dispute Result'}
                   </button>
                 </div>
@@ -485,13 +461,17 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
 
               {/* DISPUTED: Resolve */}
               {challenge.state === ChallengeState.DISPUTED && (isResolver || adminCanResolve) && (
-                <div>
+                <div className="flex flex-col gap-2">
                   <OutcomeSelector
                     value={selectedOutcome}
                     onChange={setSelectedOutcome}
                     includeInvalid={true}
                   />
-                  <button onClick={handleResolve} disabled={inProgress}>
+                  <button
+                    onClick={handleResolve}
+                    disabled={inProgress}
+                    className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                  >
                     {actionState === 'resolving' ? 'Resolving...' : 'Resolve Dispute'}
                   </button>
                 </div>
@@ -503,7 +483,11 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
                 !challenge.appealed &&
                 challenge.designatedResolver !== zeroAddress &&
                 appealWindowOpen && (
-                  <button onClick={handleAppeal} disabled={inProgress}>
+                  <button
+                    onClick={handleAppeal}
+                    disabled={inProgress}
+                    className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                  >
                     {actionState === 'appealing' ? 'Appealing...' : 'Appeal Resolution'}
                   </button>
                 )}
@@ -513,33 +497,36 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
                 challenge.state === ChallengeState.VOIDED) &&
                 isParticipant &&
                 !challenge.claimed && (
-                  <button onClick={handleClaim} disabled={inProgress}>
+                  <button
+                    onClick={handleClaim}
+                    disabled={inProgress}
+                    className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                  >
                     {actionState === 'claiming' ? 'Claiming...' : 'Claim Winnings'}
                   </button>
                 )}
 
               {/* Transaction feedback */}
               {approveTxHash && actionState === 'approving' && (
-                <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                  Approve tx: {approveTxHash}
-                </p>
+                <p className="text-sm mt-1">Approve tx: {approveTxHash}</p>
               )}
               {mainTxHash && (actionState === 'done' || inProgress) && (
-                <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                  Tx: {mainTxHash}
-                </p>
+                <p className="text-sm mt-1">Tx: {mainTxHash}</p>
               )}
               {actionState === 'done' && (
-                <p style={{ color: 'green', marginTop: '0.5rem' }}>
-                  Transaction confirmed. Challenge updated.
-                </p>
+                <p className="text-green-600 mt-1">Transaction confirmed. Challenge updated.</p>
               )}
               {actionState === 'error' && (
-                <div style={{ marginTop: '0.5rem' }}>
-                  <p style={{ color: 'red' }}>
+                <div className="mt-1">
+                  <p className="text-red-500">
                     Error: {parseRevertReason(approveError ?? mainError)}
                   </p>
-                  <button onClick={handleReset}>Reset</button>
+                  <button
+                    onClick={handleReset}
+                    className="w-full py-2 mt-2 border rounded"
+                  >
+                    Reset
+                  </button>
                 </div>
               )}
             </div>
@@ -550,20 +537,6 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
       )}
     </div>
   )
-}
-
-// --- Shared styles ---
-
-const labelStyle: React.CSSProperties = {
-  padding: '0.3rem 0.75rem 0.3rem 0',
-  fontWeight: 'bold',
-  verticalAlign: 'top',
-  whiteSpace: 'nowrap',
-}
-
-const valueStyle: React.CSSProperties = {
-  padding: '0.3rem 0',
-  wordBreak: 'break-all',
 }
 
 // --- Outcome Selector Sub-component ---
@@ -578,9 +551,13 @@ function OutcomeSelector({
   includeInvalid: boolean
 }) {
   return (
-    <div style={{ marginBottom: '0.5rem' }}>
-      <label style={{ marginRight: '0.5rem' }}>Outcome:</label>
-      <select value={value} onChange={(e) => onChange(Number(e.target.value))}>
+    <div>
+      <label className="block text-sm font-medium mb-1">Outcome</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full sm:w-auto border rounded px-2 py-1"
+      >
         <option value={Outcome.CREATOR_WIN}>Creator Win</option>
         <option value={Outcome.OPPONENT_WIN}>Opponent Win</option>
         <option value={Outcome.DRAW}>Draw</option>

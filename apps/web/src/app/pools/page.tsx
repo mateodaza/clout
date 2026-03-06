@@ -75,8 +75,8 @@ export default function PoolsPage() {
     .filter((p): p is PoolRow => p !== null && ACTIVE_POOL_STATES.has(p.state))
 
   return (
-    <div style={{ padding: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h1>Pools</h1>
         <Link href="/pools/create">+ Create Pool</Link>
       </div>
@@ -90,36 +90,58 @@ export default function PoolsPage() {
       {!isLoading && activePools.length > 0 && (
         <>
           <p>Showing active pools ({activePools.length} of {count})</p>
-          <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>ID</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Host</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>State</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>YES Total</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>NO Total</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Event Start</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Event End</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activePools.map((p) => (
-                <tr key={p.id}>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{p.id}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{truncateAddr(p.host)}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}><PoolStateBadge state={p.state} /></td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
-                    {(Number(p.yesTotal) / 1_000_000).toFixed(2)} USDC
-                  </td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
-                    {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC
-                  </td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventStart)}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventEnd)}</td>
+
+          {/* Mobile card list */}
+          <div className="flex flex-col gap-3 md:hidden mt-3">
+            {activePools.map((p) => (
+              <div key={p.id} className="border rounded p-3 flex flex-col gap-1">
+                <div className="flex justify-between">
+                  <span className="font-semibold">#{p.id}</span>
+                  <PoolStateBadge state={p.state} />
+                </div>
+                <div className="text-sm">Host: {truncateAddr(p.host)}</div>
+                <div className="text-sm">YES: {(Number(p.yesTotal) / 1_000_000).toFixed(2)} USDC</div>
+                <div className="text-sm">NO: {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC</div>
+                <div className="text-sm">Start: {formatTs(p.eventStart)}</div>
+                <div className="text-sm">End: {formatTs(p.eventEnd)}</div>
+                <Link href={`/pools/${p.id}`} className="text-sm text-blue-600">View →</Link>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto mt-3">
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+              <thead>
+                <tr>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>ID</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Host</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>State</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>YES Total</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>NO Total</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Event Start</th>
+                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Event End</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {activePools.map((p) => (
+                  <tr key={p.id}>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{p.id}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{truncateAddr(p.host)}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}><PoolStateBadge state={p.state} /></td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
+                      {(Number(p.yesTotal) / 1_000_000).toFixed(2)} USDC
+                    </td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
+                      {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC
+                    </td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventStart)}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventEnd)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>

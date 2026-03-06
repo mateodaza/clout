@@ -15,17 +15,26 @@ export function ConnectWallet() {
 
   if (isConnected && address) {
     return (
-      <div>
-        <span>{address.slice(0, 6)}…{address.slice(-4)}</span>
-        <button onClick={() => disconnect()}>Disconnect</button>
+      <div className="flex items-center gap-2">
+        <span className="text-sm">{address.slice(0, 6)}…{address.slice(-4)}</span>
+        <button
+          onClick={() => disconnect()}
+          className="text-sm px-3 py-1.5 border rounded"
+        >
+          Disconnect
+        </button>
       </div>
     )
   }
 
   return (
-    <div>
+    <div className="flex flex-col sm:flex-row gap-2">
       {connectors.map((connector) => (
-        <button key={connector.id} onClick={() => connect({ connector })}>
+        <button
+          key={connector.id}
+          onClick={() => connect({ connector })}
+          className="w-full sm:w-auto px-3 py-2 text-sm border rounded"
+        >
           {CONNECTOR_LABELS[connector.id] ?? connector.name}
         </button>
       ))}

@@ -78,7 +78,6 @@ function truncateAddr(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`
 }
 
-const CELL: React.CSSProperties = { border: '1px solid #ccc', padding: '0.4rem 0.6rem' }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -423,7 +422,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
   // ── Render ──
   if (!isValidId) {
     return (
-      <div style={{ padding: '1rem' }}>
+      <div>
         <Link href="/pools">← Back to Pools</Link>
         <p>Invalid pool ID.</p>
       </div>
@@ -431,8 +430,8 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div style={{ padding: '1rem' }}>
-      <div style={{ marginBottom: '1rem' }}>
+    <div>
+      <div className="mb-4">
         <Link href="/pools">← Back to Pools</Link>
       </div>
       <h1>Pool #{id}</h1>
@@ -443,97 +442,57 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
 
       {poolExists && pool && (
         <>
-          {/* ── Details table ── */}
-          <table style={{ borderCollapse: 'collapse', marginBottom: '1.5rem', width: '100%' }}>
-            <tbody>
-              <tr>
-                <td style={CELL}><strong>State</strong></td>
-                <td style={CELL}><PoolStateBadge state={pool.state} /></td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Host</strong></td>
-                <td style={CELL}>{pool.host}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Resolver</strong></td>
-                <td style={CELL}>{pool.resolver}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Token</strong></td>
-                <td style={CELL}>{truncateAddr(pool.token)}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Event Start</strong></td>
-                <td style={CELL}>{formatTs(pool.eventStart)}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Event End</strong></td>
-                <td style={CELL}>{formatTs(pool.eventEnd)}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Resolve By</strong></td>
-                <td style={CELL}>{formatTs(pool.resolveBy)}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Resolved At</strong></td>
-                <td style={CELL}>{formatTs(pool.resolvedAt)}</td>
-              </tr>
-              {pool.state >= PoolState.SUBMITTED && pool.resolvedAt > 0n && (
-                <tr>
-                  <td style={CELL}><strong>YES Wins</strong></td>
-                  <td style={CELL}>{pool.yesWins ? 'Yes' : 'No'}</td>
-                </tr>
-              )}
-              <tr>
-                <td style={CELL}><strong>YES Total</strong></td>
-                <td style={CELL}>{formatUsdc(pool.yesTotal)}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>NO Total</strong></td>
-                <td style={CELL}>{formatUsdc(pool.noTotal)}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>YES Staker Count</strong></td>
-                <td style={CELL}>{yesCount.toString()}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>NO Staker Count</strong></td>
-                <td style={CELL}>{noCount.toString()}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Per-Wallet Cap</strong></td>
-                <td style={CELL}>{formatUsdc(pool.perWalletCap)}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Total Pool Cap</strong></td>
-                <td style={CELL}>{formatUsdc(pool.totalPoolCap)}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Host Commission</strong></td>
-                <td style={CELL}>{pool.hostCommissionBps.toString()} bps</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Losing Staker Count</strong></td>
-                <td style={CELL}>{pool.losingStakerCount.toString()}</td>
-              </tr>
-              <tr>
-                <td style={CELL}><strong>Flag Count</strong></td>
-                <td style={CELL}>{pool.flagCount.toString()}</td>
-              </tr>
-              {isConnected && (
-                <>
-                  <tr>
-                    <td style={CELL}><strong>Your YES Stake</strong></td>
-                    <td style={CELL}>{formatUsdc(userYesStake)}</td>
-                  </tr>
-                  <tr>
-                    <td style={CELL}><strong>Your NO Stake</strong></td>
-                    <td style={CELL}>{formatUsdc(userNoStake)}</td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
+          {/* ── Details dl grid ── */}
+          <dl className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-6 gap-y-1 mb-6 mt-4">
+            <dt className="font-semibold py-1">State</dt>
+            <dd className="py-1"><PoolStateBadge state={pool.state} /></dd>
+            <dt className="font-semibold py-1">Host</dt>
+            <dd className="py-1 break-all">{pool.host}</dd>
+            <dt className="font-semibold py-1">Resolver</dt>
+            <dd className="py-1 break-all">{pool.resolver}</dd>
+            <dt className="font-semibold py-1">Token</dt>
+            <dd className="py-1 break-all">{pool.token}</dd>
+            <dt className="font-semibold py-1">Event Start</dt>
+            <dd className="py-1">{formatTs(pool.eventStart)}</dd>
+            <dt className="font-semibold py-1">Event End</dt>
+            <dd className="py-1">{formatTs(pool.eventEnd)}</dd>
+            <dt className="font-semibold py-1">Resolve By</dt>
+            <dd className="py-1">{formatTs(pool.resolveBy)}</dd>
+            <dt className="font-semibold py-1">Resolved At</dt>
+            <dd className="py-1">{formatTs(pool.resolvedAt)}</dd>
+            {pool.state >= PoolState.SUBMITTED && pool.resolvedAt > 0n && (
+              <>
+                <dt className="font-semibold py-1">YES Wins</dt>
+                <dd className="py-1">{pool.yesWins ? 'Yes' : 'No'}</dd>
+              </>
+            )}
+            <dt className="font-semibold py-1">YES Total</dt>
+            <dd className="py-1">{formatUsdc(pool.yesTotal)}</dd>
+            <dt className="font-semibold py-1">NO Total</dt>
+            <dd className="py-1">{formatUsdc(pool.noTotal)}</dd>
+            <dt className="font-semibold py-1">YES Staker Count</dt>
+            <dd className="py-1">{yesCount.toString()}</dd>
+            <dt className="font-semibold py-1">NO Staker Count</dt>
+            <dd className="py-1">{noCount.toString()}</dd>
+            <dt className="font-semibold py-1">Per-Wallet Cap</dt>
+            <dd className="py-1">{formatUsdc(pool.perWalletCap)}</dd>
+            <dt className="font-semibold py-1">Total Pool Cap</dt>
+            <dd className="py-1">{formatUsdc(pool.totalPoolCap)}</dd>
+            <dt className="font-semibold py-1">Host Commission</dt>
+            <dd className="py-1">{pool.hostCommissionBps.toString()} bps</dd>
+            <dt className="font-semibold py-1">Losing Staker Count</dt>
+            <dd className="py-1">{pool.losingStakerCount.toString()}</dd>
+            <dt className="font-semibold py-1">Flag Count</dt>
+            <dd className="py-1">{pool.flagCount.toString()}</dd>
+            {isConnected && (
+              <>
+                <dt className="font-semibold py-1">Your YES Stake</dt>
+                <dd className="py-1">{formatUsdc(userYesStake)}</dd>
+                <dt className="font-semibold py-1">Your NO Stake</dt>
+                <dd className="py-1">{formatUsdc(userNoStake)}</dd>
+              </>
+            )}
+          </dl>
 
           {/* ── Actions ── */}
           <div>
@@ -542,27 +501,26 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
             {!isConnected && <p>Connect wallet to take actions.</p>}
 
             {isConnected && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: '480px' }}>
+              <div className="flex flex-col gap-3 max-w-md">
 
                 {/* ── OPEN ── */}
                 {pool.state === PoolState.OPEN && (
                   <>
                     <div>
-                      <label>
-                        Stake amount (USDC):{' '}
-                        <input
-                          value={stakeAmountStr}
-                          onChange={(e) => setStakeAmountStr(e.target.value)}
-                          placeholder="0.00"
-                          disabled={inProgress}
-                          style={{ marginLeft: '0.5rem' }}
-                        />
-                      </label>
+                      <label className="block text-sm font-medium mb-1">Stake amount (USDC)</label>
+                      <input
+                        value={stakeAmountStr}
+                        onChange={(e) => setStakeAmountStr(e.target.value)}
+                        placeholder="0.00"
+                        disabled={inProgress}
+                        className="w-full border rounded px-3 py-2 text-sm"
+                      />
                     </div>
 
                     <button
                       onClick={handleStakeYes}
                       disabled={yesRemaining <= 0n || inProgress}
+                      className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                     >
                       {actionState === 'approving' && pendingStake?.isYes === true
                         ? 'Approving…'
@@ -574,6 +532,7 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                     <button
                       onClick={handleStakeNo}
                       disabled={noRemaining <= 0n || inProgress}
+                      className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                     >
                       {actionState === 'approving' && pendingStake?.isYes === false
                         ? 'Approving…'
@@ -583,13 +542,21 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                     </button>
 
                     {canClose && (
-                      <button onClick={handleClosePool} disabled={inProgress}>
+                      <button
+                        onClick={handleClosePool}
+                        disabled={inProgress}
+                        className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                      >
                         {actionState === 'closing' ? 'Closing…' : 'Close Pool'}
                       </button>
                     )}
 
                     {canVoidFromOpen && (
-                      <button onClick={handleVoidPool} disabled={inProgress}>
+                      <button
+                        onClick={handleVoidPool}
+                        disabled={inProgress}
+                        className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                      >
                         {actionState === 'voiding' ? 'Voiding…' : 'Void Pool'}
                       </button>
                     )}
@@ -601,36 +568,44 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                   <>
                     {canResolve && isResolver && (
                       <>
-                        <div>
-                          <label>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <label className="flex items-center gap-2">
                             <input
                               type="radio"
                               name="resolveOutcome"
                               checked={resolveYesWins}
                               onChange={() => setResolveYesWins(true)}
                               disabled={inProgress}
-                            />{' '}
+                            />
                             YES wins
                           </label>
-                          <label style={{ marginLeft: '1rem' }}>
+                          <label className="flex items-center gap-2">
                             <input
                               type="radio"
                               name="resolveOutcome"
                               checked={!resolveYesWins}
                               onChange={() => setResolveYesWins(false)}
                               disabled={inProgress}
-                            />{' '}
+                            />
                             NO wins
                           </label>
                         </div>
-                        <button onClick={handleResolve} disabled={inProgress}>
+                        <button
+                          onClick={handleResolve}
+                          disabled={inProgress}
+                          className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                        >
                           {actionState === 'resolving' ? 'Resolving…' : 'Resolve Pool'}
                         </button>
                       </>
                     )}
 
                     {canVoidFromClosed && (
-                      <button onClick={handleVoidPool} disabled={inProgress}>
+                      <button
+                        onClick={handleVoidPool}
+                        disabled={inProgress}
+                        className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                      >
                         {actionState === 'voiding' ? 'Voiding…' : 'Void Pool'}
                       </button>
                     )}
@@ -641,13 +616,21 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 {pool.state === PoolState.SUBMITTED && (
                   <>
                     {withinDisputeWindow && isOnLosingSide && !alreadyFlagged && (
-                      <button onClick={handleFlagDispute} disabled={inProgress}>
+                      <button
+                        onClick={handleFlagDispute}
+                        disabled={inProgress}
+                        className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                      >
                         {actionState === 'flagging' ? 'Flagging…' : 'Flag Dispute'}
                       </button>
                     )}
 
                     {canFinalize && (
-                      <button onClick={handleFinalizePool} disabled={inProgress}>
+                      <button
+                        onClick={handleFinalizePool}
+                        disabled={inProgress}
+                        className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                      >
                         {actionState === 'finalizing' ? 'Finalizing…' : 'Finalize Pool'}
                       </button>
                     )}
@@ -658,7 +641,11 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 {pool.state === PoolState.FINALIZED && (
                   <>
                     {isOnWinningSide && !hasClaimed && (
-                      <button onClick={handleClaim} disabled={inProgress}>
+                      <button
+                        onClick={handleClaim}
+                        disabled={inProgress}
+                        className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                      >
                         {actionState === 'claiming' ? 'Claiming…' : 'Claim Winnings'}
                       </button>
                     )}
@@ -669,7 +656,11 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 {pool.state === PoolState.VOIDED && (
                   <>
                     {isStaker && !hasClaimed && (
-                      <button onClick={handleClaim} disabled={inProgress}>
+                      <button
+                        onClick={handleClaim}
+                        disabled={inProgress}
+                        className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                      >
                         {actionState === 'claiming' ? 'Claiming…' : 'Claim Refund'}
                       </button>
                     )}
@@ -681,29 +672,33 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                   <>
                     {isAdmin && (
                       <>
-                        <div>
-                          <label>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <label className="flex items-center gap-2">
                             <input
                               type="radio"
                               name="adminOutcome"
                               checked={resolveYesWins}
                               onChange={() => setResolveYesWins(true)}
                               disabled={inProgress}
-                            />{' '}
+                            />
                             YES wins
                           </label>
-                          <label style={{ marginLeft: '1rem' }}>
+                          <label className="flex items-center gap-2">
                             <input
                               type="radio"
                               name="adminOutcome"
                               checked={!resolveYesWins}
                               onChange={() => setResolveYesWins(false)}
                               disabled={inProgress}
-                            />{' '}
+                            />
                             NO wins
                           </label>
                         </div>
-                        <button onClick={handleAdminResolve} disabled={inProgress}>
+                        <button
+                          onClick={handleAdminResolve}
+                          disabled={inProgress}
+                          className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
+                        >
                           {actionState === 'adminResolving' ? 'Resolving…' : 'Admin Resolve Pool'}
                         </button>
                       </>
@@ -723,18 +718,23 @@ export default function PoolDetailPage({ params }: { params: Promise<{ id: strin
                 {actionState === 'done' && mainTxHash && (
                   <p>
                     Success! Tx:{' '}
-                    <span style={{ fontFamily: 'monospace' }}>
+                    <span className="font-mono">
                       {truncateAddr(mainTxHash)}
                     </span>
                   </p>
                 )}
                 {actionState === 'error' && (
                   <div>
-                    <p style={{ color: 'red' }}>
+                    <p className="text-red-500">
                       Error:{' '}
                       {parseRevertReason(approveError ?? mainError)}
                     </p>
-                    <button onClick={handleReset}>Reset</button>
+                    <button
+                      onClick={handleReset}
+                      className="w-full py-2 mt-2 border rounded"
+                    >
+                      Reset
+                    </button>
                   </div>
                 )}
               </div>

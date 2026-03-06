@@ -269,7 +269,7 @@ export default function CreatePoolPage() {
 
   if (!isConnected) {
     return (
-      <div style={{ padding: '1rem' }}>
+      <div>
         <h1>Create Pool</h1>
         <p>Connect wallet to create a pool.</p>
       </div>
@@ -277,108 +277,100 @@ export default function CreatePoolPage() {
   }
 
   return (
-    <div style={{ padding: '1rem' }}>
+    <div>
       <h1>Create Pool</h1>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '480px' }}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md mt-4">
         <div>
-          <label htmlFor="eventDescription">Event description</label>
-          <br />
+          <label htmlFor="eventDescription" className="block text-sm font-medium mb-1">Event description</label>
           <input
             id="eventDescription"
             value={eventDescription}
             onChange={(e) => setEventDescription(e.target.value)}
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
         </div>
 
         <div>
-          <label htmlFor="eventStart">Event start</label>
-          <br />
+          <label htmlFor="eventStart" className="block text-sm font-medium mb-1">Event start</label>
           <input
             id="eventStart"
             type="datetime-local"
             value={eventStart}
             onChange={(e) => setEventStart(e.target.value)}
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.eventStart && <p style={{ color: 'red' }}>{errors.eventStart}</p>}
+          {errors.eventStart && <p className="text-red-500 text-sm mt-1">{errors.eventStart}</p>}
         </div>
 
         <div>
-          <label htmlFor="eventEnd">Event end</label>
-          <br />
+          <label htmlFor="eventEnd" className="block text-sm font-medium mb-1">Event end</label>
           <input
             id="eventEnd"
             type="datetime-local"
             value={eventEnd}
             onChange={(e) => setEventEnd(e.target.value)}
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.eventEnd && <p style={{ color: 'red' }}>{errors.eventEnd}</p>}
+          {errors.eventEnd && <p className="text-red-500 text-sm mt-1">{errors.eventEnd}</p>}
         </div>
 
         <div>
-          <label htmlFor="resolveBy">Resolve by</label>
-          <br />
+          <label htmlFor="resolveBy" className="block text-sm font-medium mb-1">Resolve by</label>
           <input
             id="resolveBy"
             type="datetime-local"
             value={resolveBy}
             onChange={(e) => setResolveBy(e.target.value)}
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.resolveBy && <p style={{ color: 'red' }}>{errors.resolveBy}</p>}
+          {errors.resolveBy && <p className="text-red-500 text-sm mt-1">{errors.resolveBy}</p>}
         </div>
 
         <div>
-          <label htmlFor="resolver">Resolver address</label>
-          <br />
+          <label htmlFor="resolver" className="block text-sm font-medium mb-1">Resolver address</label>
           <input
             id="resolver"
             value={resolver}
             onChange={(e) => setResolver(e.target.value)}
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.resolver && <p style={{ color: 'red' }}>{errors.resolver}</p>}
+          {errors.resolver && <p className="text-red-500 text-sm mt-1">{errors.resolver}</p>}
         </div>
 
         <div>
-          <label htmlFor="perWalletCapStr">Per-wallet cap (USDC)</label>
-          <br />
+          <label htmlFor="perWalletCapStr" className="block text-sm font-medium mb-1">Per-wallet cap (USDC)</label>
           <input
             id="perWalletCapStr"
             value={perWalletCapStr}
             onChange={(e) => setPerWalletCapStr(e.target.value)}
             placeholder="100.00"
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.perWalletCapStr && <p style={{ color: 'red' }}>{errors.perWalletCapStr}</p>}
+          {errors.perWalletCapStr && <p className="text-red-500 text-sm mt-1">{errors.perWalletCapStr}</p>}
         </div>
 
         <div>
-          <label htmlFor="totalPoolCapStr">Total pool cap (USDC)</label>
-          <br />
+          <label htmlFor="totalPoolCapStr" className="block text-sm font-medium mb-1">Total pool cap (USDC)</label>
           <input
             id="totalPoolCapStr"
             value={totalPoolCapStr}
             onChange={(e) => setTotalPoolCapStr(e.target.value)}
             placeholder="10000.00"
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.totalPoolCapStr && <p style={{ color: 'red' }}>{errors.totalPoolCapStr}</p>}
+          {errors.totalPoolCapStr && <p className="text-red-500 text-sm mt-1">{errors.totalPoolCapStr}</p>}
         </div>
 
         <div>
-          <label htmlFor="commissionBpsStr">Host commission (bps, 0–10000)</label>
-          <br />
+          <label htmlFor="commissionBpsStr" className="block text-sm font-medium mb-1">Host commission (bps, 0–10000)</label>
           <input
             id="commissionBpsStr"
             type="number"
@@ -386,26 +378,29 @@ export default function CreatePoolPage() {
             onChange={(e) => setCommissionBpsStr(e.target.value)}
             placeholder="100"
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.commissionBpsStr && <p style={{ color: 'red' }}>{errors.commissionBpsStr}</p>}
+          {errors.commissionBpsStr && <p className="text-red-500 text-sm mt-1">{errors.commissionBpsStr}</p>}
         </div>
 
         <div>
-          <label htmlFor="initialYesStakeStr">Initial YES stake (USDC)</label>
-          <br />
+          <label htmlFor="initialYesStakeStr" className="block text-sm font-medium mb-1">Initial YES stake (USDC)</label>
           <input
             id="initialYesStakeStr"
             value={initialYesStakeStr}
             onChange={(e) => setInitialYesStakeStr(e.target.value)}
             placeholder="1.00"
             disabled={isDisabled}
-            style={{ width: '100%' }}
+            className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.initialYesStakeStr && <p style={{ color: 'red' }}>{errors.initialYesStakeStr}</p>}
+          {errors.initialYesStakeStr && <p className="text-red-500 text-sm mt-1">{errors.initialYesStakeStr}</p>}
         </div>
 
-        <button type="submit" disabled={isDisabled}>
+        <button
+          type="submit"
+          disabled={isDisabled}
+          className="w-full py-2.5 px-4 border rounded font-medium disabled:opacity-50"
+        >
           {submitLabel}
         </button>
       </form>
@@ -419,15 +414,15 @@ export default function CreatePoolPage() {
       )}
 
       {formState === 'done' && (
-        <p style={{ color: 'green' }}>Pool created successfully!</p>
+        <p className="text-green-600 mt-2">Pool created successfully!</p>
       )}
 
       {formState === 'error' && (
-        <div>
-          <p style={{ color: 'red' }}>
+        <div className="mt-2">
+          <p className="text-red-500">
             Error: {parseRevertReason(approveError ?? createError)}
           </p>
-          <button onClick={handleReset}>Reset</button>
+          <button onClick={handleReset} className="w-full py-2 mt-2 border rounded">Reset</button>
         </div>
       )}
     </div>
