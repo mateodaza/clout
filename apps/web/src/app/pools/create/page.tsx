@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { isAddress, zeroAddress, parseUnits } from 'viem'
 import { cloutPoolAbi, mockStablecoinAbi, POOL_ADDRESS, TOKEN_ADDRESS } from '@/lib/contracts'
 import { parseRevertReason } from '@/lib/errors'
+import { useToast } from '@/contexts/ToastContext'
 
 // Returns unix timestamp (seconds) or null if input is empty / not a valid date.
 function parseDatetime(value: string): number | null {
@@ -16,6 +17,9 @@ function parseDatetime(value: string): number | null {
 
 export default function CreatePoolPage() {
   const { isConnected, address } = useAccount()
+  const { addToast, updateToast } = useToast()
+  const approveToastId = useRef<string | null>(null)
+  const createToastId = useRef<string | null>(null)
 
   const [eventDescription, setEventDescription] = useState('')
   const [eventStart, setEventStart] = useState('')
@@ -82,6 +86,56 @@ export default function CreatePoolPage() {
       setFormState('error')
     }
   }, [approveError, createError, formState])
+
+  // Toast effects — approve
+  useEffect(() => {
+    if (approveTxHash && !approveToastId.current) {
+      approveToastId.current = addToast('pending', 'Token approval submitted...')
+    }
+  }, [approveTxHash, addToast])
+
+  useEffect(() => {
+    if (approveConfirmed && approveToastId.current) {
+      updateToast(approveToastId.current, 'confirmed', 'Token approved')
+      approveToastId.current = null
+    }
+  }, [approveConfirmed, updateToast])
+
+  useEffect(() => {
+    if (!approveError) return
+    const msg = `Transaction failed: ${parseRevertReason(approveError)}`
+    if (approveToastId.current) {
+      updateToast(approveToastId.current, 'failed', msg)
+      approveToastId.current = null
+    } else {
+      addToast('failed', msg)
+    }
+  }, [approveError, addToast, updateToast])
+
+  // Toast effects — createPool
+  useEffect(() => {
+    if (createTxHash && !createToastId.current) {
+      createToastId.current = addToast('pending', 'Transaction submitted...')
+    }
+  }, [createTxHash, addToast])
+
+  useEffect(() => {
+    if (createConfirmed && createToastId.current) {
+      updateToast(createToastId.current, 'confirmed', 'Pool created!')
+      createToastId.current = null
+    }
+  }, [createConfirmed, updateToast])
+
+  useEffect(() => {
+    if (!createError) return
+    const msg = `Transaction failed: ${parseRevertReason(createError)}`
+    if (createToastId.current) {
+      updateToast(createToastId.current, 'failed', msg)
+      createToastId.current = null
+    } else {
+      addToast('failed', msg)
+    }
+  }, [createError, addToast, updateToast])
 
   function validate(): boolean {
     const errs: Record<string, string> = {}
@@ -200,6 +254,8 @@ export default function CreatePoolPage() {
     setPendingArgs(null)
     approveReset()
     createReset()
+    approveToastId.current = null
+    createToastId.current = null
   }
 
   const isDisabled = formState !== 'idle'

@@ -1,5 +1,5 @@
 'use client'
-import { use, useState, useEffect } from 'react'
+import { use, useState, useEffect, useRef } from 'react'
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { zeroAddress } from 'viem'
 import { ChallengeState, Outcome } from '@clout/types'
@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Spinner } from '@/components/Spinner'
 import { ChallengeStateBadge } from '@/components/StateBadge'
 import { parseRevertReason } from '@/lib/errors'
+import { useToast } from '@/contexts/ToastContext'
 
 // --- Local Types ---
 
@@ -95,6 +96,9 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
 
   const [actionState, setActionState] = useState<ActionState>('idle')
   const [selectedOutcome, setSelectedOutcome] = useState<number>(Outcome.CREATOR_WIN)
+  const { addToast, updateToast } = useToast()
+  const approveToastId = useRef<string | null>(null)
+  const mainToastId = useRef<string | null>(null)
 
   const { address: connectedAddress, isConnected } = useAccount()
 
@@ -163,6 +167,56 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
       setActionState('error')
     }
   }, [approveError, mainError])
+
+  // Toast effects: approve
+  useEffect(() => {
+    if (approveTxHash && !approveToastId.current) {
+      approveToastId.current = addToast('pending', 'Token approval submitted...')
+    }
+  }, [approveTxHash, addToast])
+
+  useEffect(() => {
+    if (approveConfirmed && approveToastId.current) {
+      updateToast(approveToastId.current, 'confirmed', 'Token approved')
+      approveToastId.current = null
+    }
+  }, [approveConfirmed, updateToast])
+
+  useEffect(() => {
+    if (!approveError) return
+    const msg = `Transaction failed: ${parseRevertReason(approveError)}`
+    if (approveToastId.current) {
+      updateToast(approveToastId.current, 'failed', msg)
+      approveToastId.current = null
+    } else {
+      addToast('failed', msg)
+    }
+  }, [approveError, addToast, updateToast])
+
+  // Toast effects: main tx
+  useEffect(() => {
+    if (mainTxHash && !mainToastId.current) {
+      mainToastId.current = addToast('pending', 'Transaction submitted...')
+    }
+  }, [mainTxHash, addToast])
+
+  useEffect(() => {
+    if (mainConfirmed && mainToastId.current) {
+      updateToast(mainToastId.current, 'confirmed', 'Transaction confirmed')
+      mainToastId.current = null
+    }
+  }, [mainConfirmed, updateToast])
+
+  useEffect(() => {
+    if (!mainError) return
+    const msg = `Transaction failed: ${parseRevertReason(mainError)}`
+    if (mainToastId.current) {
+      updateToast(mainToastId.current, 'failed', msg)
+      mainToastId.current = null
+    } else {
+      addToast('failed', msg)
+    }
+  }, [mainError, addToast, updateToast])
 
   // Parse challenge
   const challenge = rawChallenge ? parseTuple(rawChallenge as readonly unknown[]) : null
@@ -282,6 +336,8 @@ export default function ChallengeDetailPage({ params }: { params: Promise<{ id: 
 
   function handleReset() {
     setActionState('idle')
+    approveToastId.current = null
+    mainToastId.current = null
   }
 
   // --- Render ---

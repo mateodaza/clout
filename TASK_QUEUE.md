@@ -444,7 +444,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-018
 - **Constraints:** Do NOT change the ABI content — extract as-is. Existing consuming code must not require changes.
 
-#### NC-024 [ ] Add transaction toast notification system
+#### NC-024 [x] Add transaction toast notification system
 - **What:** Create a minimal toast/notification component (`apps/web/src/components/Toast.tsx`) for transaction feedback. States: pending ("Transaction submitted..."), confirmed ("Transaction confirmed"), failed ("Transaction failed: {reason}"). Show on every write transaction across all pages. Use a React context provider (`apps/web/src/contexts/ToastContext.tsx`) so any page can trigger a toast. Extract revert reasons from wagmi errors when available. Auto-dismiss success toasts after 5 seconds. Error toasts persist until dismissed.
 - **Acceptance criteria:**
   - Toast component renders at viewport bottom-right, above page content

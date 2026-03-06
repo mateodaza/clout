@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { isAddress, toHex, padHex, zeroAddress, parseUnits } from 'viem'
 import { cloutEscrowAbi, mockStablecoinAbi, ESCROW_ADDRESS, TOKEN_ADDRESS } from '@/lib/contracts'
 import { parseRevertReason } from '@/lib/errors'
+import { useToast } from '@/contexts/ToastContext'
 
 function validateStake(s: string): string | null {
   try {
@@ -18,6 +19,9 @@ function validateStake(s: string): string | null {
 
 export default function CreateChallengePage() {
   const { isConnected } = useAccount()
+  const { addToast, updateToast } = useToast()
+  const approveToastId = useRef<string | null>(null)
+  const createToastId = useRef<string | null>(null)
 
   const [opponent, setOpponent] = useState('')
   const [stakeStr, setStakeStr] = useState('')
@@ -70,6 +74,56 @@ export default function CreateChallengePage() {
       setFormState('error')
     }
   }, [approveError, createError, formState])
+
+  // Toast effects: approve
+  useEffect(() => {
+    if (approveTxHash && !approveToastId.current) {
+      approveToastId.current = addToast('pending', 'Token approval submitted...')
+    }
+  }, [approveTxHash, addToast])
+
+  useEffect(() => {
+    if (approveConfirmed && approveToastId.current) {
+      updateToast(approveToastId.current, 'confirmed', 'Token approved')
+      approveToastId.current = null
+    }
+  }, [approveConfirmed, updateToast])
+
+  useEffect(() => {
+    if (!approveError) return
+    const msg = `Transaction failed: ${parseRevertReason(approveError)}`
+    if (approveToastId.current) {
+      updateToast(approveToastId.current, 'failed', msg)
+      approveToastId.current = null
+    } else {
+      addToast('failed', msg)
+    }
+  }, [approveError, addToast, updateToast])
+
+  // Toast effects: createChallenge
+  useEffect(() => {
+    if (createTxHash && !createToastId.current) {
+      createToastId.current = addToast('pending', 'Transaction submitted...')
+    }
+  }, [createTxHash, addToast])
+
+  useEffect(() => {
+    if (createConfirmed && createToastId.current) {
+      updateToast(createToastId.current, 'confirmed', 'Transaction confirmed')
+      createToastId.current = null
+    }
+  }, [createConfirmed, updateToast])
+
+  useEffect(() => {
+    if (!createError) return
+    const msg = `Transaction failed: ${parseRevertReason(createError)}`
+    if (createToastId.current) {
+      updateToast(createToastId.current, 'failed', msg)
+      createToastId.current = null
+    } else {
+      addToast('failed', msg)
+    }
+  }, [createError, addToast, updateToast])
 
   function validate(): boolean {
     const errs: Record<string, string> = {}
@@ -124,6 +178,8 @@ export default function CreateChallengePage() {
   function handleReset() {
     setFormState('idle')
     setPendingArgs(null)
+    approveToastId.current = null
+    createToastId.current = null
   }
 
   const isDisabled = formState !== 'idle'
