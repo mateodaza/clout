@@ -13,6 +13,7 @@ import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
 import { formatTimestamp } from '@/lib/utils'
 import { Countdown } from '@/components/Countdown'
+import { ChallengeTimeline } from '@/components/ChallengeTimeline'
 
 // --- Local Types ---
 
@@ -442,6 +443,20 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
             <dt className="font-semibold py-1">Appealed At</dt>
             <dd className="py-1">{formatTimestamp(challenge.appealedAt)}</dd>
           </dl>
+
+          <ChallengeTimeline
+            state={challenge.state}
+            creator={challenge.creator}
+            opponent={challenge.opponent}
+            submittedBy={challenge.submittedBy}
+            submittedResult={challenge.submittedResult}
+            createdAt={challenge.createdAt}
+            acceptedAt={challenge.acceptedAt}
+            submittedAt={challenge.submittedAt}
+            disputedAt={challenge.disputedAt}
+            resolvedAt={challenge.resolvedAt}
+            appealedAt={challenge.appealedAt}
+          />
 
           {/* Actions section */}
           {isConnected ? (

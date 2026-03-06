@@ -22,6 +22,7 @@ import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
 import { formatTimestamp } from '@/lib/utils'
 import { Countdown } from '@/components/Countdown'
+import { PoolTimeline } from '@/components/PoolTimeline'
 
 // ─── Local Types ────────────────────────────────────────────────────────────
 
@@ -514,6 +515,14 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
               </>
             )}
           </dl>
+
+          <PoolTimeline
+            host={pool.host}
+            eventStart={pool.eventStart}
+            resolvedAt={pool.resolvedAt}
+            yesWins={pool.yesWins}
+            state={pool.state}
+          />
 
           {/* ── Actions ── */}
           <div>

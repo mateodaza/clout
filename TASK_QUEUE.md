@@ -656,7 +656,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-032
 - **Constraints:** Read `balanceOf` and `allowance` with `useReadContract`. Debounce validation with `setTimeout` (no lodash). Skip approve only when `allowance >= stakeAmount` — otherwise do the full approve-then-write flow.
 
-#### NC-037 [ ] Add transaction history to challenge and pool detail pages
+#### NC-037 [x] Add transaction history to challenge and pool detail pages
 - **What:** On `/challenges/[id]`, show a timeline of events: "Created by 0x265b…bb32 at Mar 5 3:14 PM", "Accepted by 0x1111…1111 at Mar 5 3:20 PM", etc. Derive from challenge timestamps (createdAt, acceptedAt, submittedAt, disputedAt, resolvedAt, appealedAt). On `/pools/[id]`, show: "Created by host", "Closed at eventStart", "Resolved: YES wins", etc. Style as a vertical timeline.
 - **Acceptance criteria:**
   - Challenge detail shows chronological event timeline
