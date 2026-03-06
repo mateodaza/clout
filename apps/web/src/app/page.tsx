@@ -3,11 +3,13 @@
 import { useAccount } from 'wagmi'
 import Link from 'next/link'
 import { WalletRecord } from '@/components/WalletRecord'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export default function Home() {
   const { address, isConnected } = useAccount()
 
   return (
+    <ErrorBoundary>
     <div>
       <h1>Clout</h1>
       <p>On-chain performance challenges: stake, compete, and prove your edge.</p>
@@ -29,5 +31,6 @@ export default function Home() {
         <p>Connect your wallet to view your stats.</p>
       )}
     </div>
+    </ErrorBoundary>
   )
 }

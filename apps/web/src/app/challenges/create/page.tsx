@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { CreateChallengeClient } from './CreateChallengeClient'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'Create Challenge',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function CreateChallengePage() {
-  return <CreateChallengeClient />
+  return (
+    <ErrorBoundary>
+      <CreateChallengeClient />
+    </ErrorBoundary>
+  )
 }

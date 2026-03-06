@@ -680,7 +680,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Twitter intent URL: `https://twitter.com/intent/tweet?text=...&url=...`. URL-encode the text. Use `encodeURIComponent`.
 
-#### NC-039 [ ] Add comprehensive error boundaries
+#### NC-039 [x] Add comprehensive error boundaries
 - **What:** Create a React error boundary component (`apps/web/src/components/ErrorBoundary.tsx`) that catches render errors and shows a fallback UI: "Something went wrong" with a "Try again" button (calls `reset()`). Wrap each page's client component in an error boundary. Also add specific handling for common contract errors: "User rejected transaction", "Insufficient funds for gas", "Execution reverted" — show user-friendly messages.
 - **Acceptance criteria:**
   - ErrorBoundary component catches render errors

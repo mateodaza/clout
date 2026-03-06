@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { PoolDetailClient } from './PoolDetailClient'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export async function generateMetadata({
   params,
@@ -18,5 +19,9 @@ export default function PoolDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  return <PoolDetailClient params={params} />
+  return (
+    <ErrorBoundary>
+      <PoolDetailClient params={params} />
+    </ErrorBoundary>
+  )
 }

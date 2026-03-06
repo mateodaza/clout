@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { PoolsClient } from './PoolsClient'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'Pools',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function PoolsPage() {
-  return <PoolsClient />
+  return (
+    <ErrorBoundary>
+      <PoolsClient />
+    </ErrorBoundary>
+  )
 }

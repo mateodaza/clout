@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { ChallengeDetailClient } from './ChallengeDetailClient'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export async function generateMetadata({
   params,
@@ -18,5 +19,9 @@ export default function ChallengeDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  return <ChallengeDetailClient params={params} />
+  return (
+    <ErrorBoundary>
+      <ChallengeDetailClient params={params} />
+    </ErrorBoundary>
+  )
 }
