@@ -27,6 +27,7 @@ export function WalletRecord({ address }: { address: `0x${string}` }) {
           href={basescanUrl('address', address)}
           target="_blank"
           rel="noopener"
+          aria-label={`View your address on Basescan: ${address}`}
         >
           {`${address.slice(0, 6)}…${address.slice(-4)}`}
         </a>

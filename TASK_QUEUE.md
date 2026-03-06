@@ -752,7 +752,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Reuse `Countdown` from NC-030. Pass `targetTimestamp` as BigInt. Component already handles expired state.
 
-#### NC-045 [ ] Add keyboard shortcuts and accessibility improvements
+#### NC-045 [x] Add keyboard shortcuts and accessibility improvements
 - **What:** 1) Add keyboard shortcut: `Ctrl/Cmd + K` opens a quick-nav command palette (simple modal listing: Home, Challenges, Pools, Faucet, Create Challenge, Create Pool — clicking navigates). 2) Add `aria-label` attributes to all buttons and links. 3) Add focus-visible outlines for keyboard navigation. 4) Ensure all interactive elements are reachable via Tab.
 - **Acceptance criteria:**
   - `Cmd+K` / `Ctrl+K` opens command palette overlay

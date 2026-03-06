@@ -37,7 +37,7 @@ export function PoolTimeline({ host, eventStart, resolvedAt, yesWins, state }: P
   }
 
   const entries: TimelineEntry[] = [
-    { kind: 'static', label: <>Created by <a href={basescanUrl('address', host)} target="_blank" rel="noopener">{truncateAddr(host)}</a></> },
+    { kind: 'static', label: <>Created by <a href={basescanUrl('address', host)} target="_blank" rel="noopener" aria-label={`View host address on Basescan: ${host}`}>{truncateAddr(host)}</a></> },
     ...timestamped,
     ...terminal,
   ]

@@ -350,7 +350,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
   return (
     <div>
       <div className="mb-4">
-        <Link href="/challenges">← Back to Challenges</Link>
+        <Link href="/challenges" aria-label="Back to challenges list">← Back to Challenges</Link>
       </div>
       <h1>Challenge #{id}</h1>
       <ShareButtons tweetText="I just staked on a challenge on Clout!" />
@@ -376,13 +376,13 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
           {/* Fields section */}
           <dl className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-6 gap-y-1 mb-6 mt-4">
             <dt className="font-semibold py-1">Creator</dt>
-            <dd className="py-1 break-all"><a href={basescanUrl('address', challenge.creator)} target="_blank" rel="noopener">{truncateAddr(challenge.creator)}</a></dd>
+            <dd className="py-1 break-all"><a href={basescanUrl('address', challenge.creator)} target="_blank" rel="noopener" aria-label={`View creator address on Basescan: ${challenge.creator}`}>{truncateAddr(challenge.creator)}</a></dd>
             <dt className="font-semibold py-1">Opponent</dt>
-            <dd className="py-1 break-all"><a href={basescanUrl('address', challenge.opponent)} target="_blank" rel="noopener">{truncateAddr(challenge.opponent)}</a></dd>
+            <dd className="py-1 break-all"><a href={basescanUrl('address', challenge.opponent)} target="_blank" rel="noopener" aria-label={`View opponent address on Basescan: ${challenge.opponent}`}>{truncateAddr(challenge.opponent)}</a></dd>
             <dt className="font-semibold py-1">Stake</dt>
             <dd className="py-1">{formatStake(challenge.stakeAmount, challenge.token)}</dd>
             <dt className="font-semibold py-1">Token</dt>
-            <dd className="py-1 break-all"><a href={basescanUrl('address', challenge.token)} target="_blank" rel="noopener">{truncateAddr(challenge.token)}</a></dd>
+            <dd className="py-1 break-all"><a href={basescanUrl('address', challenge.token)} target="_blank" rel="noopener" aria-label={`View token contract on Basescan: ${challenge.token}`}>{truncateAddr(challenge.token)}</a></dd>
             <dt className="font-semibold py-1">State</dt>
             <dd className="py-1"><ChallengeStateBadge state={challenge.state} /></dd>
             <dt className="font-semibold py-1">Game ID</dt>
@@ -393,7 +393,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
             <dd className="py-1 break-all">
               {challenge.designatedResolver === zeroAddress
                 ? 'None (admin only)'
-                : <a href={basescanUrl('address', challenge.designatedResolver)} target="_blank" rel="noopener">{truncateAddr(challenge.designatedResolver)}</a>}
+                : <a href={basescanUrl('address', challenge.designatedResolver)} target="_blank" rel="noopener" aria-label={`View designated resolver on Basescan: ${challenge.designatedResolver}`}>{truncateAddr(challenge.designatedResolver)}</a>}
             </dd>
             <dt className="font-semibold py-1">Submitted Result</dt>
             <dd className="py-1">{outcomeLabel(challenge.submittedResult)}</dd>
@@ -401,7 +401,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
             <dd className="py-1">
               {challenge.submittedBy === zeroAddress
                 ? '—'
-                : <a href={basescanUrl('address', challenge.submittedBy)} target="_blank" rel="noopener">{truncateAddr(challenge.submittedBy)}</a>}
+                : <a href={basescanUrl('address', challenge.submittedBy)} target="_blank" rel="noopener" aria-label={`View submitter address on Basescan: ${challenge.submittedBy}`}>{truncateAddr(challenge.submittedBy)}</a>}
             </dd>
             <dt className="font-semibold py-1">Claimed</dt>
             <dd className="py-1">{challenge.claimed ? 'Yes' : 'No'}</dd>
@@ -468,6 +468,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                 <button
                   onClick={handleAccept}
                   disabled={inProgress}
+                  aria-label="Accept challenge — approve token and stake"
                   className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                 >
                   {actionState === 'approving'
@@ -489,6 +490,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   <button
                     onClick={handleSubmitResult}
                     disabled={inProgress}
+                    aria-label="Submit your result for this challenge"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
                     {actionState === 'submitting' ? 'Submitting...' : 'Submit Result'}
@@ -502,6 +504,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   <button
                     onClick={handleConfirm}
                     disabled={inProgress}
+                    aria-label="Confirm the submitted result"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
                     {actionState === 'confirming' ? 'Confirming...' : 'Confirm Result'}
@@ -509,6 +512,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   <button
                     onClick={handleDispute}
                     disabled={inProgress}
+                    aria-label="Dispute the submitted result — escalate to resolver"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
                     {actionState === 'disputing' ? 'Disputing...' : 'Dispute Result'}
@@ -527,6 +531,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   <button
                     onClick={handleResolve}
                     disabled={inProgress}
+                    aria-label="Resolve the dispute and set the final outcome"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
                     {actionState === 'resolving' ? 'Resolving...' : 'Resolve Dispute'}
@@ -543,6 +548,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   <button
                     onClick={handleAppeal}
                     disabled={inProgress}
+                    aria-label="Appeal the resolution — escalate to admin"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
                     {actionState === 'appealing' ? 'Appealing...' : 'Appeal Resolution'}
@@ -557,6 +563,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   <button
                     onClick={handleClaim}
                     disabled={inProgress}
+                    aria-label="Claim your winnings from this challenge"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
                     {actionState === 'claiming' ? 'Claiming...' : 'Claim Winnings'}
@@ -565,10 +572,10 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
 
               {/* Transaction feedback */}
               {approveTxHash && actionState === 'approving' && (
-                <p className="text-sm mt-1">Approve tx: <a href={basescanUrl('tx', approveTxHash)} target="_blank" rel="noopener">{truncateAddr(approveTxHash)}</a></p>
+                <p className="text-sm mt-1">Approve tx: <a href={basescanUrl('tx', approveTxHash)} target="_blank" rel="noopener" aria-label="View token approval transaction on Basescan">{truncateAddr(approveTxHash)}</a></p>
               )}
               {mainTxHash && (actionState === 'done' || inProgress) && (
-                <p className="text-sm mt-1">Tx: <a href={basescanUrl('tx', mainTxHash)} target="_blank" rel="noopener">{truncateAddr(mainTxHash)}</a></p>
+                <p className="text-sm mt-1">Tx: <a href={basescanUrl('tx', mainTxHash)} target="_blank" rel="noopener" aria-label="View transaction on Basescan">{truncateAddr(mainTxHash)}</a></p>
               )}
               {actionState === 'done' && (
                 <p className="text-green-600 mt-1">Transaction confirmed. Challenge updated.</p>
@@ -580,6 +587,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   </p>
                   <button
                     onClick={handleReset}
+                    aria-label="Reset — try again after error"
                     className="w-full py-2 mt-2 border rounded"
                   >
                     Reset

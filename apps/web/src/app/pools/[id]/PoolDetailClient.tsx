@@ -425,7 +425,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
   if (!isValidId) {
     return (
       <div>
-        <Link href="/pools">← Back to Pools</Link>
+        <Link href="/pools" aria-label="Back to pools list">← Back to Pools</Link>
         <p>Invalid pool ID.</p>
       </div>
     )
@@ -434,7 +434,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
   return (
     <div>
       <div className="mb-4">
-        <Link href="/pools">← Back to Pools</Link>
+        <Link href="/pools" aria-label="Back to pools list">← Back to Pools</Link>
       </div>
       <h1>Pool #{id}</h1>
       <ShareButtons tweetText="I just staked on a pool on Clout!" />
@@ -462,15 +462,15 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
             <dt className="font-semibold py-1">State</dt>
             <dd className="py-1"><PoolStateBadge state={pool.state} /></dd>
             <dt className="font-semibold py-1">Host</dt>
-            <dd className="py-1 break-all"><a href={basescanUrl('address', pool.host)} target="_blank" rel="noopener">{truncateAddr(pool.host)}</a></dd>
+            <dd className="py-1 break-all"><a href={basescanUrl('address', pool.host)} target="_blank" rel="noopener" aria-label={`View host address on Basescan: ${pool.host}`}>{truncateAddr(pool.host)}</a></dd>
             <dt className="font-semibold py-1">Resolver</dt>
             <dd className="py-1 break-all">
               {pool.resolver === zeroAddress
                 ? 'None'
-                : <a href={basescanUrl('address', pool.resolver)} target="_blank" rel="noopener">{truncateAddr(pool.resolver)}</a>}
+                : <a href={basescanUrl('address', pool.resolver)} target="_blank" rel="noopener" aria-label={`View resolver address on Basescan: ${pool.resolver}`}>{truncateAddr(pool.resolver)}</a>}
             </dd>
             <dt className="font-semibold py-1">Token</dt>
-            <dd className="py-1 break-all"><a href={basescanUrl('address', pool.token)} target="_blank" rel="noopener">{truncateAddr(pool.token)}</a></dd>
+            <dd className="py-1 break-all"><a href={basescanUrl('address', pool.token)} target="_blank" rel="noopener" aria-label={`View token contract on Basescan: ${pool.token}`}>{truncateAddr(pool.token)}</a></dd>
             <dt className="font-semibold py-1">Event Start</dt>
             <dd className="py-1">
               {formatTimestamp(pool.eventStart)}
@@ -582,6 +582,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
                     <button
                       onClick={handleStakeYes}
                       disabled={yesRemaining <= 0n || inProgress}
+                      aria-label={actionState === 'approving' && pendingStake?.isYes === true ? 'Approving token for YES stake…' : actionState === 'staking' && pendingStake?.isYes === true ? 'Staking YES…' : `Stake YES — ${formatUsdc(yesRemaining)} remaining`}
                       className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                     >
                       {actionState === 'approving' && pendingStake?.isYes === true
@@ -594,6 +595,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
                     <button
                       onClick={handleStakeNo}
                       disabled={noRemaining <= 0n || inProgress}
+                      aria-label={actionState === 'approving' && pendingStake?.isYes === false ? 'Approving token for NO stake…' : actionState === 'staking' && pendingStake?.isYes === false ? 'Staking NO…' : `Stake NO — ${formatUsdc(noRemaining)} remaining`}
                       className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                     >
                       {actionState === 'approving' && pendingStake?.isYes === false

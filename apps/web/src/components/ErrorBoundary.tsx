@@ -15,6 +15,7 @@ function ErrorFallback({ error, reset }: FallbackProps) {
       <p className="mb-4 text-sm">{friendlyError(error)}</p>
       <button
         onClick={reset}
+        aria-label="Try again — reload this section"
         className="px-4 py-2 border rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
       >
         Try again

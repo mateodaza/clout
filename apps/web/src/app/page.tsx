@@ -15,11 +15,11 @@ export default function Home() {
       <p>On-chain performance challenges: stake, compete, and prove your edge.</p>
 
       <div className="flex flex-col sm:flex-row gap-4 my-8">
-        <Link href="/challenges" className="flex-1 p-4 border rounded">
+        <Link href="/challenges" className="flex-1 p-4 border rounded" aria-label="Browse challenges">
           <strong>Challenges</strong>
           <p>Browse, create, and manage PvP escrow challenges.</p>
         </Link>
-        <Link href="/pools" className="flex-1 p-4 border rounded">
+        <Link href="/pools" className="flex-1 p-4 border rounded" aria-label="Browse pools">
           <strong>Pools</strong>
           <p>Explore multi-participant challenge pools.</p>
         </Link>

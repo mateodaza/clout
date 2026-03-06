@@ -22,6 +22,7 @@ export function ConnectWallet() {
         <span className="text-sm">{address.slice(0, 6)}…{address.slice(-4)} | {balance !== undefined ? formatBalance(balance as bigint) : '—'}</span>
         <button
           onClick={() => disconnect()}
+          aria-label="Disconnect wallet"
           className="text-sm px-3 py-1.5 border rounded dark:border-gray-600 dark:text-gray-200"
         >
           Disconnect
@@ -36,6 +37,7 @@ export function ConnectWallet() {
         <button
           key={connector.id}
           onClick={() => connect({ connector })}
+          aria-label={`Connect with ${CONNECTOR_LABELS[connector.id] ?? connector.name}`}
           className="w-full sm:w-auto px-3 py-2 text-sm border rounded dark:border-gray-600 dark:text-gray-200"
         >
           {CONNECTOR_LABELS[connector.id] ?? connector.name}

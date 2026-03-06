@@ -21,6 +21,7 @@ export default function Error({
       </p>
       <button
         onClick={reset}
+        aria-label="Try again — reload the page"
         className="px-4 py-2 border rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600"
       >
         Try again

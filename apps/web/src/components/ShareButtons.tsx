@@ -22,10 +22,10 @@ export default function ShareButtons({ tweetText }: ShareButtonsProps) {
 
   return (
     <div className="flex gap-2 mt-2">
-      <button onClick={handleCopy}>
+      <button onClick={handleCopy} aria-label={copied ? 'Link copied to clipboard' : 'Copy link to clipboard'}>
         {copied ? 'Copied!' : 'Copy Link'}
       </button>
-      <button onClick={handleShare}>Share on X</button>
+      <button onClick={handleShare} aria-label="Share on X (Twitter)">Share on X</button>
     </div>
   )
 }

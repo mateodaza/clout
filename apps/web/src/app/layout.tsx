@@ -30,10 +30,10 @@ export default function RootLayout({
         <Providers>
           <header className="border-b dark:border-gray-700 px-4 py-3">
             <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <a href="/" className="font-semibold">Clout</a>
-              <a href="/challenges">Challenges</a>
-              <a href="/pools">Pools</a>
-              <a href="/faucet">Faucet</a>
+              <a href="/" className="font-semibold" aria-label="Go to home">Clout</a>
+              <a href="/challenges" aria-label="Go to challenges">Challenges</a>
+              <a href="/pools" aria-label="Go to pools">Pools</a>
+              <a href="/faucet" aria-label="Go to faucet">Faucet</a>
               <div className="ml-auto flex items-center gap-2">
                 <ThemeToggle />
                 <ConnectWallet />

@@ -103,7 +103,7 @@ export function ChallengesClient() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h1>Challenges</h1>
-        <Link href="/challenges/create">+ Create Challenge</Link>
+        <Link href="/challenges/create" aria-label="Create a new challenge">+ Create Challenge</Link>
       </div>
 
       {/* Filter + sort controls */}
@@ -112,24 +112,34 @@ export function ChallengesClient() {
           <button
             key={btn.value}
             onClick={() => setFilter(btn.value)}
+            aria-label={`Filter challenges: ${btn.label}`}
+            aria-pressed={filter === btn.value}
             style={filter === btn.value ? { fontWeight: 700, borderBottom: '2px solid currentColor' } : undefined}
           >
             {btn.label}
           </button>
         ))}
-        <button onClick={() => setSortAsc(s => !s)} style={{ marginLeft: 'auto' }}>
+        <button
+          onClick={() => setSortAsc(s => !s)}
+          aria-label={sortAsc ? 'Sort: oldest first — click to sort newest first' : 'Sort: newest first — click to sort oldest first'}
+          style={{ marginLeft: 'auto' }}
+        >
           ↕ {sortAsc ? 'Oldest first' : 'Newest first'}
         </button>
         {isConnected && (
           <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
             <button
               onClick={() => setMyView(false)}
+              aria-label="Show all challenges"
+              aria-pressed={!myView}
               style={!myView ? { fontWeight: 700, borderBottom: '2px solid currentColor' } : undefined}
             >
               All Challenges
             </button>
             <button
               onClick={() => setMyView(true)}
+              aria-label="Show my challenges"
+              aria-pressed={myView}
               style={myView ? { fontWeight: 700, borderBottom: '2px solid currentColor' } : undefined}
             >
               My Challenges
@@ -160,7 +170,7 @@ export function ChallengesClient() {
           {myView
             ? 'You have no challenges yet.'
             : filter === 'all'
-              ? <><span>No challenges yet. </span><Link href="/challenges/create">Create one</Link></>
+              ? <><span>No challenges yet. </span><Link href="/challenges/create" aria-label="Create your first challenge">Create one</Link></>
               : 'No challenges match this filter.'
           }
         </p>
@@ -176,6 +186,7 @@ export function ChallengesClient() {
               <Link
                 key={c.id}
                 href={`/challenges/${c.id}`}
+                aria-label={`View challenge #${c.id}`}
                 className="border rounded p-3 flex flex-col gap-1 block hover:bg-gray-50 cursor-pointer"
               >
                 <div className="flex justify-between">
@@ -207,6 +218,7 @@ export function ChallengesClient() {
                 <Link
                   key={c.id}
                   href={`/challenges/${c.id}`}
+                  aria-label={`View challenge #${c.id}`}
                   className="hover:bg-gray-50 cursor-pointer"
                   style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)' }}
                 >
