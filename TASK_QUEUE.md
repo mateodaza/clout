@@ -488,7 +488,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 
 > Addressing Codex review feedback + remaining UX gaps before Fuji deployment.
 
-#### NC-027 [ ] Make challenge/pool list rows clickable links to detail pages
+#### NC-027 [x] Make challenge/pool list rows clickable links to detail pages
 - **What:** On `/challenges`, wrap each challenge card/row in a `<Link href="/challenges/{id}">` so clicking anywhere on the row navigates to the detail page. Same for `/pools` — each pool card/row links to `/pools/{id}`. Add hover state (subtle background change) to indicate clickability. Cursor should be `pointer` on hover.
 - **Acceptance criteria:**
   - Clicking a challenge row navigates to `/challenges/[id]`

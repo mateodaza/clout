@@ -94,7 +94,11 @@ export function PoolsClient() {
           {/* Mobile card list */}
           <div className="flex flex-col gap-3 md:hidden mt-3">
             {activePools.map((p) => (
-              <div key={p.id} className="border rounded p-3 flex flex-col gap-1">
+              <Link
+                key={p.id}
+                href={`/pools/${p.id}`}
+                className="border rounded p-3 flex flex-col gap-1 block hover:bg-gray-50 cursor-pointer"
+              >
                 <div className="flex justify-between">
                   <span className="font-semibold">#{p.id}</span>
                   <PoolStateBadge state={p.state} />
@@ -104,43 +108,47 @@ export function PoolsClient() {
                 <div className="text-sm">NO: {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC</div>
                 <div className="text-sm">Start: {formatTs(p.eventStart)}</div>
                 <div className="text-sm">End: {formatTs(p.eventEnd)}</div>
-                <Link href={`/pools/${p.id}`} className="text-sm text-blue-600">View →</Link>
-              </div>
+              </Link>
             ))}
           </div>
 
-          {/* Desktop table */}
+          {/* Desktop grid */}
           <div className="hidden md:block overflow-x-auto mt-3">
-            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-              <thead>
-                <tr>
-                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>ID</th>
-                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Host</th>
-                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>State</th>
-                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>YES Total</th>
-                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>NO Total</th>
-                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Event Start</th>
-                  <th style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Event End</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activePools.map((p) => (
-                  <tr key={p.id}>
-                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{p.id}</td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{truncateAddr(p.host)}</td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}><PoolStateBadge state={p.state} /></td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
-                      {(Number(p.yesTotal) / 1_000_000).toFixed(2)} USDC
-                    </td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
-                      {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC
-                    </td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventStart)}</td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventEnd)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ width: '100%' }}>
+              {/* Header row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', fontWeight: 'bold' }}>
+                <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>ID</span>
+                <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Host</span>
+                <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>State</span>
+                <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>YES Total</span>
+                <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>NO Total</span>
+                <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Event Start</span>
+                <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Event End</span>
+              </div>
+              {/* Data rows — each row is a <Link> */}
+              {activePools.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/pools/${p.id}`}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}
+                >
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{p.id}</span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{truncateAddr(p.host)}</span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
+                    <PoolStateBadge state={p.state} />
+                  </span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
+                    {(Number(p.yesTotal) / 1_000_000).toFixed(2)} USDC
+                  </span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
+                    {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC
+                  </span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventStart)}</span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventEnd)}</span>
+                </Link>
+              ))}
+            </div>
           </div>
         </>
       )}
