@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 export const metadata: Metadata = {
   title: 'Create Pool',
   description: 'Create a new prediction pool and stake USDC on an outcome.',
+  alternates: { canonical: '/pools/create' },
 }
 
 export default function CreatePoolPage() {

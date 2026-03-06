@@ -1,36 +1,30 @@
-'use client'
+import type { Metadata } from 'next'
+import { HomeClient } from './HomeClient'
 
-import { useAccount } from 'wagmi'
-import Link from 'next/link'
-import { WalletRecord } from '@/components/WalletRecord'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
+export const metadata: Metadata = {
+  title: 'Clout',
+  description: 'The conviction market for the creator economy. Stake, compete, and prove your edge on-chain.',
+  alternates: { canonical: '/' },
+}
 
-export default function Home() {
-  const { address, isConnected } = useAccount()
-
+export default function HomePage() {
   return (
-    <ErrorBoundary>
-    <div>
-      <h1>Clout</h1>
-      <p>On-chain performance challenges: stake, compete, and prove your edge.</p>
-
-      <div className="flex flex-col sm:flex-row gap-4 my-8">
-        <Link href="/challenges" className="flex-1 p-4 border rounded" aria-label="Browse challenges">
-          <strong>Challenges</strong>
-          <p>Browse, create, and manage PvP escrow challenges.</p>
-        </Link>
-        <Link href="/pools" className="flex-1 p-4 border rounded" aria-label="Browse pools">
-          <strong>Pools</strong>
-          <p>Explore multi-participant challenge pools.</p>
-        </Link>
-      </div>
-
-      {isConnected && address ? (
-        <WalletRecord address={address} />
-      ) : (
-        <p>Connect your wallet to view your stats.</p>
-      )}
-    </div>
-    </ErrorBoundary>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebApplication',
+            name: 'Clout',
+            description: 'The conviction market for the creator economy. Stake, compete, and prove your edge on-chain.',
+            url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://clout.app',
+            applicationCategory: 'FinanceApplication',
+            operatingSystem: 'Web',
+          }),
+        }}
+      />
+      <HomeClient />
+    </>
   )
 }

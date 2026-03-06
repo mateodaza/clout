@@ -5,8 +5,10 @@ import { ConnectWallet } from '@/components/ConnectWallet'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://clout.app'),
   title: { default: 'Clout', template: '%s | Clout' },
   description: 'The conviction market for the creator economy. Stake, compete, and prove your edge on-chain.',
+  alternates: { canonical: '/' },
   openGraph: {
     title: 'Clout',
     description: 'The conviction market for the creator economy. Stake, compete, and prove your edge on-chain.',

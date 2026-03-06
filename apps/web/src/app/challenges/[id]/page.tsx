@@ -11,6 +11,7 @@ export async function generateMetadata({
   return {
     title: `Challenge #${id}`,
     description: `View details and take actions on Challenge #${id} on Clout.`,
+    alternates: { canonical: `/challenges/${id}` },
   }
 }
 

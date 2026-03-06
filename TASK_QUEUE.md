@@ -778,7 +778,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-039
 - **Constraints:** Use `<dialog>` element or a modal div. No modal library. Keep it simple — not a full design system modal.
 
-#### NC-047 [ ] Add SEO-optimized dynamic metadata for all pages
+#### NC-047 [x] Add SEO-optimized dynamic metadata for all pages
 - **What:** Ensure every page has proper metadata using Next.js `generateMetadata` or static `metadata` export. Pages to check/add: `/faucet`, `/challenges` (count in description), `/pools` (count in description), `/challenges/[id]` (already done), `/pools/[id]` (add pool description/host). Add `canonical` URL to all pages. Add JSON-LD structured data to home page (WebApplication schema).
 - **Acceptance criteria:**
   - All pages have `title` and `description` metadata
