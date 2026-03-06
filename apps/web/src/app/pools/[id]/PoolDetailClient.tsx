@@ -23,6 +23,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { formatTimestamp, basescanUrl } from '@/lib/utils'
 import { Countdown } from '@/components/Countdown'
 import { PoolTimeline } from '@/components/PoolTimeline'
+import { PoolProgressBars } from '@/components/PoolProgressBars'
 import ShareButtons from '@/components/ShareButtons'
 
 // ─── Local Types ────────────────────────────────────────────────────────────
@@ -521,6 +522,16 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
               </>
             )}
           </dl>
+
+          <PoolProgressBars
+            yesTotal={pool.yesTotal}
+            noTotal={pool.noTotal}
+            totalPoolCap={pool.totalPoolCap}
+            perWalletCap={pool.perWalletCap}
+            userYesStake={userYesStake}
+            userNoStake={userNoStake}
+            isConnected={isConnected}
+          />
 
           <PoolTimeline
             host={pool.host}

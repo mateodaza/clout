@@ -729,7 +729,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-035
 - **Constraints:** `not-found.tsx` is a Server Component. `error.tsx` must be a Client Component with `"use client"`. Follow Next.js 16 conventions.
 
-#### NC-043 [ ] Add pool staking progress bars
+#### NC-043 [x] Add pool staking progress bars
 - **What:** On `/pools/[id]` detail page, show visual progress bars for: 1) YES vs NO stake totals (horizontal bar, green=YES, red=NO, proportional width). 2) Total pool fill (current total / total cap, if cap exists). 3) Per-wallet remaining allowance (user's stake / wallet cap). Show percentages next to each bar.
 - **Acceptance criteria:**
   - YES/NO bar shows proportional split with percentages
