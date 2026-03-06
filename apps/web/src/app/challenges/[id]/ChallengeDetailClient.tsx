@@ -6,7 +6,7 @@ import { zeroAddress } from 'viem'
 import { ChallengeState, Outcome } from '@clout/types'
 import { cloutEscrowAbi, mockStablecoinAbi, ESCROW_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
-import { Spinner } from '@/components/Spinner'
+import { Skeleton } from '@/components/Skeleton'
 import { ChallengeStateBadge } from '@/components/StateBadge'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
@@ -350,7 +350,19 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
       </div>
       <h1>Challenge #{id}</h1>
 
-      {isLoading && <Spinner />}
+      {isLoading && (
+        <div className="flex flex-col gap-4 mt-4">
+          <Skeleton width="8rem" height="1.75rem" />
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div key={i} className="flex gap-6">
+                <Skeleton width="8rem" height="1rem" className="flex-shrink-0" />
+                <Skeleton width="60%" height="1rem" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!isLoading && !challengeExists && <p>Challenge not found.</p>}
 

@@ -4,7 +4,7 @@ import { useReadContract, useReadContracts } from 'wagmi'
 import { PoolState } from '@clout/types'
 import { cloutPoolAbi, POOL_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
-import { Spinner } from '@/components/Spinner'
+import { Skeleton } from '@/components/Skeleton'
 import { PoolStateBadge } from '@/components/StateBadge'
 
 const ACTIVE_POOL_STATES = new Set([
@@ -81,7 +81,23 @@ export function PoolsClient() {
         <Link href="/pools/create">+ Create Pool</Link>
       </div>
 
-      {isLoading && <Spinner label="Loading pools..." />}
+      {isLoading && (
+        <div className="flex flex-col gap-3 mt-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="border rounded p-3 flex flex-col gap-2">
+              <div className="flex justify-between">
+                <Skeleton width="2rem" height="1rem" />
+                <Skeleton width="5rem" height="1rem" />
+              </div>
+              <Skeleton width="65%" height="1rem" />
+              <Skeleton width="45%" height="1rem" />
+              <Skeleton width="45%" height="1rem" />
+              <Skeleton width="55%" height="1rem" />
+              <Skeleton width="55%" height="1rem" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {!isLoading && activePools.length === 0 && (
         <p>No active pools. <Link href="/pools/create">Create one</Link></p>

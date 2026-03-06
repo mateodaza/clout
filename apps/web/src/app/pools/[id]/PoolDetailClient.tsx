@@ -15,7 +15,7 @@ import {
   POOL_ADDRESS,
 } from '@/lib/contracts'
 import Link from 'next/link'
-import { Spinner } from '@/components/Spinner'
+import { Skeleton } from '@/components/Skeleton'
 import { PoolStateBadge } from '@/components/StateBadge'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
@@ -436,7 +436,19 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
       </div>
       <h1>Pool #{id}</h1>
 
-      {poolLoading && <Spinner />}
+      {poolLoading && (
+        <div className="flex flex-col gap-4 mt-4">
+          <Skeleton width="6rem" height="1.75rem" />
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div key={i} className="flex gap-6">
+                <Skeleton width="8rem" height="1rem" className="flex-shrink-0" />
+                <Skeleton width="60%" height="1rem" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!poolLoading && !poolExists && <p>Pool not found.</p>}
 

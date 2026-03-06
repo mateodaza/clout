@@ -500,7 +500,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-026
 - **Constraints:** Use Next.js `Link` component. Don't break existing card layout. If rows contain buttons, use `e.stopPropagation()` on button clicks to prevent double navigation.
 
-#### NC-028 [ ] Add a global loading skeleton component
+#### NC-028 [x] Add a global loading skeleton component
 - **What:** Create a reusable `Skeleton` component (`apps/web/src/components/Skeleton.tsx`) — a pulsing gray rectangle with configurable width/height. Use it to replace any raw "Loading..." text across all list pages (`/challenges`, `/pools`) and detail pages (`/challenges/[id]`, `/pools/[id]`). Show skeleton cards (3-4 placeholder rows) while contract reads are pending.
 - **Acceptance criteria:**
   - `Skeleton` component accepts `width`, `height`, `className` props

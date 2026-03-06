@@ -5,7 +5,7 @@ import { hexToString } from 'viem'
 import { ChallengeState } from '@clout/types'
 import { cloutEscrowAbi, ESCROW_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
-import { Spinner } from '@/components/Spinner'
+import { Skeleton } from '@/components/Skeleton'
 import { ChallengeStateBadge } from '@/components/StateBadge'
 
 const ACTIVE_STATES = new Set([
@@ -74,7 +74,22 @@ export function ChallengesClient() {
         <Link href="/challenges/create">+ Create Challenge</Link>
       </div>
 
-      {isLoading && <Spinner label="Loading challenges..." />}
+      {isLoading && (
+        <div className="flex flex-col gap-3 mt-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="border rounded p-3 flex flex-col gap-2">
+              <div className="flex justify-between">
+                <Skeleton width="2rem" height="1rem" />
+                <Skeleton width="5rem" height="1rem" />
+              </div>
+              <Skeleton width="70%" height="1rem" />
+              <Skeleton width="70%" height="1rem" />
+              <Skeleton width="40%" height="1rem" />
+              <Skeleton width="55%" height="1rem" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {!isLoading && activeChallenges.length === 0 && (
         <p>No active challenges. <Link href="/challenges/create">Create one</Link></p>
