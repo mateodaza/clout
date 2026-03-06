@@ -14,6 +14,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { formatTimestamp } from '@/lib/utils'
 import { Countdown } from '@/components/Countdown'
 import { ChallengeTimeline } from '@/components/ChallengeTimeline'
+import ShareButtons from '@/components/ShareButtons'
 
 // --- Local Types ---
 
@@ -352,6 +353,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
         <Link href="/challenges">← Back to Challenges</Link>
       </div>
       <h1>Challenge #{id}</h1>
+      <ShareButtons tweetText="I just staked on a challenge on Clout!" />
 
       {isLoading && (
         <div className="flex flex-col gap-4 mt-4">

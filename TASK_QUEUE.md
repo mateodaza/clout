@@ -668,7 +668,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Derive all events from on-chain data (timestamps on the structs). No event log fetching needed. Reuse `formatTimestamp`. Simple vertical timeline with Tailwind — no timeline library.
 
-#### NC-038 [ ] Add share / copy link buttons
+#### NC-038 [x] Add share / copy link buttons
 - **What:** On challenge and pool detail pages, add a "Copy Link" button that copies the current URL to clipboard. Add a "Share on X" button that opens a pre-filled tweet: "I just [created/staked on] a challenge on Clout! [URL]". Show a brief "Copied!" tooltip on copy.
 - **Acceptance criteria:**
   - "Copy Link" button on both detail pages

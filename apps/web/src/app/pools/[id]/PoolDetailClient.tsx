@@ -23,6 +23,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { formatTimestamp } from '@/lib/utils'
 import { Countdown } from '@/components/Countdown'
 import { PoolTimeline } from '@/components/PoolTimeline'
+import ShareButtons from '@/components/ShareButtons'
 
 // ─── Local Types ────────────────────────────────────────────────────────────
 
@@ -435,6 +436,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
         <Link href="/pools">← Back to Pools</Link>
       </div>
       <h1>Pool #{id}</h1>
+      <ShareButtons tweetText="I just staked on a pool on Clout!" />
 
       {poolLoading && (
         <div className="flex flex-col gap-4 mt-4">
