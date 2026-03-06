@@ -484,6 +484,60 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 
 ---
 
+## Phase 6C: UX & Functionality Gaps (Day 8)
+
+> Addressing Codex review feedback + remaining UX gaps before Fuji deployment.
+
+#### NC-027 [ ] Make challenge/pool list rows clickable links to detail pages
+- **What:** On `/challenges`, wrap each challenge card/row in a `<Link href="/challenges/{id}">` so clicking anywhere on the row navigates to the detail page. Same for `/pools` — each pool card/row links to `/pools/{id}`. Add hover state (subtle background change) to indicate clickability. Cursor should be `pointer` on hover.
+- **Acceptance criteria:**
+  - Clicking a challenge row navigates to `/challenges/[id]`
+  - Clicking a pool row navigates to `/pools/[id]`
+  - Hover state visible on both (background shift or border highlight)
+  - Cursor changes to pointer on hover
+  - Existing action buttons inside rows (if any) still work without triggering navigation
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-026
+- **Constraints:** Use Next.js `Link` component. Don't break existing card layout. If rows contain buttons, use `e.stopPropagation()` on button clicks to prevent double navigation.
+
+#### NC-028 [ ] Add a global loading skeleton component
+- **What:** Create a reusable `Skeleton` component (`apps/web/src/components/Skeleton.tsx`) — a pulsing gray rectangle with configurable width/height. Use it to replace any raw "Loading..." text across all list pages (`/challenges`, `/pools`) and detail pages (`/challenges/[id]`, `/pools/[id]`). Show skeleton cards (3-4 placeholder rows) while contract reads are pending.
+- **Acceptance criteria:**
+  - `Skeleton` component accepts `width`, `height`, `className` props
+  - Pulsing animation via Tailwind `animate-pulse`
+  - `/challenges` shows 3 skeleton cards while loading
+  - `/pools` shows 3 skeleton cards while loading
+  - Detail pages show skeleton layout while loading (header + content blocks)
+  - No "Loading..." raw text remains anywhere
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-027
+- **Constraints:** Pure Tailwind — no animation libraries. Keep the skeleton shapes simple (rectangles). One component, reused everywhere.
+
+#### NC-029 [ ] Add "Connect Wallet" prompts on action-gated pages
+- **What:** On detail pages (`/challenges/[id]`, `/pools/[id]`), if the user is not connected, show a clear "Connect your wallet to interact" message where action buttons would normally appear. On create pages (`/challenges/create`, `/pools/create`), show the same prompt above the form with the form inputs disabled. Import and render the existing `ConnectWallet` component inline so the user can connect without scrolling to the nav.
+- **Acceptance criteria:**
+  - Disconnected users see a connect prompt instead of action buttons on detail pages
+  - Disconnected users see a connect prompt above disabled forms on create pages
+  - The `ConnectWallet` component is rendered inline in the prompt area
+  - After connecting, action buttons / form inputs appear immediately (reactive)
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-028
+- **Constraints:** Reuse the existing `ConnectWallet` component — don't build a new one. Use wagmi's `useAccount` to check connection status.
+
+#### NC-030 [ ] Add timestamp formatting and countdown displays
+- **What:** All unix timestamps displayed in the app (challenge creation time, pool eventStart/eventEnd/resolveBy, WalletRecord firstChallengeAt/lastChallengeAt) should be formatted as human-readable dates. Create a utility `formatTimestamp(unix: bigint): string` in `apps/web/src/lib/utils.ts`. For active timeouts (24h confirm window, 48h dispute window, etc.), show a countdown: "Expires in 23h 14m" or "Expired" if past. Create a `Countdown` component that updates every minute.
+- **Acceptance criteria:**
+  - All raw unix timestamps replaced with human-readable dates (e.g., "Mar 5, 2026 at 3:14 PM")
+  - Active timeout windows show countdown ("Expires in Xh Ym")
+  - Countdown updates every 60 seconds without full page re-render
+  - Expired timeouts show "Expired" in red
+  - `formatTimestamp` utility is reusable and handles BigInt input
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-029
+- **Constraints:** No date library (use `Intl.DateTimeFormat` and manual math for countdown). `Countdown` component uses `useEffect` + `setInterval` (60s). Clean up interval on unmount.
+
+---
+
 ## Phase 7: Manual Integration + Demo (Day 9)
 
 > **NOTE:** NC-020 through NC-022 are MANUAL tasks executed by Mateo, not Nightcrawler.
