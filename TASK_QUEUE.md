@@ -429,6 +429,61 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 
 ---
 
+## Phase 6B: Frontend Polish (Day 7)
+
+> Fresh commits in the public repo. Meaningful improvements, not padding.
+
+#### NC-023 [ ] Extract contract ABIs to separate JSON files
+- **What:** `apps/web/src/lib/contracts.ts` is 3011 lines with full ABIs inline as `as const` objects. Extract each ABI to its own file: `apps/web/src/lib/abis/CloutEscrow.json`, `CloutPool.json`, `MockStablecoin.json`. Update `contracts.ts` to import from the JSON files and re-export. Keep the typed `as const` assertion. The file should drop to ~50 lines (imports + address exports + re-exports).
+- **Acceptance criteria:**
+  - Three ABI JSON files in `apps/web/src/lib/abis/`
+  - `contracts.ts` imports and re-exports ABIs with `as const` typing
+  - `contracts.ts` under 80 lines
+  - All existing imports of ABIs from `contracts.ts` still work unchanged
+  - `pnpm turbo build` passes with zero errors
+- **Dependencies:** NC-018
+- **Constraints:** Do NOT change the ABI content — extract as-is. Existing consuming code must not require changes.
+
+#### NC-024 [ ] Add transaction toast notification system
+- **What:** Create a minimal toast/notification component (`apps/web/src/components/Toast.tsx`) for transaction feedback. States: pending ("Transaction submitted..."), confirmed ("Transaction confirmed"), failed ("Transaction failed: {reason}"). Show on every write transaction across all pages. Use a React context provider (`apps/web/src/contexts/ToastContext.tsx`) so any page can trigger a toast. Extract revert reasons from wagmi errors when available. Auto-dismiss success toasts after 5 seconds. Error toasts persist until dismissed.
+- **Acceptance criteria:**
+  - Toast component renders at viewport bottom-right, above page content
+  - Three visual states: pending (yellow/spinner), confirmed (green/check), failed (red/x)
+  - All existing write operations (create challenge, accept, stake, claim, etc.) trigger toasts
+  - Failed transactions show human-readable revert reason when available
+  - Success toasts auto-dismiss after 5 seconds
+  - Error toasts have a dismiss button
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-023
+- **Constraints:** No external toast library — keep it lightweight. Use Tailwind for styling. Context provider goes inside the existing `Providers.tsx` wrapper.
+
+#### NC-025 [ ] Mobile-responsive pass on all pages
+- **What:** Audit all pages (home, challenges list/create/detail, pools list/create/detail) for mobile viewport (375px width). Fix: nav collapse to hamburger or stacked layout, form inputs full-width on mobile, list cards stack vertically, action buttons full-width on mobile, table-like layouts become card layouts on small screens. Use Tailwind responsive prefixes (`sm:`, `md:`).
+- **Acceptance criteria:**
+  - All pages render without horizontal overflow at 375px viewport width
+  - Nav is usable on mobile (hamburger menu or stacked links)
+  - Forms are usable on mobile (full-width inputs, properly sized touch targets)
+  - Challenge/pool lists stack vertically on mobile
+  - Detail page action buttons are full-width on mobile
+  - No text truncation that hides critical information
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-024
+- **Constraints:** Mobile-first adjustments only — don't redesign. Use Tailwind responsive classes. Test mentally against 375px (iPhone SE) and 768px (tablet) breakpoints.
+
+#### NC-026 [ ] Add meta tags, OG images, and favicon
+- **What:** Use Next.js Metadata API to add proper `<title>`, `<meta description>`, and Open Graph tags to all routes. Root layout gets default metadata. Each route segment gets specific titles (`Challenges | Clout`, `Create Pool | Clout`, etc.). Add a simple favicon (can be a text-based SVG favicon via `app/icon.svg`). Add `robots.txt` and `sitemap.xml` via Next.js conventions (`app/robots.ts`, `app/sitemap.ts`).
+- **Acceptance criteria:**
+  - Every page has a unique `<title>` and `<meta description>`
+  - Root layout has Open Graph metadata (title, description, type: "website")
+  - Favicon renders in browser tab
+  - `robots.txt` accessible at `/robots.txt`
+  - `sitemap.xml` accessible at `/sitemap.xml` with all routes
+  - `pnpm turbo build` passes
+- **Dependencies:** NC-025
+- **Constraints:** Use Next.js `metadata` export or `generateMetadata` — no `<Head>` components. Keep OG descriptions short and descriptive for Build Games judges. SVG favicon preferred (no image asset needed).
+
+---
+
 ## Phase 7: Manual Integration + Demo (Day 9)
 
 > **NOTE:** NC-020 through NC-022 are MANUAL tasks executed by Mateo, not Nightcrawler.
