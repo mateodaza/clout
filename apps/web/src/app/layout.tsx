@@ -4,8 +4,13 @@ import { Providers } from '@/components/Providers'
 import { ConnectWallet } from '@/components/ConnectWallet'
 
 export const metadata: Metadata = {
-  title: 'Clout',
-  description: 'The conviction market for the creator economy.',
+  title: { default: 'Clout', template: '%s | Clout' },
+  description: 'The conviction market for the creator economy. Stake, compete, and prove your edge on-chain.',
+  openGraph: {
+    title: 'Clout',
+    description: 'The conviction market for the creator economy. Stake, compete, and prove your edge on-chain.',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({

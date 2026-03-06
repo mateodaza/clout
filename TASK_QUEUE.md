@@ -470,7 +470,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-024
 - **Constraints:** Mobile-first adjustments only — don't redesign. Use Tailwind responsive classes. Test mentally against 375px (iPhone SE) and 768px (tablet) breakpoints.
 
-#### NC-026 [ ] Add meta tags, OG images, and favicon
+#### NC-026 [x] Add meta tags, OG images, and favicon
 - **What:** Use Next.js Metadata API to add proper `<title>`, `<meta description>`, and Open Graph tags to all routes. Root layout gets default metadata. Each route segment gets specific titles (`Challenges | Clout`, `Create Pool | Clout`, etc.). Add a simple favicon (can be a text-based SVG favicon via `app/icon.svg`). Add `robots.txt` and `sitemap.xml` via Next.js conventions (`app/robots.ts`, `app/sitemap.ts`).
 - **Acceptance criteria:**
   - Every page has a unique `<title>` and `<meta description>`
