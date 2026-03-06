@@ -20,7 +20,7 @@ import { PoolStateBadge } from '@/components/StateBadge'
 import { ConnectWallet } from '@/components/ConnectWallet'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
-import { formatTimestamp } from '@/lib/utils'
+import { formatTimestamp, basescanUrl } from '@/lib/utils'
 import { Countdown } from '@/components/Countdown'
 import { PoolTimeline } from '@/components/PoolTimeline'
 import ShareButtons from '@/components/ShareButtons'
@@ -461,11 +461,15 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
             <dt className="font-semibold py-1">State</dt>
             <dd className="py-1"><PoolStateBadge state={pool.state} /></dd>
             <dt className="font-semibold py-1">Host</dt>
-            <dd className="py-1 break-all">{pool.host}</dd>
+            <dd className="py-1 break-all"><a href={basescanUrl('address', pool.host)} target="_blank" rel="noopener">{truncateAddr(pool.host)}</a></dd>
             <dt className="font-semibold py-1">Resolver</dt>
-            <dd className="py-1 break-all">{pool.resolver}</dd>
+            <dd className="py-1 break-all">
+              {pool.resolver === zeroAddress
+                ? 'None'
+                : <a href={basescanUrl('address', pool.resolver)} target="_blank" rel="noopener">{truncateAddr(pool.resolver)}</a>}
+            </dd>
             <dt className="font-semibold py-1">Token</dt>
-            <dd className="py-1 break-all">{pool.token}</dd>
+            <dd className="py-1 break-all"><a href={basescanUrl('address', pool.token)} target="_blank" rel="noopener">{truncateAddr(pool.token)}</a></dd>
             <dt className="font-semibold py-1">Event Start</dt>
             <dd className="py-1">{formatTimestamp(pool.eventStart)}</dd>
             <dt className="font-semibold py-1">Event End</dt>
@@ -755,9 +759,9 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
                 {actionState === 'done' && mainTxHash && (
                   <p>
                     Success! Tx:{' '}
-                    <span className="font-mono">
+                    <a href={basescanUrl('tx', mainTxHash)} target="_blank" rel="noopener" className="font-mono">
                       {truncateAddr(mainTxHash)}
-                    </span>
+                    </a>
                   </p>
                 )}
                 {actionState === 'error' && (

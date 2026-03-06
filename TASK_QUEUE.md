@@ -706,7 +706,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Constraints:** Keep it concise — README, not a book. Mermaid diagram in markdown (GitHub renders it). Don't include private keys or real secrets in examples.
 
 
-#### NC-041 [ ] Add Basescan links for all on-chain data
+#### NC-041 [x] Add Basescan links for all on-chain data
 - **What:** Everywhere an address or transaction hash is displayed, make it a clickable link to Basescan. Addresses link to `https://sepolia.basescan.org/address/{addr}`. Tx hashes link to `https://sepolia.basescan.org/tx/{hash}`. Create a utility `basescanUrl(type: 'address' | 'tx', value: string): string` in `apps/web/src/lib/utils.ts`. Apply to: challenge detail (creator, opponent, resolver, token addresses), pool detail (host, resolver), tx hash displays after writes, WalletRecord component.
 - **Acceptance criteria:**
   - All addresses on detail pages link to Basescan

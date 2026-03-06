@@ -1,8 +1,9 @@
+import React from 'react'
 import { PoolState } from '@clout/types'
-import { formatTimestamp } from '@/lib/utils'
+import { formatTimestamp, basescanUrl } from '@/lib/utils'
 
-type TimestampedEntry = { kind: 'ts'; ts: bigint; label: string }
-type StaticEntry = { kind: 'static'; label: string }
+type TimestampedEntry = { kind: 'ts'; ts: bigint; label: React.ReactNode }
+type StaticEntry = { kind: 'static'; label: React.ReactNode }
 type TimelineEntry = TimestampedEntry | StaticEntry
 
 type PoolTimelineProps = {
@@ -36,7 +37,7 @@ export function PoolTimeline({ host, eventStart, resolvedAt, yesWins, state }: P
   }
 
   const entries: TimelineEntry[] = [
-    { kind: 'static', label: `Created by ${truncateAddr(host)}` },
+    { kind: 'static', label: <>Created by <a href={basescanUrl('address', host)} target="_blank" rel="noopener">{truncateAddr(host)}</a></> },
     ...timestamped,
     ...terminal,
   ]

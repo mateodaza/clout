@@ -27,3 +27,8 @@ export function formatBalance(raw: bigint): string {
   }).format(Number(raw) / 1_000_000)
   return `${formatted} mUSDC`
 }
+
+export function basescanUrl(type: 'address' | 'tx', value: string): string {
+  const base = process.env.NEXT_PUBLIC_EXPLORER_URL ?? 'https://sepolia.basescan.org'
+  return `${base}/${type === 'address' ? 'address' : 'tx'}/${value}`
+}

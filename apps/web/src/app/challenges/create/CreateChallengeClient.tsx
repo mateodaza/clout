@@ -8,7 +8,7 @@ import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
 import { ConnectWallet } from '@/components/ConnectWallet'
 import { useTokenBalance } from '@/lib/useTokenBalance'
-import { formatBalance } from '@/lib/utils'
+import { formatBalance, basescanUrl } from '@/lib/utils'
 
 function validateStake(s: string): string | null {
   try {
@@ -397,11 +397,21 @@ export function CreateChallengeClient() {
       </form>
 
       {formState === 'approving' && approveTxHash && (
-        <p>Approve tx: {approveTxHash}</p>
+        <p>
+          Approve tx:{' '}
+          <a href={basescanUrl('tx', approveTxHash)} target="_blank" rel="noopener">
+            {`${approveTxHash.slice(0, 10)}…${approveTxHash.slice(-8)}`}
+          </a>
+        </p>
       )}
 
       {(formState === 'creating' || formState === 'done') && createTxHash && (
-        <p>Create tx: {createTxHash}</p>
+        <p>
+          Create tx:{' '}
+          <a href={basescanUrl('tx', createTxHash)} target="_blank" rel="noopener">
+            {`${createTxHash.slice(0, 10)}…${createTxHash.slice(-8)}`}
+          </a>
+        </p>
       )}
 
       {formState === 'done' && (

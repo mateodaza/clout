@@ -4,7 +4,7 @@ import { useReadContract } from 'wagmi'
 import { WalletRecord as WalletRecordType } from '@clout/types'
 import { cloutEscrowAbi, ESCROW_ADDRESS } from '@/lib/contracts'
 import { Spinner } from '@/components/Spinner'
-import { formatTimestamp } from '@/lib/utils'
+import { formatTimestamp, basescanUrl } from '@/lib/utils'
 
 export function WalletRecord({ address }: { address: `0x${string}` }) {
   const { data, isLoading } = useReadContract({
@@ -21,6 +21,16 @@ export function WalletRecord({ address }: { address: `0x${string}` }) {
 
   return (
     <div style={{ padding: '1rem' }}>
+      <p>
+        Address:{' '}
+        <a
+          href={basescanUrl('address', address)}
+          target="_blank"
+          rel="noopener"
+        >
+          {`${address.slice(0, 6)}…${address.slice(-4)}`}
+        </a>
+      </p>
       <dl>
         <dt>Challenges Entered</dt>
         <dd>{Number(record.challengesEntered)}</dd>

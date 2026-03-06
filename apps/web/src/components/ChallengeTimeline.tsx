@@ -1,8 +1,9 @@
+import React from 'react'
 import { ChallengeState, Outcome } from '@clout/types'
-import { formatTimestamp } from '@/lib/utils'
+import { formatTimestamp, basescanUrl } from '@/lib/utils'
 
-type TimestampedEntry = { kind: 'ts'; ts: bigint; label: string }
-type StaticEntry = { kind: 'static'; label: string }
+type TimestampedEntry = { kind: 'ts'; ts: bigint; label: React.ReactNode }
+type StaticEntry = { kind: 'static'; label: React.ReactNode }
 type TimelineEntry = TimestampedEntry | StaticEntry
 
 type ChallengeTimelineProps = {
@@ -48,9 +49,9 @@ export function ChallengeTimeline({
   appealedAt,
 }: ChallengeTimelineProps) {
   const candidates: TimestampedEntry[] = [
-    { kind: 'ts', ts: createdAt, label: `Created by ${truncateAddr(creator)}` },
-    { kind: 'ts', ts: acceptedAt, label: `Accepted by ${truncateAddr(opponent)}` },
-    { kind: 'ts', ts: submittedAt, label: `Result submitted by ${truncateAddr(submittedBy)}` },
+    { kind: 'ts', ts: createdAt, label: <>Created by <a href={basescanUrl('address', creator)} target="_blank" rel="noopener">{truncateAddr(creator)}</a></> },
+    { kind: 'ts', ts: acceptedAt, label: <>Accepted by <a href={basescanUrl('address', opponent)} target="_blank" rel="noopener">{truncateAddr(opponent)}</a></> },
+    { kind: 'ts', ts: submittedAt, label: <>Result submitted by <a href={basescanUrl('address', submittedBy)} target="_blank" rel="noopener">{truncateAddr(submittedBy)}</a></> },
     { kind: 'ts', ts: disputedAt, label: 'Result disputed' },
     { kind: 'ts', ts: resolvedAt, label: 'Dispute resolved' },
     { kind: 'ts', ts: appealedAt, label: 'Resolution appealed' },
