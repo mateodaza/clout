@@ -1,78 +1,104 @@
 # Clout
 
-Clout is a conviction market protocol: users make public, stake-backed claims, outcomes settle via on-chain escrow, and track records accumulate over time.
+Clout is a stake-backed conviction market on Base Sepolia — make public claims, back them with USDC, and build an on-chain track record.
 
-Gaming is the wedge.
+## Architecture
 
-## Vision
+```mermaid
+graph LR
+  User["User"] --> Frontend["Next.js Frontend\n(apps/web)"]
+  Frontend --> Wagmi["wagmi / viem"]
+  Wagmi --> Chain["Base Sepolia"]
+  Chain --> Escrow["CloutEscrow\n(1v1 challenges)"]
+  Chain --> Pool["CloutPool\n(challenge pools)"]
+```
 
-Clout starts with gaming because the behavior already exists and outcomes are often verifiable.  
-The larger idea is broader than gaming:
+## Tech Stack
 
-- **Rail A (duels)** captures direct self-commitment
-- **Rail B (challenge pools)** captures social conviction loops
-- **Rail C (open markets)** expands into larger event markets without losing conviction principles
+| Layer | Technology |
+|---|---|
+| Smart contracts | Solidity 0.8.20 + OpenZeppelin (Foundry) |
+| Frontend | Next.js 16 / React 19 / Tailwind 4 (TypeScript) |
+| Web3 | wagmi v2 + viem + TanStack Query |
+| Monorepo | pnpm workspaces + Turborepo |
 
-The long-term thesis is that reputation-calibrated conviction becomes reusable infrastructure across individual, community, and event-driven domains.
+## Local Development
 
-## Current Scope
+**Prerequisites**
 
-This repo currently contains strategy and pitch documentation for internal development.
+- Node 20+
+- pnpm — `npm i -g pnpm`
+- Foundry — `foundryup`
 
-- `RESEARCH.md`: full strategic + product spec
-- `PITCH_SCRIPT.md`: final 2-minute pitch script
+**Clone and install**
 
-## Product Rails
+```bash
+git clone <repo-url> clout
+cd clout
+pnpm install
+```
 
-- **Rail A: PvP Escrow (MVP)**
-  - 1v1 match stakes
-  - matched collateral
-  - manual resolution fallback in v1
+**Environment**
 
-- **Rail B: Challenge Pools (MVP-lite)**
-  - host-defined YES/NO challenge
-  - audience stake pool
-  - fixed close time + event window constraints
-  - capped participation + manual resolution
+```bash
+cp apps/web/.env.example apps/web/.env.local
+```
 
-- **Rail C: Open Markets (post-MVP)**
-  - broader event markets and pricing rails
-  - expansion layer only (not core identity)
-  - must preserve conviction guardrails (identity visibility, track-record-first UX, time-at-risk signals)
+Fill in the following variables in `apps/web/.env.local`:
 
-## MVP (Stage 2)
+```
+NEXT_PUBLIC_ESCROW_ADDRESS=
+NEXT_PUBLIC_POOL_ADDRESS=
+NEXT_PUBLIC_USDC_ADDRESS=
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
+```
 
-Target: **March 9, 2026**
+**Start the dev server**
 
-In scope:
+```bash
+pnpm turbo dev
+# or
+cd apps/web && pnpm dev
+```
 
-- Rail A end-to-end lifecycle
-- Rail B-lite end-to-end lifecycle
-- USDC collateral on Base Sepolia
-- basic web app flow for create/join/resolve/claim
+## Contract Deployment
 
-Out of scope:
+```bash
+cd packages/contracts
+forge build
+forge test -v
+forge script script/Deploy.s.sol --broadcast --rpc-url $BASE_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY
+```
 
-- full uncapped Challenge Pools
-- Rail C open markets
-- automated game API resolution
-- x402 convenience layer
+After deploying, update `DEPLOYMENTS.md` with the new addresses. Do not commit private keys.
 
-## After MVP (Stage 3+)
+## Project Structure
 
-After Stage 2 ships cleanly, focus shifts from core proof to scale and integration:
+```
+clout/
+├── apps/
+│   └── web/          # Next.js frontend (@clout/web)
+├── packages/
+│   ├── contracts/    # Solidity/Foundry (@clout/contracts)
+│   └── types/        # Shared TS types (@clout/types)
+├── DEPLOYMENTS.md
+├── RESEARCH.md
+└── turbo.json
+```
 
-- **Challenge Pools expansion**: uncapped pools, better discovery, stronger abuse controls
-- **Rail C exploration**: open markets as an extension layer with conviction guardrails
-- **Agent support clarity**:
-  - **Agent-compatible now**: any wallet (human or AI) can use core contracts
-  - **Agent integration later**: x402 adds HTTP-native payment flow and smoother agent UX
+## Testing
 
-This keeps product identity anchored in conviction while expanding distribution and automation.
+```bash
+# Contracts (Foundry)
+cd packages/contracts && forge test -v
 
-## Next Step
+# TypeScript typecheck (all packages)
+pnpm turbo typecheck
 
-If you are reviewing this project for demo readiness, start with:
+# Full build (all packages)
+pnpm turbo build
+```
 
-1. `PITCH_SCRIPT.md`
-2. `RESEARCH.md`
+## Deployed Addresses
+
+See [DEPLOYMENTS.md](./DEPLOYMENTS.md) for live Base Sepolia contract addresses.

@@ -692,7 +692,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Use React class component for error boundary (hooks can't catch render errors). Map error codes in `parseRevertReason` or a new `friendlyError` utility. Keep the fallback UI simple.
 
-#### NC-040 [ ] Add README with setup instructions and architecture overview
+#### NC-040 [x] Add README with setup instructions and architecture overview
 - **What:** Rewrite `README.md` with: 1) One-line description. 2) Architecture diagram (mermaid in markdown). 3) Tech stack list. 4) Local development setup (prerequisites, install, env setup, dev server). 5) Contract deployment instructions. 6) Project structure (monorepo layout). 7) Testing instructions. 8) Deployed addresses (link to DEPLOYMENTS.md).
 - **Acceptance criteria:**
   - README has all 8 sections
