@@ -741,7 +741,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Pure Tailwind for bars (colored divs with percentage widths). Calculate percentages in component. Handle division by zero.
 
-#### NC-044 [ ] Add pool event countdown on list and detail pages
+#### NC-044 [x] Add pool event countdown on list and detail pages
 - **What:** On `/pools` list page, show time until eventStart for OPEN pools ("Starts in 2d 5h") and time until eventEnd for CLOSED pools ("Ends in 1d 3h"). On `/pools/[id]` detail page, show countdown for all relevant timestamps: eventStart, eventEnd, resolveBy. Use the existing `Countdown` component from NC-030. Past timestamps show "Started", "Ended", "Resolve deadline passed" respectively.
 - **Acceptance criteria:**
   - Pool list shows countdown for eventStart/eventEnd per pool state

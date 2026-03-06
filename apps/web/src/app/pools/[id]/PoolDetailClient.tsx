@@ -472,14 +472,24 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
             <dt className="font-semibold py-1">Token</dt>
             <dd className="py-1 break-all"><a href={basescanUrl('address', pool.token)} target="_blank" rel="noopener">{truncateAddr(pool.token)}</a></dd>
             <dt className="font-semibold py-1">Event Start</dt>
-            <dd className="py-1">{formatTimestamp(pool.eventStart)}</dd>
+            <dd className="py-1">
+              {formatTimestamp(pool.eventStart)}
+              {pool.eventStart > 0n && (
+                <> · <Countdown expiresAt={pool.eventStart} prefix="Starts in" expiredLabel="Started" /></>
+              )}
+            </dd>
             <dt className="font-semibold py-1">Event End</dt>
-            <dd className="py-1">{formatTimestamp(pool.eventEnd)}</dd>
+            <dd className="py-1">
+              {formatTimestamp(pool.eventEnd)}
+              {pool.eventEnd > 0n && (
+                <> · <Countdown expiresAt={pool.eventEnd} prefix="Ends in" expiredLabel="Ended" /></>
+              )}
+            </dd>
             <dt className="font-semibold py-1">Resolve By</dt>
             <dd className="py-1">
               {formatTimestamp(pool.resolveBy)}
-              {pool.state === PoolState.CLOSED && (
-                <> · <Countdown expiresAt={pool.resolveBy} /></>
+              {pool.resolveBy > 0n && (
+                <> · <Countdown expiresAt={pool.resolveBy} prefix="Resolves in" expiredLabel="Resolve deadline passed" /></>
               )}
             </dd>
             <dt className="font-semibold py-1">Resolved At</dt>

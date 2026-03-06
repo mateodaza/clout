@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { Skeleton } from '@/components/Skeleton'
 import { PoolStateBadge } from '@/components/StateBadge'
 import { formatTimestamp } from '@/lib/utils'
+import { Countdown } from '@/components/Countdown'
 
 const POOL_FILTER_SETS: Record<string, Set<number>> = {
   open:     new Set([PoolState.OPEN]),
@@ -207,8 +208,18 @@ export function PoolsClient() {
                 <div className="text-sm">Host: {truncateAddr(p.host)}</div>
                 <div className="text-sm">YES: {(Number(p.yesTotal) / 1_000_000).toFixed(2)} USDC</div>
                 <div className="text-sm">NO: {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC</div>
-                <div className="text-sm">Start: {formatTimestamp(p.eventStart)}</div>
-                <div className="text-sm">End: {formatTimestamp(p.eventEnd)}</div>
+                <div className="text-sm">
+                  Start: {formatTimestamp(p.eventStart)}
+                  {POOL_FILTER_SETS.open.has(p.state) && (
+                    <> · <Countdown expiresAt={p.eventStart} prefix="Starts in" expiredLabel="Started" /></>
+                  )}
+                </div>
+                <div className="text-sm">
+                  End: {formatTimestamp(p.eventEnd)}
+                  {POOL_FILTER_SETS.closed.has(p.state) && (
+                    <> · <Countdown expiresAt={p.eventEnd} prefix="Ends in" expiredLabel="Ended" /></>
+                  )}
+                </div>
               </Link>
             ))}
           </div>
@@ -245,8 +256,18 @@ export function PoolsClient() {
                   <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
                     {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC
                   </span>
-                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTimestamp(p.eventStart)}</span>
-                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTimestamp(p.eventEnd)}</span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
+                    {formatTimestamp(p.eventStart)}
+                    {POOL_FILTER_SETS.open.has(p.state) && (
+                      <> · <Countdown expiresAt={p.eventStart} prefix="Starts in" expiredLabel="Started" /></>
+                    )}
+                  </span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
+                    {formatTimestamp(p.eventEnd)}
+                    {POOL_FILTER_SETS.closed.has(p.state) && (
+                      <> · <Countdown expiresAt={p.eventEnd} prefix="Ends in" expiredLabel="Ended" /></>
+                    )}
+                  </span>
                 </Link>
               ))}
             </div>
