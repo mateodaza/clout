@@ -433,7 +433,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 
 > Fresh commits in the public repo. Meaningful improvements, not padding.
 
-#### NC-023 [ ] Extract contract ABIs to separate JSON files
+#### NC-023 [x] Extract contract ABIs to separate JSON files
 - **What:** `apps/web/src/lib/contracts.ts` is 3011 lines with full ABIs inline as `as const` objects. Extract each ABI to its own file: `apps/web/src/lib/abis/CloutEscrow.json`, `CloutPool.json`, `MockStablecoin.json`. Update `contracts.ts` to import from the JSON files and re-export. Keep the typed `as const` assertion. The file should drop to ~50 lines (imports + address exports + re-exports).
 - **Acceptance criteria:**
   - Three ABI JSON files in `apps/web/src/lib/abis/`
