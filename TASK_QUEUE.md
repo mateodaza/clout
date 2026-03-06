@@ -618,7 +618,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Client-side filtering only (data is already loaded via multicall). Use state for active filter. Keep filter buttons as simple styled buttons, not a dropdown.
 
-#### NC-034 [ ] Add "My Challenges" and "My Pools" views
+#### NC-034 [x] Add "My Challenges" and "My Pools" views
 - **What:** On `/challenges` page, add a toggle: "All Challenges" / "My Challenges". "My Challenges" filters to challenges where connected wallet is creator OR opponent. On `/pools` page, same toggle: "All Pools" / "My Pools". "My Pools" filters to pools where the user has staked (yesStake > 0 or noStake > 0) — requires reading `getStakes(poolId, address)` for each pool.
 - **Acceptance criteria:**
   - Toggle renders on both list pages (only when wallet connected)

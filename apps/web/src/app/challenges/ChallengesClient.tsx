@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useReadContract, useReadContracts } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { hexToString } from 'viem'
 import { ChallengeState } from '@clout/types'
 import { cloutEscrowAbi, ESCROW_ADDRESS } from '@/lib/contracts'
@@ -31,6 +32,17 @@ function truncateAddr(addr: string): string {
 export function ChallengesClient() {
   const [filter, setFilter] = useState<'all' | 'open' | 'active' | 'resolved'>('all')
   const [sortAsc, setSortAsc] = useState(false)
+  const { address, isConnected } = useAccount()
+  const [myView, setMyView] = useState(false)
+
+  useEffect(() => {
+    const v = sessionStorage.getItem('clout:challenges:myView')
+    if (v === 'true') setMyView(true)
+  }, [])
+
+  useEffect(() => {
+    sessionStorage.setItem('clout:challenges:myView', String(myView))
+  }, [myView])
 
   const { data: countData, isLoading: countLoading } = useReadContract({
     address: ESCROW_ADDRESS,
@@ -69,9 +81,16 @@ export function ChallengesClient() {
     })
     .filter((c): c is ChallengeRow => c !== null)
 
-  const displayChallenges = allChallenges
-    .filter(c => filter === 'all' || CHALLENGE_FILTER_SETS[filter].has(c.state))
-    .sort((a, b) => sortAsc ? a.id - b.id : b.id - a.id)
+  const displayChallenges = useMemo(() => {
+    return allChallenges
+      .filter(c => filter === 'all' || CHALLENGE_FILTER_SETS[filter].has(c.state))
+      .filter(c => {
+        if (!myView || !address) return true
+        const addrLower = address.toLowerCase()
+        return c.creator.toLowerCase() === addrLower || c.opponent.toLowerCase() === addrLower
+      })
+      .sort((a, b) => sortAsc ? a.id - b.id : b.id - a.id)
+  }, [allChallenges, filter, sortAsc, myView, address])
 
   const filterButtons: { label: string; value: 'all' | 'open' | 'active' | 'resolved' }[] = [
     { label: 'All', value: 'all' },
@@ -101,6 +120,22 @@ export function ChallengesClient() {
         <button onClick={() => setSortAsc(s => !s)} style={{ marginLeft: 'auto' }}>
           ↕ {sortAsc ? 'Oldest first' : 'Newest first'}
         </button>
+        {isConnected && (
+          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+            <button
+              onClick={() => setMyView(false)}
+              style={!myView ? { fontWeight: 700, borderBottom: '2px solid currentColor' } : undefined}
+            >
+              All Challenges
+            </button>
+            <button
+              onClick={() => setMyView(true)}
+              style={myView ? { fontWeight: 700, borderBottom: '2px solid currentColor' } : undefined}
+            >
+              My Challenges
+            </button>
+          </div>
+        )}
       </div>
 
       {isLoading && (
@@ -122,9 +157,11 @@ export function ChallengesClient() {
 
       {!isLoading && displayChallenges.length === 0 && (
         <p>
-          {filter === 'all'
-            ? <><span>No challenges yet. </span><Link href="/challenges/create">Create one</Link></>
-            : 'No challenges match this filter.'
+          {myView
+            ? 'You have no challenges yet.'
+            : filter === 'all'
+              ? <><span>No challenges yet. </span><Link href="/challenges/create">Create one</Link></>
+              : 'No challenges match this filter.'
           }
         </p>
       )}

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useReadContract, useReadContracts } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { PoolState } from '@clout/types'
 import { cloutPoolAbi, POOL_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
@@ -32,6 +33,17 @@ function truncateAddr(addr: string): string {
 export function PoolsClient() {
   const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'resolved'>('all')
   const [sortAsc, setSortAsc] = useState(false)
+  const { address, isConnected } = useAccount()
+  const [myView, setMyView] = useState(false)
+
+  useEffect(() => {
+    const v = sessionStorage.getItem('clout:pools:myView')
+    if (v === 'true') setMyView(true)
+  }, [])
+
+  useEffect(() => {
+    sessionStorage.setItem('clout:pools:myView', String(myView))
+  }, [myView])
 
   const { data: countData, isLoading: countLoading } = useReadContract({
     address: POOL_ADDRESS,
@@ -51,7 +63,28 @@ export function PoolsClient() {
     query: { enabled: count > 0 },
   })
 
-  const isLoading = countLoading || poolsLoading
+  const { data: stakesResults, isLoading: stakesLoading } = useReadContracts({
+    contracts: Array.from({ length: count }, (_, i) => ({
+      address: POOL_ADDRESS,
+      abi: cloutPoolAbi,
+      functionName: 'getStakes' as const,
+      args: [BigInt(i + 1), address!] as const,
+    })),
+    query: { enabled: myView && !!address && count > 0 },
+  })
+
+  const stakedPoolIds = useMemo<Set<number>>(() => {
+    if (!myView || !address || !stakesResults) return new Set()
+    const ids = new Set<number>()
+    stakesResults.forEach((r, i) => {
+      if (!r.result) return
+      const [yesStake, noStake] = r.result as [bigint, bigint]
+      if (yesStake > 0n || noStake > 0n) ids.add(i + 1)
+    })
+    return ids
+  }, [stakesResults, myView, address])
+
+  const isLoading = countLoading || poolsLoading || (myView && stakesLoading)
 
   // pools() returns a tuple — field order per CloutPool.sol:
   // 0=host, 1=resolver, 2=token, 3=eventStart, 4=eventEnd, 5=resolveBy,
@@ -73,9 +106,12 @@ export function PoolsClient() {
     })
     .filter((p): p is PoolRow => p !== null)
 
-  const displayPools = allPools
-    .filter(p => filter === 'all' || POOL_FILTER_SETS[filter].has(p.state))
-    .sort((a, b) => sortAsc ? a.id - b.id : b.id - a.id)
+  const displayPools = useMemo(() => {
+    return allPools
+      .filter(p => filter === 'all' || POOL_FILTER_SETS[filter].has(p.state))
+      .filter(p => !myView || !address || stakedPoolIds.has(p.id))
+      .sort((a, b) => sortAsc ? a.id - b.id : b.id - a.id)
+  }, [allPools, filter, sortAsc, myView, address, stakedPoolIds])
 
   const filterButtons: { label: string; value: 'all' | 'open' | 'closed' | 'resolved' }[] = [
     { label: 'All', value: 'all' },
@@ -105,6 +141,22 @@ export function PoolsClient() {
         <button onClick={() => setSortAsc(s => !s)} style={{ marginLeft: 'auto' }}>
           ↕ {sortAsc ? 'Oldest first' : 'Newest first'}
         </button>
+        {isConnected && (
+          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+            <button
+              onClick={() => setMyView(false)}
+              style={!myView ? { fontWeight: 700, borderBottom: '2px solid currentColor' } : undefined}
+            >
+              All Pools
+            </button>
+            <button
+              onClick={() => setMyView(true)}
+              style={myView ? { fontWeight: 700, borderBottom: '2px solid currentColor' } : undefined}
+            >
+              My Pools
+            </button>
+          </div>
+        )}
       </div>
 
       {isLoading && (
@@ -127,9 +179,11 @@ export function PoolsClient() {
 
       {!isLoading && displayPools.length === 0 && (
         <p>
-          {filter === 'all'
-            ? <><span>No pools yet. </span><Link href="/pools/create">Create one</Link></>
-            : 'No pools match this filter.'
+          {myView
+            ? 'You have no pools yet.'
+            : filter === 'all'
+              ? <><span>No pools yet. </span><Link href="/pools/create">Create one</Link></>
+              : 'No pools match this filter.'
           }
         </p>
       )}
