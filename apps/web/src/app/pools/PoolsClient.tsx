@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useReadContract, useReadContracts } from 'wagmi'
 import { PoolState } from '@clout/types'
 import { cloutPoolAbi, POOL_ADDRESS } from '@/lib/contracts'
@@ -8,13 +9,11 @@ import { Skeleton } from '@/components/Skeleton'
 import { PoolStateBadge } from '@/components/StateBadge'
 import { formatTimestamp } from '@/lib/utils'
 
-const ACTIVE_POOL_STATES = new Set([
-  PoolState.OPEN,       // 0
-  PoolState.CLOSED,     // 1
-  PoolState.SUBMITTED,  // 2
-  PoolState.DISPUTED,   // 3
-  // FINALIZED (4) and VOIDED (5) are excluded
-])
+const POOL_FILTER_SETS: Record<string, Set<number>> = {
+  open:     new Set([PoolState.OPEN]),
+  closed:   new Set([PoolState.CLOSED, PoolState.SUBMITTED, PoolState.DISPUTED]),
+  resolved: new Set([PoolState.FINALIZED, PoolState.VOIDED]),
+}
 
 type PoolRow = {
   id: number
@@ -31,6 +30,9 @@ function truncateAddr(addr: string): string {
 }
 
 export function PoolsClient() {
+  const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'resolved'>('all')
+  const [sortAsc, setSortAsc] = useState(false)
+
   const { data: countData, isLoading: countLoading } = useReadContract({
     address: POOL_ADDRESS,
     abi: cloutPoolAbi,
@@ -55,7 +57,7 @@ export function PoolsClient() {
   // 0=host, 1=resolver, 2=token, 3=eventStart, 4=eventEnd, 5=resolveBy,
   // 6=perWalletCap, 7=totalPoolCap, 8=hostCommissionBps, 9=state,
   // 10=yesTotal, 11=noTotal, 12=resolvedAt, 13=yesWins, 14=losingStakerCount, 15=flagCount
-  const activePools: PoolRow[] = (poolResults ?? [])
+  const allPools: PoolRow[] = (poolResults ?? [])
     .map((r, i) => {
       if (!r.result) return null
       const p = r.result as readonly unknown[]
@@ -69,13 +71,40 @@ export function PoolsClient() {
         eventEnd: p[4] as bigint,
       }
     })
-    .filter((p): p is PoolRow => p !== null && ACTIVE_POOL_STATES.has(p.state))
+    .filter((p): p is PoolRow => p !== null)
+
+  const displayPools = allPools
+    .filter(p => filter === 'all' || POOL_FILTER_SETS[filter].has(p.state))
+    .sort((a, b) => sortAsc ? a.id - b.id : b.id - a.id)
+
+  const filterButtons: { label: string; value: 'all' | 'open' | 'closed' | 'resolved' }[] = [
+    { label: 'All', value: 'all' },
+    { label: 'Open', value: 'open' },
+    { label: 'Closed', value: 'closed' },
+    { label: 'Resolved', value: 'resolved' },
+  ]
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h1>Pools</h1>
         <Link href="/pools/create">+ Create Pool</Link>
+      </div>
+
+      {/* Filter + sort controls */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        {filterButtons.map(btn => (
+          <button
+            key={btn.value}
+            onClick={() => setFilter(btn.value)}
+            style={filter === btn.value ? { fontWeight: 700, borderBottom: '2px solid currentColor' } : undefined}
+          >
+            {btn.label}
+          </button>
+        ))}
+        <button onClick={() => setSortAsc(s => !s)} style={{ marginLeft: 'auto' }}>
+          ↕ {sortAsc ? 'Oldest first' : 'Newest first'}
+        </button>
       </div>
 
       {isLoading && (
@@ -96,17 +125,22 @@ export function PoolsClient() {
         </div>
       )}
 
-      {!isLoading && activePools.length === 0 && (
-        <p>No active pools. <Link href="/pools/create">Create one</Link></p>
+      {!isLoading && displayPools.length === 0 && (
+        <p>
+          {filter === 'all'
+            ? <><span>No pools yet. </span><Link href="/pools/create">Create one</Link></>
+            : 'No pools match this filter.'
+          }
+        </p>
       )}
 
-      {!isLoading && activePools.length > 0 && (
+      {!isLoading && displayPools.length > 0 && (
         <>
-          <p>Showing active pools ({activePools.length} of {count})</p>
+          <p>Showing {displayPools.length} of {allPools.length} pools</p>
 
           {/* Mobile card list */}
           <div className="flex flex-col gap-3 md:hidden mt-3">
-            {activePools.map((p) => (
+            {displayPools.map((p) => (
               <Link
                 key={p.id}
                 href={`/pools/${p.id}`}
@@ -139,7 +173,7 @@ export function PoolsClient() {
                 <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Event End</span>
               </div>
               {/* Data rows — each row is a <Link> */}
-              {activePools.map((p) => (
+              {displayPools.map((p) => (
                 <Link
                   key={p.id}
                   href={`/pools/${p.id}`}

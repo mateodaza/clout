@@ -605,7 +605,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-031
 - **Constraints:** Read from `MockStablecoin.balanceOf(address)`. Use `useReadContract` with `watch: true` or refetch after writes. Format with `Intl.NumberFormat`.
 
-#### NC-033 [ ] Add challenge/pool status filters and sorting
+#### NC-033 [x] Add challenge/pool status filters and sorting
 - **What:** On `/challenges` list page, add filter buttons: "All", "Open" (CREATED), "Active" (ACCEPTED/SUBMITTED), "Resolved" (FINALIZED/VOIDED). On `/pools` list page, add filters: "All", "Open", "Closed", "Resolved". Default to "All". Add sort toggle: newest first / oldest first.
 - **Acceptance criteria:**
   - Filter buttons render on both list pages

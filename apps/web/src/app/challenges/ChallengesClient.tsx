@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useReadContract, useReadContracts } from 'wagmi'
 import { hexToString } from 'viem'
 import { ChallengeState } from '@clout/types'
@@ -8,13 +9,11 @@ import Link from 'next/link'
 import { Skeleton } from '@/components/Skeleton'
 import { ChallengeStateBadge } from '@/components/StateBadge'
 
-const ACTIVE_STATES = new Set([
-  ChallengeState.CREATED,
-  ChallengeState.ACCEPTED,
-  ChallengeState.SUBMITTED,
-  ChallengeState.DISPUTED,
-  ChallengeState.RESOLVED,
-])
+const CHALLENGE_FILTER_SETS: Record<string, Set<number>> = {
+  open:     new Set([ChallengeState.CREATED]),
+  active:   new Set([ChallengeState.ACCEPTED, ChallengeState.SUBMITTED]),
+  resolved: new Set([ChallengeState.FINALIZED, ChallengeState.VOIDED]),
+}
 
 type ChallengeRow = {
   id: number
@@ -30,6 +29,9 @@ function truncateAddr(addr: string): string {
 }
 
 export function ChallengesClient() {
+  const [filter, setFilter] = useState<'all' | 'open' | 'active' | 'resolved'>('all')
+  const [sortAsc, setSortAsc] = useState(false)
+
   const { data: countData, isLoading: countLoading } = useReadContract({
     address: ESCROW_ADDRESS,
     abi: cloutEscrowAbi,
@@ -52,7 +54,7 @@ export function ChallengesClient() {
 
   // challenges() returns a tuple: [creator, opponent, designatedResolver, token, stakeAmount, state, gameId, ...]
   // Indices: 0=creator, 1=opponent, 2=designatedResolver, 3=token, 4=stakeAmount, 5=state, 6=gameId
-  const activeChallenges: ChallengeRow[] = (challengeResults ?? [])
+  const allChallenges: ChallengeRow[] = (challengeResults ?? [])
     .map((r, i) => {
       if (!r.result) return null
       const c = r.result as readonly unknown[]
@@ -65,13 +67,40 @@ export function ChallengesClient() {
         gameId: c[6] as `0x${string}`,
       }
     })
-    .filter((c): c is ChallengeRow => c !== null && ACTIVE_STATES.has(c.state))
+    .filter((c): c is ChallengeRow => c !== null)
+
+  const displayChallenges = allChallenges
+    .filter(c => filter === 'all' || CHALLENGE_FILTER_SETS[filter].has(c.state))
+    .sort((a, b) => sortAsc ? a.id - b.id : b.id - a.id)
+
+  const filterButtons: { label: string; value: 'all' | 'open' | 'active' | 'resolved' }[] = [
+    { label: 'All', value: 'all' },
+    { label: 'Open', value: 'open' },
+    { label: 'Active', value: 'active' },
+    { label: 'Resolved', value: 'resolved' },
+  ]
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h1>Challenges</h1>
         <Link href="/challenges/create">+ Create Challenge</Link>
+      </div>
+
+      {/* Filter + sort controls */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        {filterButtons.map(btn => (
+          <button
+            key={btn.value}
+            onClick={() => setFilter(btn.value)}
+            style={filter === btn.value ? { fontWeight: 700, borderBottom: '2px solid currentColor' } : undefined}
+          >
+            {btn.label}
+          </button>
+        ))}
+        <button onClick={() => setSortAsc(s => !s)} style={{ marginLeft: 'auto' }}>
+          ↕ {sortAsc ? 'Oldest first' : 'Newest first'}
+        </button>
       </div>
 
       {isLoading && (
@@ -91,17 +120,22 @@ export function ChallengesClient() {
         </div>
       )}
 
-      {!isLoading && activeChallenges.length === 0 && (
-        <p>No active challenges. <Link href="/challenges/create">Create one</Link></p>
+      {!isLoading && displayChallenges.length === 0 && (
+        <p>
+          {filter === 'all'
+            ? <><span>No challenges yet. </span><Link href="/challenges/create">Create one</Link></>
+            : 'No challenges match this filter.'
+          }
+        </p>
       )}
 
-      {!isLoading && activeChallenges.length > 0 && (
+      {!isLoading && displayChallenges.length > 0 && (
         <>
-          <p>Showing active challenges ({activeChallenges.length} of {count})</p>
+          <p>Showing {displayChallenges.length} of {allChallenges.length} challenges</p>
 
           {/* Mobile card list */}
           <div className="flex flex-col gap-3 md:hidden mt-3">
-            {activeChallenges.map((c) => (
+            {displayChallenges.map((c) => (
               <Link
                 key={c.id}
                 href={`/challenges/${c.id}`}
@@ -132,7 +166,7 @@ export function ChallengesClient() {
                 <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Game</span>
               </div>
               {/* Data rows — each row is a <Link> */}
-              {activeChallenges.map((c) => (
+              {displayChallenges.map((c) => (
                 <Link
                   key={c.id}
                   href={`/challenges/${c.id}`}
