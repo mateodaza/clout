@@ -20,6 +20,8 @@ import { PoolStateBadge } from '@/components/StateBadge'
 import { ConnectWallet } from '@/components/ConnectWallet'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
+import { formatTimestamp } from '@/lib/utils'
+import { Countdown } from '@/components/Countdown'
 
 // ─── Local Types ────────────────────────────────────────────────────────────
 
@@ -69,10 +71,6 @@ function tryParseAmount(str: string): bigint | null {
 
 function formatUsdc(amount: bigint): string {
   return (Number(amount) / 1_000_000).toFixed(2) + ' USDC'
-}
-
-function formatTs(ts: bigint): string {
-  return ts === 0n ? '—' : new Date(Number(ts) * 1000).toLocaleString()
 }
 
 function truncateAddr(addr: string): string {
@@ -466,13 +464,23 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
             <dt className="font-semibold py-1">Token</dt>
             <dd className="py-1 break-all">{pool.token}</dd>
             <dt className="font-semibold py-1">Event Start</dt>
-            <dd className="py-1">{formatTs(pool.eventStart)}</dd>
+            <dd className="py-1">{formatTimestamp(pool.eventStart)}</dd>
             <dt className="font-semibold py-1">Event End</dt>
-            <dd className="py-1">{formatTs(pool.eventEnd)}</dd>
+            <dd className="py-1">{formatTimestamp(pool.eventEnd)}</dd>
             <dt className="font-semibold py-1">Resolve By</dt>
-            <dd className="py-1">{formatTs(pool.resolveBy)}</dd>
+            <dd className="py-1">
+              {formatTimestamp(pool.resolveBy)}
+              {pool.state === PoolState.CLOSED && (
+                <> · <Countdown expiresAt={pool.resolveBy} /></>
+              )}
+            </dd>
             <dt className="font-semibold py-1">Resolved At</dt>
-            <dd className="py-1">{formatTs(pool.resolvedAt)}</dd>
+            <dd className="py-1">
+              {formatTimestamp(pool.resolvedAt)}
+              {pool.state === PoolState.SUBMITTED && pool.resolvedAt > 0n && (
+                <> · <Countdown expiresAt={pool.resolvedAt + 86400n} /></>
+              )}
+            </dd>
             {pool.state >= PoolState.SUBMITTED && pool.resolvedAt > 0n && (
               <>
                 <dt className="font-semibold py-1">YES Wins</dt>

@@ -11,6 +11,8 @@ import { ChallengeStateBadge } from '@/components/StateBadge'
 import { ConnectWallet } from '@/components/ConnectWallet'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
+import { formatTimestamp } from '@/lib/utils'
+import { Countdown } from '@/components/Countdown'
 
 // --- Local Types ---
 
@@ -81,9 +83,8 @@ function formatStake(amount: bigint, token: string): string {
   return (Number(amount) / 1_000_000).toFixed(2) + ' (' + truncateAddr(token) + ')'
 }
 
-function formatTs(ts: bigint): string {
-  return ts === 0n ? '—' : new Date(Number(ts) * 1000).toLocaleString()
-}
+const VOID_TIMEOUT = 172800n    // 48h
+const SUBMIT_TIMEOUT = 86400n   // 24h
 
 function outcomeLabel(o: Outcome): string {
   return ['None', 'Creator Win', 'Opponent Win', 'Draw', 'Invalid'][o] ?? 'Unknown'
@@ -404,17 +405,42 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
             <dt className="font-semibold py-1">Appealed</dt>
             <dd className="py-1">{challenge.appealed ? 'Yes' : 'No'}</dd>
             <dt className="font-semibold py-1">Created At</dt>
-            <dd className="py-1">{formatTs(challenge.createdAt)}</dd>
+            <dd className="py-1">
+              {formatTimestamp(challenge.createdAt)}
+              {challenge.state === ChallengeState.CREATED && (
+                <> · <Countdown expiresAt={challenge.createdAt + VOID_TIMEOUT} /></>
+              )}
+            </dd>
             <dt className="font-semibold py-1">Accepted At</dt>
-            <dd className="py-1">{formatTs(challenge.acceptedAt)}</dd>
+            <dd className="py-1">
+              {formatTimestamp(challenge.acceptedAt)}
+              {challenge.state === ChallengeState.ACCEPTED && (
+                <> · <Countdown expiresAt={challenge.acceptedAt + VOID_TIMEOUT} /></>
+              )}
+            </dd>
             <dt className="font-semibold py-1">Submitted At</dt>
-            <dd className="py-1">{formatTs(challenge.submittedAt)}</dd>
+            <dd className="py-1">
+              {formatTimestamp(challenge.submittedAt)}
+              {challenge.state === ChallengeState.SUBMITTED && (
+                <> · <Countdown expiresAt={challenge.submittedAt + SUBMIT_TIMEOUT} /></>
+              )}
+            </dd>
             <dt className="font-semibold py-1">Disputed At</dt>
-            <dd className="py-1">{formatTs(challenge.disputedAt)}</dd>
+            <dd className="py-1">
+              {formatTimestamp(challenge.disputedAt)}
+              {challenge.state === ChallengeState.DISPUTED && (
+                <> · <Countdown expiresAt={challenge.disputedAt + VOID_TIMEOUT} /></>
+              )}
+            </dd>
             <dt className="font-semibold py-1">Resolved At</dt>
-            <dd className="py-1">{formatTs(challenge.resolvedAt)}</dd>
+            <dd className="py-1">
+              {formatTimestamp(challenge.resolvedAt)}
+              {challenge.state === ChallengeState.RESOLVED && (
+                <> · <Countdown expiresAt={challenge.resolvedAt + SUBMIT_TIMEOUT} /></>
+              )}
+            </dd>
             <dt className="font-semibold py-1">Appealed At</dt>
-            <dd className="py-1">{formatTs(challenge.appealedAt)}</dd>
+            <dd className="py-1">{formatTimestamp(challenge.appealedAt)}</dd>
           </dl>
 
           {/* Actions section */}

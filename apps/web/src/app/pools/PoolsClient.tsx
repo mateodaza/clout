@@ -6,6 +6,7 @@ import { cloutPoolAbi, POOL_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
 import { Skeleton } from '@/components/Skeleton'
 import { PoolStateBadge } from '@/components/StateBadge'
+import { formatTimestamp } from '@/lib/utils'
 
 const ACTIVE_POOL_STATES = new Set([
   PoolState.OPEN,       // 0
@@ -27,10 +28,6 @@ type PoolRow = {
 
 function truncateAddr(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`
-}
-
-function formatTs(ts: bigint): string {
-  return ts === 0n ? '—' : new Date(Number(ts) * 1000).toLocaleString()
 }
 
 export function PoolsClient() {
@@ -122,8 +119,8 @@ export function PoolsClient() {
                 <div className="text-sm">Host: {truncateAddr(p.host)}</div>
                 <div className="text-sm">YES: {(Number(p.yesTotal) / 1_000_000).toFixed(2)} USDC</div>
                 <div className="text-sm">NO: {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC</div>
-                <div className="text-sm">Start: {formatTs(p.eventStart)}</div>
-                <div className="text-sm">End: {formatTs(p.eventEnd)}</div>
+                <div className="text-sm">Start: {formatTimestamp(p.eventStart)}</div>
+                <div className="text-sm">End: {formatTimestamp(p.eventEnd)}</div>
               </Link>
             ))}
           </div>
@@ -160,8 +157,8 @@ export function PoolsClient() {
                   <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
                     {(Number(p.noTotal) / 1_000_000).toFixed(2)} USDC
                   </span>
-                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventStart)}</span>
-                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTs(p.eventEnd)}</span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTimestamp(p.eventStart)}</span>
+                  <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{formatTimestamp(p.eventEnd)}</span>
                 </Link>
               ))}
             </div>

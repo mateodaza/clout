@@ -4,11 +4,7 @@ import { useReadContract } from 'wagmi'
 import { WalletRecord as WalletRecordType } from '@clout/types'
 import { cloutEscrowAbi, ESCROW_ADDRESS } from '@/lib/contracts'
 import { Spinner } from '@/components/Spinner'
-
-function formatTimestamp(ts: bigint): string {
-  if (ts === 0n) return 'N/A'
-  return new Date(Number(ts) * 1000).toLocaleDateString()
-}
+import { formatTimestamp } from '@/lib/utils'
 
 export function WalletRecord({ address }: { address: `0x${string}` }) {
   const { data, isLoading } = useReadContract({

@@ -524,7 +524,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-028
 - **Constraints:** Reuse the existing `ConnectWallet` component — don't build a new one. Use wagmi's `useAccount` to check connection status.
 
-#### NC-030 [ ] Add timestamp formatting and countdown displays
+#### NC-030 [x] Add timestamp formatting and countdown displays
 - **What:** All unix timestamps displayed in the app (challenge creation time, pool eventStart/eventEnd/resolveBy, WalletRecord firstChallengeAt/lastChallengeAt) should be formatted as human-readable dates. Create a utility `formatTimestamp(unix: bigint): string` in `apps/web/src/lib/utils.ts`. For active timeouts (24h confirm window, 48h dispute window, etc.), show a countdown: "Expires in 23h 14m" or "Expired" if past. Create a `Countdown` component that updates every minute.
 - **Acceptance criteria:**
   - All raw unix timestamps replaced with human-readable dates (e.g., "Mar 5, 2026 at 3:14 PM")
