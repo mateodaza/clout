@@ -1,19 +1,13 @@
 import { ChallengeState, PoolState } from '@clout/types'
 
-const BADGE_STYLE_BASE: React.CSSProperties = {
-  display: 'inline-block',
-  borderRadius: '9999px',
-  padding: '0.1rem 0.55rem',
-  fontSize: '0.75rem',
-  fontWeight: 600,
-}
+const BASE_CLASS = 'inline-block rounded-full py-0.5 px-2.5 text-xs font-semibold'
 
-const COLOR: Record<string, React.CSSProperties> = {
-  green:  { background: '#dcfce7', color: '#166534' },
-  yellow: { background: '#fef9c3', color: '#854d0e' },
-  red:    { background: '#fee2e2', color: '#991b1b' },
-  blue:   { background: '#dbeafe', color: '#1e40af' },
-  gray:   { background: '#f3f4f6', color: '#374151' },
+const COLOR: Record<string, string> = {
+  green:  'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+  yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+  red:    'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+  blue:   'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+  gray:   'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200',
 }
 
 const CHALLENGE_COLORS: Record<number, string> = {
@@ -38,7 +32,7 @@ const POOL_COLORS: Record<number, string> = {
 export function ChallengeStateBadge({ state }: { state: number }) {
   const colorKey = CHALLENGE_COLORS[state] ?? 'gray'
   return (
-    <span style={{ ...BADGE_STYLE_BASE, ...COLOR[colorKey] }}>
+    <span className={`${BASE_CLASS} ${COLOR[colorKey]}`}>
       {ChallengeState[state] ?? 'Unknown'}
     </span>
   )
@@ -47,7 +41,7 @@ export function ChallengeStateBadge({ state }: { state: number }) {
 export function PoolStateBadge({ state }: { state: number }) {
   const colorKey = POOL_COLORS[state] ?? 'gray'
   return (
-    <span style={{ ...BADGE_STYLE_BASE, ...COLOR[colorKey] }}>
+    <span className={`${BASE_CLASS} ${COLOR[colorKey]}`}>
       {PoolState[state] ?? 'Unknown'}
     </span>
   )

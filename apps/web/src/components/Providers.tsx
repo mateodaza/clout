@@ -6,17 +6,20 @@ import { wagmiConfig } from '@/lib/wagmi'
 import { useState } from 'react'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { ToastContainer } from '@/components/Toast'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          {children}
-          <ToastContainer />
-        </ToastProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <ThemeProvider>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <ToastProvider>
+            {children}
+            <ToastContainer />
+          </ToastProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </ThemeProvider>
   )
 }

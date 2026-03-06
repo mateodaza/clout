@@ -630,7 +630,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-033
 - **Constraints:** For "My Pools", batch-read `getStakes` for all pools using `useReadContracts`. Only show toggle when wallet is connected. Works alongside the status filters from NC-033 (both can be active).
 
-#### NC-035 [ ] Add dark mode with system preference detection
+#### NC-035 [x] Add dark mode with system preference detection
 - **What:** Implement dark mode using Tailwind's `dark:` variant. Detect system preference with `prefers-color-scheme` media query. Add a theme toggle button in the nav (sun/moon icon). Persist preference in `localStorage`. Apply dark variants to all existing pages: backgrounds, text, borders, badges, form inputs, buttons.
 - **Acceptance criteria:**
   - Dark mode applies to all pages consistently
