@@ -718,7 +718,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Base Sepolia explorer: `https://sepolia.basescan.org`. Make the base URL configurable via `NEXT_PUBLIC_EXPLORER_URL` env var (default to sepolia basescan). Add this var to `.env.example`.
 
-#### NC-042 [ ] Add 404 and custom error pages
+#### NC-042 [x] Add 404 and custom error pages
 - **What:** Create custom Next.js error pages: `apps/web/src/app/not-found.tsx` (404) and `apps/web/src/app/error.tsx` (runtime errors). 404 page shows "Page not found" with link back to home. Error page shows "Something went wrong" with retry button. Both should match the app's visual style (nav visible, centered content).
 - **Acceptance criteria:**
   - `/nonexistent-path` shows custom 404 page
