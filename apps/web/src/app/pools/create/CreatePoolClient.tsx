@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
-import { isAddress, zeroAddress, parseUnits } from 'viem'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useEstimateGas, useGasPrice } from 'wagmi'
+import { isAddress, zeroAddress, parseUnits, formatUnits, encodeFunctionData } from 'viem'
 import { cloutPoolAbi, mockStablecoinAbi, POOL_ADDRESS, TOKEN_ADDRESS } from '@/lib/contracts'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
@@ -47,12 +47,79 @@ export function CreatePoolClient() {
     hostCommissionBps: bigint
     initialYesStake: bigint
   } | null>(null)
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [hasSubmitted, setHasSubmitted] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { writeContract: approveWrite, data: approveTxHash, error: approveError, reset: approveReset } = useWriteContract()
   const { isSuccess: approveConfirmed } = useWaitForTransactionReceipt({ hash: approveTxHash })
 
   const { writeContract: createWrite, data: createTxHash, error: createError, reset: createReset } = useWriteContract()
   const { isSuccess: createConfirmed } = useWaitForTransactionReceipt({ hash: createTxHash })
+
+  const { data: allowanceData } = useReadContract({
+    address: TOKEN_ADDRESS,
+    abi: mockStablecoinAbi,
+    functionName: 'allowance',
+    args: [address ?? zeroAddress, POOL_ADDRESS],
+    query: { enabled: isConnected && !!address },
+  })
+
+  const stakeAmount = useMemo(() => {
+    try { return parseUnits(initialYesStakeStr, 6) } catch { return 0n }
+  }, [initialYesStakeStr])
+
+  const isBalanceInsufficient =
+    isConnected &&
+    balance !== undefined &&
+    stakeAmount > 0n &&
+    (balance as bigint) < stakeAmount
+
+  const isAllowanceSufficient =
+    allowanceData !== undefined &&
+    (allowanceData as bigint) >= stakeAmount &&
+    stakeAmount > 0n
+
+  const estimateReady =
+    isConnected &&
+    stakeAmount > 0n &&
+    parseDatetime(eventStart) !== null &&
+    parseDatetime(eventEnd) !== null &&
+    parseDatetime(resolveBy) !== null &&
+    isAddress(resolver)
+
+  const callData = useMemo(() => {
+    if (!estimateReady) return undefined
+    try {
+      const eventStartUnix = parseDatetime(eventStart)!
+      const eventEndUnix = parseDatetime(eventEnd)!
+      const resolveByUnix = parseDatetime(resolveBy)!
+      return encodeFunctionData({
+        abi: cloutPoolAbi,
+        functionName: 'createPool',
+        args: [
+          resolver as `0x${string}`,
+          TOKEN_ADDRESS,
+          BigInt(eventStartUnix),
+          BigInt(eventEndUnix),
+          BigInt(resolveByUnix),
+          parseUnits(perWalletCapStr || '0', 6),
+          parseUnits(totalPoolCapStr || '0', 6),
+          BigInt(Number(commissionBpsStr.trim() || '0')),
+          stakeAmount,
+        ],
+      })
+    } catch { return undefined }
+  }, [estimateReady, resolver, eventStart, eventEnd, resolveBy, perWalletCapStr, totalPoolCapStr, commissionBpsStr, stakeAmount])
+
+  const { data: gasUnits } = useEstimateGas({
+    to: POOL_ADDRESS,
+    data: callData,
+    query: { enabled: !!callData },
+  })
+  const { data: gasPrice } = useGasPrice()
+  const gasCostWei =
+    gasUnits !== undefined && gasPrice !== undefined ? gasUnits * gasPrice : undefined
 
   // Effect 1: approve confirmed → fire createPool
   useEffect(() => {
@@ -142,6 +209,9 @@ export function CreatePoolClient() {
     }
   }, [createError, addToast, updateToast])
 
+  // Cleanup debounce on unmount
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current) }, [])
+
   function validate(): boolean {
     const errs: Record<string, string> = {}
     const now = Math.floor(Date.now() / 1000)
@@ -223,8 +293,14 @@ export function CreatePoolClient() {
     return Object.keys(errs).length === 0
   }
 
+  function scheduleValidate() {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => validate(), 500)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setHasSubmitted(true)
     if (!validate()) return
 
     // parseDatetime is guaranteed non-null here because validate() would have returned false otherwise
@@ -244,26 +320,51 @@ export function CreatePoolClient() {
     }
 
     setPendingArgs(args)
-    setFormState('approving')
 
-    approveWrite({
-      address: TOKEN_ADDRESS,
-      abi: mockStablecoinAbi,
-      functionName: 'approve',
-      args: [POOL_ADDRESS, args.initialYesStake],
-    })
+    if (allowanceData !== undefined && (allowanceData as bigint) >= args.initialYesStake) {
+      // Sufficient allowance — skip approve, go directly to create
+      setFormState('creating')
+      createWrite({
+        address: POOL_ADDRESS,
+        abi: cloutPoolAbi,
+        functionName: 'createPool',
+        args: [
+          args.resolver,
+          TOKEN_ADDRESS,
+          args.eventStart,
+          args.eventEnd,
+          args.resolveBy,
+          args.perWalletCap,
+          args.totalPoolCap,
+          args.hostCommissionBps,
+          args.initialYesStake,
+        ],
+      })
+    } else {
+      setFormState('approving')
+      approveWrite({
+        address: TOKEN_ADDRESS,
+        abi: mockStablecoinAbi,
+        functionName: 'approve',
+        args: [POOL_ADDRESS, args.initialYesStake],
+      })
+    }
   }
 
   function handleReset() {
     setFormState('idle')
     setPendingArgs(null)
+    setTouched({})
+    setHasSubmitted(false)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
     approveReset()
     createReset()
     approveToastId.current = null
     createToastId.current = null
   }
 
-  const isDisabled = !isConnected || formState !== 'idle'
+  const isInputDisabled = !isConnected || formState !== 'idle'
+  const isSubmitDisabled = isInputDisabled || isBalanceInsufficient
 
   const submitLabel =
     formState === 'idle' ? 'Create Pool' :
@@ -289,8 +390,9 @@ export function CreatePoolClient() {
           <input
             id="eventDescription"
             value={eventDescription}
-            onChange={(e) => setEventDescription(e.target.value)}
-            disabled={isDisabled}
+            onChange={(e) => { setEventDescription(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, eventDescription: true })); validate() }}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
         </div>
@@ -301,11 +403,14 @@ export function CreatePoolClient() {
             id="eventStart"
             type="datetime-local"
             value={eventStart}
-            onChange={(e) => setEventStart(e.target.value)}
-            disabled={isDisabled}
+            onChange={(e) => { setEventStart(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, eventStart: true })); validate() }}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.eventStart && <p className="text-red-500 text-sm mt-1">{errors.eventStart}</p>}
+          {(touched.eventStart || hasSubmitted) && errors.eventStart && (
+            <p className="text-red-500 text-sm mt-1">{errors.eventStart}</p>
+          )}
         </div>
 
         <div>
@@ -314,11 +419,14 @@ export function CreatePoolClient() {
             id="eventEnd"
             type="datetime-local"
             value={eventEnd}
-            onChange={(e) => setEventEnd(e.target.value)}
-            disabled={isDisabled}
+            onChange={(e) => { setEventEnd(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, eventEnd: true })); validate() }}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.eventEnd && <p className="text-red-500 text-sm mt-1">{errors.eventEnd}</p>}
+          {(touched.eventEnd || hasSubmitted) && errors.eventEnd && (
+            <p className="text-red-500 text-sm mt-1">{errors.eventEnd}</p>
+          )}
         </div>
 
         <div>
@@ -327,11 +435,14 @@ export function CreatePoolClient() {
             id="resolveBy"
             type="datetime-local"
             value={resolveBy}
-            onChange={(e) => setResolveBy(e.target.value)}
-            disabled={isDisabled}
+            onChange={(e) => { setResolveBy(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, resolveBy: true })); validate() }}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.resolveBy && <p className="text-red-500 text-sm mt-1">{errors.resolveBy}</p>}
+          {(touched.resolveBy || hasSubmitted) && errors.resolveBy && (
+            <p className="text-red-500 text-sm mt-1">{errors.resolveBy}</p>
+          )}
         </div>
 
         <div>
@@ -339,11 +450,14 @@ export function CreatePoolClient() {
           <input
             id="resolver"
             value={resolver}
-            onChange={(e) => setResolver(e.target.value)}
-            disabled={isDisabled}
+            onChange={(e) => { setResolver(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, resolver: true })); validate() }}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.resolver && <p className="text-red-500 text-sm mt-1">{errors.resolver}</p>}
+          {(touched.resolver || hasSubmitted) && errors.resolver && (
+            <p className="text-red-500 text-sm mt-1">{errors.resolver}</p>
+          )}
         </div>
 
         <div>
@@ -351,12 +465,15 @@ export function CreatePoolClient() {
           <input
             id="perWalletCapStr"
             value={perWalletCapStr}
-            onChange={(e) => setPerWalletCapStr(e.target.value)}
+            onChange={(e) => { setPerWalletCapStr(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, perWalletCapStr: true })); validate() }}
             placeholder="100.00"
-            disabled={isDisabled}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.perWalletCapStr && <p className="text-red-500 text-sm mt-1">{errors.perWalletCapStr}</p>}
+          {(touched.perWalletCapStr || hasSubmitted) && errors.perWalletCapStr && (
+            <p className="text-red-500 text-sm mt-1">{errors.perWalletCapStr}</p>
+          )}
         </div>
 
         <div>
@@ -364,12 +481,15 @@ export function CreatePoolClient() {
           <input
             id="totalPoolCapStr"
             value={totalPoolCapStr}
-            onChange={(e) => setTotalPoolCapStr(e.target.value)}
+            onChange={(e) => { setTotalPoolCapStr(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, totalPoolCapStr: true })); validate() }}
             placeholder="10000.00"
-            disabled={isDisabled}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.totalPoolCapStr && <p className="text-red-500 text-sm mt-1">{errors.totalPoolCapStr}</p>}
+          {(touched.totalPoolCapStr || hasSubmitted) && errors.totalPoolCapStr && (
+            <p className="text-red-500 text-sm mt-1">{errors.totalPoolCapStr}</p>
+          )}
         </div>
 
         <div>
@@ -378,12 +498,15 @@ export function CreatePoolClient() {
             id="commissionBpsStr"
             type="number"
             value={commissionBpsStr}
-            onChange={(e) => setCommissionBpsStr(e.target.value)}
+            onChange={(e) => { setCommissionBpsStr(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, commissionBpsStr: true })); validate() }}
             placeholder="100"
-            disabled={isDisabled}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.commissionBpsStr && <p className="text-red-500 text-sm mt-1">{errors.commissionBpsStr}</p>}
+          {(touched.commissionBpsStr || hasSubmitted) && errors.commissionBpsStr && (
+            <p className="text-red-500 text-sm mt-1">{errors.commissionBpsStr}</p>
+          )}
         </div>
 
         {isConnected && (
@@ -394,24 +517,56 @@ export function CreatePoolClient() {
 
         <div>
           <label htmlFor="initialYesStakeStr" className="block text-sm font-medium mb-1">Initial YES stake (USDC)</label>
-          <input
-            id="initialYesStakeStr"
-            value={initialYesStakeStr}
-            onChange={(e) => setInitialYesStakeStr(e.target.value)}
-            placeholder="1.00"
-            disabled={isDisabled}
-            className="w-full border rounded px-3 py-2 text-sm"
-          />
-          {errors.initialYesStakeStr && <p className="text-red-500 text-sm mt-1">{errors.initialYesStakeStr}</p>}
+          <div className="flex gap-2">
+            <input
+              id="initialYesStakeStr"
+              value={initialYesStakeStr}
+              onChange={(e) => { setInitialYesStakeStr(e.target.value); scheduleValidate() }}
+              onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, initialYesStakeStr: true })); validate() }}
+              placeholder="1.00"
+              disabled={isInputDisabled}
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
+            {isConnected && balance !== undefined && (balance as bigint) > 0n && (
+              <button
+                type="button"
+                onClick={() => setInitialYesStakeStr(formatUnits(balance as bigint, 6))}
+                disabled={!isConnected || formState !== 'idle'}
+                className="px-3 py-2 border rounded text-sm whitespace-nowrap disabled:opacity-50"
+              >Max</button>
+            )}
+          </div>
+          {(touched.initialYesStakeStr || hasSubmitted) && errors.initialYesStakeStr && (
+            <p className="text-red-500 text-sm mt-1">{errors.initialYesStakeStr}</p>
+          )}
+          {isBalanceInsufficient && (
+            <p className="text-amber-600 text-sm mt-1">
+              Insufficient balance — you have {formatBalance(balance as bigint)}
+            </p>
+          )}
         </div>
+
+        {isConnected && stakeAmount > 0n && (
+          <p className="text-sm text-gray-500">
+            {isAllowanceSufficient
+              ? '✓ Sufficient allowance — approve step will be skipped'
+              : 'Approval required before creating'}
+          </p>
+        )}
 
         <button
           type="submit"
-          disabled={isDisabled}
+          disabled={isSubmitDisabled}
           className="w-full py-2.5 px-4 border rounded font-medium disabled:opacity-50"
         >
           {submitLabel}
         </button>
+
+        {gasCostWei !== undefined && (
+          <p className="text-xs text-gray-400 mt-1">
+            Est. gas: ~{formatUnits(gasCostWei, 18).slice(0, 8)} ETH
+          </p>
+        )}
       </form>
 
       {formState === 'approving' && approveTxHash && (

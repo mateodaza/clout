@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
-import { isAddress, toHex, padHex, zeroAddress, parseUnits } from 'viem'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useReadContract, useEstimateGas, useGasPrice } from 'wagmi'
+import { isAddress, toHex, padHex, zeroAddress, parseUnits, formatUnits, encodeFunctionData } from 'viem'
 import { cloutEscrowAbi, mockStablecoinAbi, ESCROW_ADDRESS, TOKEN_ADDRESS } from '@/lib/contracts'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
@@ -21,7 +21,7 @@ function validateStake(s: string): string | null {
 }
 
 export function CreateChallengeClient() {
-  const { isConnected } = useAccount()
+  const { isConnected, address } = useAccount()
   const { addToast, updateToast } = useToast()
   const { data: balance, refetch: refetchBalance } = useTokenBalance()
   const approveToastId = useRef<string | null>(null)
@@ -39,12 +39,64 @@ export function CreateChallengeClient() {
     gameId: `0x${string}`
     designatedResolver: `0x${string}`
   } | null>(null)
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [hasSubmitted, setHasSubmitted] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { writeContract: approveWrite, data: approveTxHash, error: approveError } = useWriteContract()
+  const { writeContract: approveWrite, data: approveTxHash, error: approveError, reset: approveReset } = useWriteContract()
   const { isSuccess: approveConfirmed } = useWaitForTransactionReceipt({ hash: approveTxHash })
 
-  const { writeContract: createWrite, data: createTxHash, error: createError } = useWriteContract()
+  const { writeContract: createWrite, data: createTxHash, error: createError, reset: createReset } = useWriteContract()
   const { isSuccess: createConfirmed } = useWaitForTransactionReceipt({ hash: createTxHash })
+
+  const { data: allowanceData } = useReadContract({
+    address: TOKEN_ADDRESS,
+    abi: mockStablecoinAbi,
+    functionName: 'allowance',
+    args: [address ?? zeroAddress, ESCROW_ADDRESS],
+    query: { enabled: isConnected && !!address },
+  })
+
+  const stakeAmount = useMemo(() => {
+    try { return parseUnits(stakeStr, 6) } catch { return 0n }
+  }, [stakeStr])
+
+  const isBalanceInsufficient =
+    isConnected &&
+    balance !== undefined &&
+    stakeAmount > 0n &&
+    (balance as bigint) < stakeAmount
+
+  const isAllowanceSufficient =
+    allowanceData !== undefined &&
+    (allowanceData as bigint) >= stakeAmount &&
+    stakeAmount > 0n
+
+  const estimateReady =
+    isConnected && isAddress(opponent) && stakeAmount > 0n && gameDesc.length > 0
+
+  const callData = useMemo(() => {
+    if (!estimateReady) return undefined
+    try {
+      const gameId = padHex(toHex(gameDesc), { size: 32, dir: 'right' })
+      const resolverAddr =
+        resolver && isAddress(resolver) ? (resolver as `0x${string}`) : zeroAddress
+      return encodeFunctionData({
+        abi: cloutEscrowAbi,
+        functionName: 'createChallenge',
+        args: [opponent as `0x${string}`, stakeAmount, TOKEN_ADDRESS, gameId, resolverAddr],
+      })
+    } catch { return undefined }
+  }, [estimateReady, opponent, stakeAmount, gameDesc, resolver])
+
+  const { data: gasUnits } = useEstimateGas({
+    to: ESCROW_ADDRESS,
+    data: callData,
+    query: { enabled: !!callData },
+  })
+  const { data: gasPrice } = useGasPrice()
+  const gasCostWei =
+    gasUnits !== undefined && gasPrice !== undefined ? gasUnits * gasPrice : undefined
 
   // Effect 1: approve confirmed → fire createChallenge
   useEffect(() => {
@@ -130,6 +182,9 @@ export function CreateChallengeClient() {
     }
   }, [createError, addToast, updateToast])
 
+  // Cleanup debounce on unmount
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current) }, [])
+
   function validate(): boolean {
     const errs: Record<string, string> = {}
 
@@ -158,36 +213,63 @@ export function CreateChallengeClient() {
     return Object.keys(errs).length === 0
   }
 
+  function scheduleValidate() {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => validate(), 500)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setHasSubmitted(true)
     if (!validate()) return
 
-    const stakeAmount = parseUnits(stakeStr, 6) // exact — no float
+    const stakeAmt = parseUnits(stakeStr, 6)
     const gameId = padHex(toHex(gameDesc), { size: 32, dir: 'right' })
     const designatedResolver =
-      resolver && isAddress(resolver)
-        ? (resolver as `0x${string}`)
-        : zeroAddress
+      resolver && isAddress(resolver) ? (resolver as `0x${string}`) : zeroAddress
 
-    setPendingArgs({ opponent: opponent as `0x${string}`, stakeAmount, gameId, designatedResolver })
-    setFormState('approving')
+    const args = {
+      opponent: opponent as `0x${string}`,
+      stakeAmount: stakeAmt,
+      gameId,
+      designatedResolver,
+    }
+    setPendingArgs(args)
 
-    approveWrite({
-      address: TOKEN_ADDRESS,
-      abi: mockStablecoinAbi,
-      functionName: 'approve',
-      args: [ESCROW_ADDRESS, stakeAmount],
-    })
+    if (allowanceData !== undefined && (allowanceData as bigint) >= stakeAmt) {
+      // Sufficient allowance — skip approve, go directly to create
+      setFormState('creating')
+      createWrite({
+        address: ESCROW_ADDRESS,
+        abi: cloutEscrowAbi,
+        functionName: 'createChallenge',
+        args: [args.opponent, args.stakeAmount, TOKEN_ADDRESS, args.gameId, args.designatedResolver],
+      })
+    } else {
+      setFormState('approving')
+      approveWrite({
+        address: TOKEN_ADDRESS,
+        abi: mockStablecoinAbi,
+        functionName: 'approve',
+        args: [ESCROW_ADDRESS, stakeAmt],
+      })
+    }
   }
 
   function handleReset() {
     setFormState('idle')
     setPendingArgs(null)
+    setTouched({})
+    setHasSubmitted(false)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    approveReset()
+    createReset()
     approveToastId.current = null
     createToastId.current = null
   }
 
-  const isDisabled = !isConnected || formState !== 'idle'
+  const isInputDisabled = !isConnected || formState !== 'idle'
+  const isSubmitDisabled = isInputDisabled || isBalanceInsufficient
 
   const submitLabel =
     formState === 'idle' ? 'Create Challenge' :
@@ -213,11 +295,14 @@ export function CreateChallengeClient() {
           <input
             id="opponent"
             value={opponent}
-            onChange={(e) => setOpponent(e.target.value)}
-            disabled={isDisabled}
+            onChange={(e) => { setOpponent(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, opponent: true })); validate() }}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.opponent && <p className="text-red-500 text-sm mt-1">{errors.opponent}</p>}
+          {(touched.opponent || hasSubmitted) && errors.opponent && (
+            <p className="text-red-500 text-sm mt-1">{errors.opponent}</p>
+          )}
         </div>
 
         {isConnected && (
@@ -228,28 +313,57 @@ export function CreateChallengeClient() {
 
         <div>
           <label htmlFor="stakeStr" className="block text-sm font-medium mb-1">Stake amount (USDC)</label>
-          <input
-            id="stakeStr"
-            value={stakeStr}
-            onChange={(e) => setStakeStr(e.target.value)}
-            placeholder="5.00"
-            disabled={isDisabled}
-            className="w-full border rounded px-3 py-2 text-sm"
-          />
-          {errors.stakeStr && <p className="text-red-500 text-sm mt-1">{errors.stakeStr}</p>}
+          <div className="flex gap-2">
+            <input
+              id="stakeStr"
+              value={stakeStr}
+              onChange={(e) => { setStakeStr(e.target.value); scheduleValidate() }}
+              onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, stakeStr: true })); validate() }}
+              placeholder="5.00"
+              disabled={isInputDisabled}
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
+            {isConnected && balance !== undefined && (balance as bigint) > 0n && (
+              <button
+                type="button"
+                onClick={() => setStakeStr(formatUnits(balance as bigint, 6))}
+                disabled={!isConnected || formState !== 'idle'}
+                className="px-3 py-2 border rounded text-sm whitespace-nowrap disabled:opacity-50"
+              >Max</button>
+            )}
+          </div>
+          {(touched.stakeStr || hasSubmitted) && errors.stakeStr && (
+            <p className="text-red-500 text-sm mt-1">{errors.stakeStr}</p>
+          )}
+          {isBalanceInsufficient && (
+            <p className="text-amber-600 text-sm mt-1">
+              Insufficient balance — you have {formatBalance(balance as bigint)}
+            </p>
+          )}
         </div>
+
+        {isConnected && stakeAmount > 0n && (
+          <p className="text-sm text-gray-500">
+            {isAllowanceSufficient
+              ? '✓ Sufficient allowance — approve step will be skipped'
+              : 'Approval required before creating'}
+          </p>
+        )}
 
         <div>
           <label htmlFor="gameDesc" className="block text-sm font-medium mb-1">Game description (≤32 bytes)</label>
           <input
             id="gameDesc"
             value={gameDesc}
-            onChange={(e) => setGameDesc(e.target.value)}
+            onChange={(e) => { setGameDesc(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, gameDesc: true })); validate() }}
             placeholder="e.g. Chess match"
-            disabled={isDisabled}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.gameDesc && <p className="text-red-500 text-sm mt-1">{errors.gameDesc}</p>}
+          {(touched.gameDesc || hasSubmitted) && errors.gameDesc && (
+            <p className="text-red-500 text-sm mt-1">{errors.gameDesc}</p>
+          )}
         </div>
 
         <div>
@@ -257,20 +371,29 @@ export function CreateChallengeClient() {
           <input
             id="resolver"
             value={resolver}
-            onChange={(e) => setResolver(e.target.value)}
-            disabled={isDisabled}
+            onChange={(e) => { setResolver(e.target.value); scheduleValidate() }}
+            onBlur={() => { clearTimeout(debounceRef.current!); setTouched(t => ({ ...t, resolver: true })); validate() }}
+            disabled={isInputDisabled}
             className="w-full border rounded px-3 py-2 text-sm"
           />
-          {errors.resolver && <p className="text-red-500 text-sm mt-1">{errors.resolver}</p>}
+          {(touched.resolver || hasSubmitted) && errors.resolver && (
+            <p className="text-red-500 text-sm mt-1">{errors.resolver}</p>
+          )}
         </div>
 
         <button
           type="submit"
-          disabled={isDisabled}
+          disabled={isSubmitDisabled}
           className="w-full py-2.5 px-4 border rounded font-medium disabled:opacity-50"
         >
           {submitLabel}
         </button>
+
+        {gasCostWei !== undefined && (
+          <p className="text-xs text-gray-400 mt-1">
+            Est. gas: ~{formatUnits(gasCostWei, 18).slice(0, 8)} ETH
+          </p>
+        )}
       </form>
 
       {formState === 'approving' && approveTxHash && (

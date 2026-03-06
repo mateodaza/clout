@@ -644,7 +644,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Use Tailwind `dark:` classes. Add `darkMode: 'class'` to Tailwind config if needed. Theme provider in `Providers.tsx`. Use `suppressHydrationWarning` on `<html>` to prevent hydration mismatch. Inline script in `layout.tsx` `<head>` to set class before render (prevents flash).
 
-#### NC-036 [ ] Improve form validation and UX on create pages
+#### NC-036 [x] Improve form validation and UX on create pages
 - **What:** Enhance both create pages (`/challenges/create`, `/pools/create`) with: 1) Real-time validation as user types (debounced). 2) Check if user has sufficient mUSDC balance before allowing submit. 3) Show estimated gas cost. 4) Add "Max" button next to stake input that fills with user's full balance. 5) Disable submit if balance < stake amount. 6) Show allowance status — if already approved, skip approve step.
 - **Acceptance criteria:**
   - Real-time validation on blur or after 500ms debounce
