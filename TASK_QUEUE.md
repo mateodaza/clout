@@ -594,7 +594,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Page at `apps/web/src/app/faucet/`. Use `useWriteContract` + `useWaitForTransactionReceipt`. Read balance with `useReadContract` on `balanceOf`. Re-fetch balance after mint. Import `mockStablecoinAbi` and `TOKEN_ADDRESS` from `@/lib/contracts`.
 
-#### NC-032 [ ] Add token balance display to nav and action pages
+#### NC-032 [x] Add token balance display to nav and action pages
 - **What:** Show the connected user's mUSDC balance in the nav bar next to the wallet address (e.g., "0x265b…bb32 | 1,000.00 mUSDC"). Also show balance on create pages (`/challenges/create`, `/pools/create`) above the stake input so users know how much they can stake. Format with 2 decimal places and comma separators.
 - **Acceptance criteria:**
   - Nav shows mUSDC balance next to address when connected

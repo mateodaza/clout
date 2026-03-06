@@ -7,6 +7,8 @@ import { cloutEscrowAbi, mockStablecoinAbi, ESCROW_ADDRESS, TOKEN_ADDRESS } from
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
 import { ConnectWallet } from '@/components/ConnectWallet'
+import { useTokenBalance } from '@/lib/useTokenBalance'
+import { formatBalance } from '@/lib/utils'
 
 function validateStake(s: string): string | null {
   try {
@@ -21,6 +23,7 @@ function validateStake(s: string): string | null {
 export function CreateChallengeClient() {
   const { isConnected } = useAccount()
   const { addToast, updateToast } = useToast()
+  const { data: balance, refetch: refetchBalance } = useTokenBalance()
   const approveToastId = useRef<string | null>(null)
   const createToastId = useRef<string | null>(null)
 
@@ -66,6 +69,7 @@ export function CreateChallengeClient() {
   useEffect(() => {
     if (createConfirmed && formState === 'creating') {
       setFormState('done')
+      void refetchBalance()
     }
   }, [createConfirmed, formState])
 
@@ -215,6 +219,12 @@ export function CreateChallengeClient() {
           />
           {errors.opponent && <p className="text-red-500 text-sm mt-1">{errors.opponent}</p>}
         </div>
+
+        {isConnected && (
+          <p className="text-sm text-gray-500">
+            Your balance: {balance !== undefined ? formatBalance(balance as bigint) : '—'}
+          </p>
+        )}
 
         <div>
           <label htmlFor="stakeStr" className="block text-sm font-medium mb-1">Stake amount (USDC)</label>

@@ -19,3 +19,11 @@ export function formatCountdown(expiryUnix: bigint): string {
   if (hours > 0) return `Expires in ${hours}h ${minutes}m`
   return `Expires in ${minutes}m`
 }
+
+export function formatBalance(raw: bigint): string {
+  const formatted = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(raw) / 1_000_000)
+  return `${formatted} mUSDC`
+}

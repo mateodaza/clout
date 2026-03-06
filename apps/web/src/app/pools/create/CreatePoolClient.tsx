@@ -7,6 +7,8 @@ import { cloutPoolAbi, mockStablecoinAbi, POOL_ADDRESS, TOKEN_ADDRESS } from '@/
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
 import { ConnectWallet } from '@/components/ConnectWallet'
+import { useTokenBalance } from '@/lib/useTokenBalance'
+import { formatBalance } from '@/lib/utils'
 
 // Returns unix timestamp (seconds) or null if input is empty / not a valid date.
 function parseDatetime(value: string): number | null {
@@ -19,6 +21,7 @@ function parseDatetime(value: string): number | null {
 export function CreatePoolClient() {
   const { isConnected, address } = useAccount()
   const { addToast, updateToast } = useToast()
+  const { data: balance, refetch: refetchBalance } = useTokenBalance()
   const approveToastId = useRef<string | null>(null)
   const createToastId = useRef<string | null>(null)
 
@@ -78,6 +81,7 @@ export function CreatePoolClient() {
   useEffect(() => {
     if (createConfirmed && formState === 'creating') {
       setFormState('done')
+      void refetchBalance()
     }
   }, [createConfirmed, formState])
 
@@ -381,6 +385,12 @@ export function CreatePoolClient() {
           />
           {errors.commissionBpsStr && <p className="text-red-500 text-sm mt-1">{errors.commissionBpsStr}</p>}
         </div>
+
+        {isConnected && (
+          <p className="text-sm text-gray-500">
+            Your balance: {balance !== undefined ? formatBalance(balance as bigint) : '—'}
+          </p>
+        )}
 
         <div>
           <label htmlFor="initialYesStakeStr" className="block text-sm font-medium mb-1">Initial YES stake (USDC)</label>
