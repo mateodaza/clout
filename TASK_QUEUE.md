@@ -765,7 +765,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-035
 - **Constraints:** Command palette is a simple modal with `<dialog>` or a div with `role="dialog"`. No command palette library. Use `useEffect` for keyboard listener. Clean up on unmount.
 
-#### NC-046 [ ] Add confirmation dialogs for high-stakes actions
+#### NC-046 [x] Add confirmation dialogs for high-stakes actions
 - **What:** Before executing these actions, show a confirmation dialog: 1) Accept Challenge ("You are about to stake X mUSDC. Confirm?"). 2) Dispute Result ("Filing a dispute escalates to resolver/admin. Continue?"). 3) Claim Winnings ("Claim your winnings from this challenge/pool?"). Create a reusable `ConfirmDialog` component that accepts title, message, onConfirm, onCancel.
 - **Acceptance criteria:**
   - ConfirmDialog component is reusable with title/message/callbacks

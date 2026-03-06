@@ -25,6 +25,7 @@ import { Countdown } from '@/components/Countdown'
 import { PoolTimeline } from '@/components/PoolTimeline'
 import { PoolProgressBars } from '@/components/PoolProgressBars'
 import ShareButtons from '@/components/ShareButtons'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 
 // ─── Local Types ────────────────────────────────────────────────────────────
 
@@ -187,6 +188,11 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
     isYes: boolean
     amount: bigint
     token: `0x${string}`
+  } | null>(null)
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string
+    message: string
+    onConfirm: () => void
   } | null>(null)
 
   // ── Effect 1: chain approve → stakePool ──
@@ -415,6 +421,13 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
     mainWrite({ address: POOL_ADDRESS, abi: cloutPoolAbi, functionName: 'adminResolvePool', args: [poolId, resolveYesWins] })
   }
 
+  function requestConfirm(title: string, message: string, onConfirm: () => void) {
+    setPendingConfirm({ title, message, onConfirm })
+  }
+  function dismissConfirm() {
+    setPendingConfirm(null)
+  }
+
   function handleReset() {
     setActionState('idle')
     approveToastId.current = null
@@ -580,7 +593,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
                     </div>
 
                     <button
-                      onClick={handleStakeYes}
+                      onClick={() => { const amt = tryParseAmount(stakeAmountStr); if (!amt) return; requestConfirm('Stake YES', `You are about to stake ${stakeAmountStr} USDC on YES. Confirm?`, handleStakeYes) }}
                       disabled={yesRemaining <= 0n || inProgress}
                       aria-label={actionState === 'approving' && pendingStake?.isYes === true ? 'Approving token for YES stake…' : actionState === 'staking' && pendingStake?.isYes === true ? 'Staking YES…' : `Stake YES — ${formatUsdc(yesRemaining)} remaining`}
                       className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
@@ -593,7 +606,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
                     </button>
 
                     <button
-                      onClick={handleStakeNo}
+                      onClick={() => { const amt = tryParseAmount(stakeAmountStr); if (!amt) return; requestConfirm('Stake NO', `You are about to stake ${stakeAmountStr} USDC on NO. Confirm?`, handleStakeNo) }}
                       disabled={noRemaining <= 0n || inProgress}
                       aria-label={actionState === 'approving' && pendingStake?.isYes === false ? 'Approving token for NO stake…' : actionState === 'staking' && pendingStake?.isYes === false ? 'Staking NO…' : `Stake NO — ${formatUsdc(noRemaining)} remaining`}
                       className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
@@ -681,7 +694,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
                   <>
                     {withinDisputeWindow && isOnLosingSide && !alreadyFlagged && (
                       <button
-                        onClick={handleFlagDispute}
+                        onClick={() => requestConfirm('Flag Dispute', 'Filing a dispute escalates to admin. Continue?', handleFlagDispute)}
                         disabled={inProgress}
                         className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                       >
@@ -706,7 +719,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
                   <>
                     {isOnWinningSide && !hasClaimed && (
                       <button
-                        onClick={handleClaim}
+                        onClick={() => requestConfirm('Claim Winnings', 'Claim your winnings from this pool?', handleClaim)}
                         disabled={inProgress}
                         className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                       >
@@ -721,7 +734,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
                   <>
                     {isStaker && !hasClaimed && (
                       <button
-                        onClick={handleClaim}
+                        onClick={() => requestConfirm('Claim Refund', 'Claim your refund from this voided pool?', handleClaim)}
                         disabled={inProgress}
                         className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                       >
@@ -805,6 +818,14 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
             )}
           </div>
         </>
+      )}
+      {pendingConfirm && (
+        <ConfirmDialog
+          title={pendingConfirm.title}
+          message={pendingConfirm.message}
+          onConfirm={() => { const fn = pendingConfirm.onConfirm; dismissConfirm(); fn() }}
+          onCancel={dismissConfirm}
+        />
       )}
     </div>
   )

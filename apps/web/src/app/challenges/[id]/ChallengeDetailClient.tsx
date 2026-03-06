@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect, useRef } from 'react'
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
-import { zeroAddress } from 'viem'
+import { formatUnits, zeroAddress } from 'viem'
 import { ChallengeState, Outcome } from '@clout/types'
 import { cloutEscrowAbi, mockStablecoinAbi, ESCROW_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
@@ -15,6 +15,7 @@ import { formatTimestamp, basescanUrl } from '@/lib/utils'
 import { Countdown } from '@/components/Countdown'
 import { ChallengeTimeline } from '@/components/ChallengeTimeline'
 import ShareButtons from '@/components/ShareButtons'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 
 // --- Local Types ---
 
@@ -101,6 +102,11 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
 
   const [actionState, setActionState] = useState<ActionState>('idle')
   const [selectedOutcome, setSelectedOutcome] = useState<number>(Outcome.CREATOR_WIN)
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string
+    message: string
+    onConfirm: () => void
+  } | null>(null)
   const { addToast, updateToast } = useToast()
   const approveToastId = useRef<string | null>(null)
   const mainToastId = useRef<string | null>(null)
@@ -339,6 +345,13 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
     })
   }
 
+  function requestConfirm(title: string, message: string, onConfirm: () => void) {
+    setPendingConfirm({ title, message, onConfirm })
+  }
+  function dismissConfirm() {
+    setPendingConfirm(null)
+  }
+
   function handleReset() {
     setActionState('idle')
     approveToastId.current = null
@@ -466,7 +479,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
               {/* CREATED: Accept */}
               {challenge.state === ChallengeState.CREATED && isOpponent && (
                 <button
-                  onClick={handleAccept}
+                  onClick={() => requestConfirm('Accept Challenge', `You are about to stake ${formatUnits(challenge.stakeAmount, 6)} USDC. Confirm?`, handleAccept)}
                   disabled={inProgress}
                   aria-label="Accept challenge — approve token and stake"
                   className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
@@ -510,7 +523,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                     {actionState === 'confirming' ? 'Confirming...' : 'Confirm Result'}
                   </button>
                   <button
-                    onClick={handleDispute}
+                    onClick={() => requestConfirm('Dispute Result', 'Filing a dispute escalates to the resolver/admin. Continue?', handleDispute)}
                     disabled={inProgress}
                     aria-label="Dispute the submitted result — escalate to resolver"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
@@ -561,7 +574,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                 isParticipant &&
                 !challenge.claimed && (
                   <button
-                    onClick={handleClaim}
+                    onClick={() => requestConfirm('Claim Winnings', 'Claim your winnings from this challenge?', handleClaim)}
                     disabled={inProgress}
                     aria-label="Claim your winnings from this challenge"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
@@ -602,6 +615,14 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
             </div>
           )}
         </>
+      )}
+      {pendingConfirm && (
+        <ConfirmDialog
+          title={pendingConfirm.title}
+          message={pendingConfirm.message}
+          onConfirm={() => { const fn = pendingConfirm.onConfirm; dismissConfirm(); fn() }}
+          onCancel={dismissConfirm}
+        />
       )}
     </div>
   )
