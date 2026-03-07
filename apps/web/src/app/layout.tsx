@@ -45,6 +45,12 @@ export default function RootLayout({
           </header>
           <ChainBanner />
           <main className="px-4 py-6 max-w-4xl mx-auto">{children}</main>
+          <footer className="border-t dark:border-gray-700 px-4 py-4 mt-8 text-center">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Clout is a skill-based competition platform. Not available in all jurisdictions. 18+ only. Please wager responsibly.{' '}
+              <a href="/terms" className="underline hover:text-gray-300 transition-colors">Terms of Use</a>
+            </p>
+          </footer>
         </Providers>
       </body>
     </html>

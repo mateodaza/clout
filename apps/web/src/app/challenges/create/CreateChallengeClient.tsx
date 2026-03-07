@@ -389,6 +389,10 @@ export function CreateChallengeClient() {
           {submitLabel}
         </button>
 
+        <p className="text-xs text-gray-400 mt-1">
+          By creating this challenge, you confirm you are 18+ and understand you may lose your staked tokens.
+        </p>
+
         {gasCostWei !== undefined && (
           <p className="text-xs text-gray-400 mt-1">
             Est. gas: ~{formatUnits(gasCostWei, 18).slice(0, 8)} ETH

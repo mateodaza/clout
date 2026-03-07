@@ -839,7 +839,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-035
 - **Constraints:** Component at `apps/web/src/components/AgeGate.tsx` (`"use client"`). Render in `Providers.tsx` or layout. Use `localStorage.getItem('clout-age-verified')`. The modal must render ABOVE everything (z-50+). No scroll on body while modal is open.
 
-#### NC-053 [ ] Add responsible gambling disclosures
+#### NC-053 [x] Add responsible gambling disclosures
 - **What:** 1) Add a footer to the layout with: "Clout is a skill-based competition platform. Not available in all jurisdictions. 18+ only. Please wager responsibly." 2) On `/challenges/create` and `/pools/create` pages, add a small disclaimer below the submit button: "By creating this challenge/pool, you confirm you are 18+ and understand you may lose your staked tokens." 3) Add a `/terms` page with basic terms of use (not legal advice — placeholder structure).
 - **Acceptance criteria:**
   - Footer visible on all pages with disclaimer text
