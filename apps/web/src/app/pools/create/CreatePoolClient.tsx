@@ -9,6 +9,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { ConnectWallet } from '@/components/ConnectWallet'
 import { useTokenBalance } from '@/lib/useTokenBalance'
 import { formatBalance, basescanUrl } from '@/lib/utils'
+import { useWrongChain } from '@/lib/useWrongChain'
 
 // Returns unix timestamp (seconds) or null if input is empty / not a valid date.
 function parseDatetime(value: string): number | null {
@@ -20,6 +21,7 @@ function parseDatetime(value: string): number | null {
 
 export function CreatePoolClient() {
   const { isConnected, address } = useAccount()
+  const isWrongChain = useWrongChain()
   const { addToast, updateToast } = useToast()
   const { data: balance, refetch: refetchBalance } = useTokenBalance()
   const approveToastId = useRef<string | null>(null)
@@ -363,7 +365,7 @@ export function CreatePoolClient() {
     createToastId.current = null
   }
 
-  const isInputDisabled = !isConnected || formState !== 'idle'
+  const isInputDisabled = !isConnected || formState !== 'idle' || isWrongChain
   const isSubmitDisabled = isInputDisabled || isBalanceInsufficient
 
   const submitLabel =
@@ -531,7 +533,7 @@ export function CreatePoolClient() {
               <button
                 type="button"
                 onClick={() => setInitialYesStakeStr(formatUnits(balance as bigint, 6))}
-                disabled={!isConnected || formState !== 'idle'}
+                disabled={!isConnected || formState !== 'idle' || isWrongChain}
                 className="px-3 py-2 border rounded text-sm whitespace-nowrap disabled:opacity-50"
               >Max</button>
             )}
