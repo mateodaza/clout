@@ -26,6 +26,7 @@ import { PoolTimeline } from '@/components/PoolTimeline'
 import { PoolProgressBars } from '@/components/PoolProgressBars'
 import ShareButtons from '@/components/ShareButtons'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useWrongChain } from '@/lib/useWrongChain'
 
 // ─── Local Types ────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
 
   // ── Wallet ──
   const { address: connectedAddress, isConnected } = useAccount()
+  const isWrongChain = useWrongChain()
   const { addToast, updateToast } = useToast()
   const approveToastId = useRef<string | null>(null)
   const mainToastId = useRef<string | null>(null)
@@ -594,7 +596,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
 
                     <button
                       onClick={() => { const amt = tryParseAmount(stakeAmountStr); if (!amt) return; requestConfirm('Stake YES', `You are about to stake ${stakeAmountStr} USDC on YES. Confirm?`, handleStakeYes) }}
-                      disabled={yesRemaining <= 0n || inProgress}
+                      disabled={yesRemaining <= 0n || inProgress || isWrongChain}
                       aria-label={actionState === 'approving' && pendingStake?.isYes === true ? 'Approving token for YES stake…' : actionState === 'staking' && pendingStake?.isYes === true ? 'Staking YES…' : `Stake YES — ${formatUsdc(yesRemaining)} remaining`}
                       className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                     >
@@ -607,7 +609,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
 
                     <button
                       onClick={() => { const amt = tryParseAmount(stakeAmountStr); if (!amt) return; requestConfirm('Stake NO', `You are about to stake ${stakeAmountStr} USDC on NO. Confirm?`, handleStakeNo) }}
-                      disabled={noRemaining <= 0n || inProgress}
+                      disabled={noRemaining <= 0n || inProgress || isWrongChain}
                       aria-label={actionState === 'approving' && pendingStake?.isYes === false ? 'Approving token for NO stake…' : actionState === 'staking' && pendingStake?.isYes === false ? 'Staking NO…' : `Stake NO — ${formatUsdc(noRemaining)} remaining`}
                       className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                     >
@@ -621,7 +623,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
                     {canClose && (
                       <button
                         onClick={handleClosePool}
-                        disabled={inProgress}
+                        disabled={inProgress || isWrongChain}
                         className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                       >
                         {actionState === 'closing' ? 'Closing…' : 'Close Pool'}

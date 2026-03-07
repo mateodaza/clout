@@ -3,6 +3,7 @@ import './globals.css'
 import { Providers } from '@/components/Providers'
 import { ConnectWallet } from '@/components/ConnectWallet'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { ChainBanner } from '@/components/ChainBanner'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://clout.app'),
@@ -42,6 +43,7 @@ export default function RootLayout({
               </div>
             </nav>
           </header>
+          <ChainBanner />
           <main className="px-4 py-6 max-w-4xl mx-auto">{children}</main>
         </Providers>
       </body>
