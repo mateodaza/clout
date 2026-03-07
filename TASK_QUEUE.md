@@ -827,7 +827,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Use `forge verify-contract --chain base-sepolia --etherscan-api-key $BASESCAN_API_KEY`. Basescan uses the same API as Etherscan. Contract addresses should be read from env vars or passed as args.
 
-#### NC-052 [ ] Add 18+ age gate on first visit
+#### NC-052 [x] Add 18+ age gate on first visit
 - **What:** On first visit, show a fullscreen modal: "You must be 18 or older to use Clout. This platform involves wagering with real digital assets." Two buttons: "I am 18+" (dismisses, sets `localStorage` flag) and "Exit" (redirects to google.com). The gate blocks ALL interaction until acknowledged. On subsequent visits, check `localStorage` — if already confirmed, don't show again.
 - **Acceptance criteria:**
   - Fullscreen modal on first visit, blocks all content

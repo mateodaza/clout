@@ -8,6 +8,7 @@ import { ToastProvider } from '@/contexts/ToastContext'
 import { ToastContainer } from '@/components/Toast'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { CommandPalette } from '@/components/CommandPalette'
+import { AgeGate } from '@/components/AgeGate'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
@@ -33,6 +34,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             {children}
             <ToastContainer />
             <CommandPalette open={paletteOpen} onClose={handleClose} />
+            <AgeGate />
           </ToastProvider>
         </QueryClientProvider>
       </WagmiProvider>
