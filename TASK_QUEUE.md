@@ -851,7 +851,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-052
 - **Constraints:** Footer in `layout.tsx` outside `<main>`. Terms page at `apps/web/src/app/terms/page.tsx` (Server Component with static content). Keep disclaimers factual and short — this is not legal counsel.
 
-#### NC-054 [ ] Build a proper landing/hero section on home page
+#### NC-054 [x] Build a proper landing/hero section on home page
 - **What:** Replace the current minimal home page with a proper hero section: 1) Large heading: "The conviction market for the creator economy". 2) Subheading: "Stake on outcomes. Build your track record. Prove your edge." 3) Two CTA buttons: "Browse Challenges" → `/challenges`, "Explore Pools" → `/pools`. 4) Below hero: stats section showing total challenges, total pools, total volume staked (read from contracts). 5) Keep WalletRecord section below for connected users.
 - **Acceptance criteria:**
   - Hero section with heading, subheading, two CTA buttons
