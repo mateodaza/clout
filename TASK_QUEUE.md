@@ -802,7 +802,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-030
 - **Constraints:** Use `useChainId` and `useSwitchChain` from wagmi. Target chain ID: 84532 (Base Sepolia). Banner component in layout, outside of `<main>`.
 
-#### NC-049 [ ] Add recent activity feed to home page
+#### NC-049 [x] Add recent activity feed to home page
 - **What:** On the home page, below the WalletRecord, show a "Recent Activity" section. Read the last 5 challenges and last 5 pools (by ID, newest first) and display them as a combined feed sorted by creation time. Each entry shows: type (Challenge/Pool), ID, creator/host, stake/total, state badge, relative time ("2 hours ago"). Each entry links to its detail page.
 - **Acceptance criteria:**
   - Home page shows "Recent Activity" section

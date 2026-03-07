@@ -4,6 +4,7 @@ import { useAccount } from 'wagmi'
 import Link from 'next/link'
 import { WalletRecord } from '@/components/WalletRecord'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { RecentActivity } from '@/components/RecentActivity'
 
 export function HomeClient() {
   const { address, isConnected } = useAccount()
@@ -30,6 +31,10 @@ export function HomeClient() {
       ) : (
         <p>Connect your wallet to view your stats.</p>
       )}
+
+      <div className="mt-8">
+        <RecentActivity />
+      </div>
     </div>
     </ErrorBoundary>
   )
