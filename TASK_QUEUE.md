@@ -816,7 +816,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Constraints:** Read `challengeCount` and `poolCount`, then batch-read the last 5 of each with `useReadContracts`. Merge and sort by timestamp. Relative time: use manual calculation ("Xh ago", "Xd ago") — no library.
 
 
-#### NC-051 [ ] Add contract verification script for Basescan
+#### NC-051 [x] Add contract verification script for Basescan
 - **What:** Create `packages/contracts/script/Verify.sh` that runs `forge verify-contract` for all 3 contracts on Base Sepolia. Use Basescan API. Script reads addresses from environment or accepts them as arguments. Document the verify command in `DEPLOYMENTS.md`. Add `BASESCAN_API_KEY` to `.env.example`.
 - **Acceptance criteria:**
   - `Verify.sh` runs `forge verify-contract` for MockStablecoin, CloutEscrow, CloutPool

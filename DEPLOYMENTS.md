@@ -20,3 +20,37 @@
 ## How to update
 After running `forge script script/Deploy.s.sol --broadcast --rpc-url $BASE_SEPOLIA_RPC_URL`,
 fill in fields above with addresses from the broadcast output.
+
+## Verification
+
+Verify all three contracts on Basescan using `script/Verify.sh`.
+
+### Prerequisites
+
+- `BASESCAN_API_KEY` — get yours at https://basescan.org/myapikey
+- Contract addresses (use the table above or provide as positional args)
+- Script must be executable: `chmod +x packages/contracts/script/Verify.sh`
+
+### Usage
+
+```bash
+cd packages/contracts
+
+# Using env vars
+BASESCAN_API_KEY=<key> \
+  MOCK_STABLECOIN_ADDRESS=0xCF31F10B6be540c08060253334B1ad99b2C8E488 \
+  CLOUT_ESCROW_ADDRESS=0x7D7F328a9eFDc4d6a332892a0902b549f2cB7E8D \
+  CLOUT_POOL_ADDRESS=0x25d7c79044Ef8d0C7978822086d2d4D4b7C2bb65 \
+  ./script/Verify.sh
+
+# Using positional args
+BASESCAN_API_KEY=<key> \
+  ./script/Verify.sh \
+  0xCF31F10B6be540c08060253334B1ad99b2C8E488 \
+  0x7D7F328a9eFDc4d6a332892a0902b549f2cB7E8D \
+  0x25d7c79044Ef8d0C7978822086d2d4D4b7C2bb65
+```
+
+### Compiler flags
+
+The script passes `--via-ir` to match `via_ir = true` in `foundry.toml`. Without this flag Basescan rejects the verification because the bytecode won't match.
