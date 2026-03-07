@@ -208,8 +208,7 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
         args: [poolId, pendingStake.isYes, pendingStake.amount],
       })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [approveConfirmed, actionState])
+  }, [approveConfirmed, actionState, pendingStake, poolId, mainWrite])
 
   // ── Effect 2: refetch on main tx success ──
   useEffect(() => {
@@ -218,16 +217,14 @@ export function PoolDetailClient({ params }: { params: Promise<{ id: string }> }
       refetchPool()
       refetchStakes()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mainConfirmed])
+  }, [mainConfirmed, refetchPool, refetchStakes])
 
   // ── Effect 3: surface errors ──
   useEffect(() => {
     if ((approveError || mainError) && actionState !== 'idle') {
       setActionState('error')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [approveError, mainError])
+  }, [approveError, mainError, actionState])
 
   // ── Toast effects — approve ──
   useEffect(() => {

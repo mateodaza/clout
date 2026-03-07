@@ -19,7 +19,18 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   useEffect(() => {
     if (!open) return
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key === 'Tab') {
+        const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button, [href], input, [tabindex]:not([tabindex="-1"])')
+        if (!focusable || focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault(); last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault(); first.focus()
+        }
+      }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)

@@ -32,15 +32,16 @@ interface ErrorBoundaryProps {
 interface State {
   hasError: boolean
   error: Error | null
+  resetKey: number
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
   constructor(props: ErrorBoundaryProps) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, error: null, resetKey: 0 }
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error }
   }
 
@@ -56,10 +57,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
       return (
         <ErrorFallback
           error={this.state.error}
-          reset={() => this.setState({ hasError: false, error: null })}
+          reset={() => this.setState(s => ({ hasError: false, error: null, resetKey: s.resetKey + 1 }))}
         />
       )
     }
-    return this.props.children
+    return <div key={this.state.resetKey}>{this.props.children}</div>
   }
 }

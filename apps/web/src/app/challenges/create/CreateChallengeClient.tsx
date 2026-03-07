@@ -194,6 +194,8 @@ export function CreateChallengeClient() {
       errs.opponent = 'Must be a valid address'
     } else if (opponent.toLowerCase() === zeroAddress.toLowerCase()) {
       errs.opponent = 'Opponent cannot be the zero address'
+    } else if (address && opponent.toLowerCase() === address.toLowerCase()) {
+      errs.opponent = 'Opponent cannot be your own address'
     }
 
     const stakeErr = validateStake(stakeStr)

@@ -280,7 +280,9 @@ export function CreatePoolClient() {
     }
 
     // Step 5: commission bps — reject decimals and scientific notation
-    if (!/^\d+$/.test(commissionBpsStr.trim())) {
+    if (!commissionBpsStr.trim()) {
+      errs.commissionBpsStr = 'Required'
+    } else if (!/^\d+$/.test(commissionBpsStr.trim())) {
       errs.commissionBpsStr = 'Must be 0–10000'
     } else {
       const bps = Number(commissionBpsStr.trim())

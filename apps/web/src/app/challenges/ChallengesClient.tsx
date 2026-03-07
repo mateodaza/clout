@@ -4,6 +4,10 @@ import { useState, useMemo, useEffect } from 'react'
 import { useReadContract, useReadContracts } from 'wagmi'
 import { useAccount } from 'wagmi'
 import { hexToString } from 'viem'
+
+function safeHexToLabel(hex: `0x${string}`): string {
+  try { return hexToString(hex).replace(/\0+$/, '') || hex.slice(0, 10) + '…' } catch { return hex.slice(0, 10) + '…' }
+}
 import { ChallengeState } from '@clout/types'
 import { cloutEscrowAbi, ESCROW_ADDRESS } from '@/lib/contracts'
 import Link from 'next/link'
@@ -196,7 +200,7 @@ export function ChallengesClient() {
                 <div className="text-sm">Creator: {truncateAddr(c.creator)}</div>
                 <div className="text-sm">Opponent: {truncateAddr(c.opponent)}</div>
                 <div className="text-sm">Stake: {(Number(c.stakeAmount) / 1_000_000).toFixed(2)} USDC</div>
-                <div className="text-sm">Game: {hexToString(c.gameId).replace(/\0+$/, '')}</div>
+                <div className="text-sm">Game: {safeHexToLabel(c.gameId)}</div>
               </Link>
             ))}
           </div>
@@ -232,7 +236,7 @@ export function ChallengesClient() {
                     <ChallengeStateBadge state={c.state} />
                   </span>
                   <span style={{ border: '1px solid #ccc', padding: '0.5rem' }}>
-                    {hexToString(c.gameId).replace(/\0+$/, '')}
+                    {safeHexToLabel(c.gameId)}
                   </span>
                 </Link>
               ))}
