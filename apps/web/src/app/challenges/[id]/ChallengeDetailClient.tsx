@@ -16,7 +16,6 @@ import { Countdown } from '@/components/Countdown'
 import { ChallengeTimeline } from '@/components/ChallengeTimeline'
 import ShareButtons from '@/components/ShareButtons'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { useWrongChain } from '@/lib/useWrongChain'
 
 // --- Local Types ---
 
@@ -113,7 +112,6 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
   const mainToastId = useRef<string | null>(null)
 
   const { address: connectedAddress, isConnected } = useAccount()
-  const isWrongChain = useWrongChain()
 
   const {
     data: rawChallenge,
@@ -482,7 +480,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
               {challenge.state === ChallengeState.CREATED && isOpponent && (
                 <button
                   onClick={() => requestConfirm('Accept Challenge', `You are about to stake ${formatUnits(challenge.stakeAmount, 6)} USDC. Confirm?`, handleAccept)}
-                  disabled={inProgress || isWrongChain}
+                  disabled={inProgress}
                   aria-label="Accept challenge — approve token and stake"
                   className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                 >
@@ -504,7 +502,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   />
                   <button
                     onClick={handleSubmitResult}
-                    disabled={inProgress || isWrongChain}
+                    disabled={inProgress}
                     aria-label="Submit your result for this challenge"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
@@ -518,7 +516,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={handleConfirm}
-                    disabled={inProgress || isWrongChain}
+                    disabled={inProgress}
                     aria-label="Confirm the submitted result"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
@@ -526,7 +524,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   </button>
                   <button
                     onClick={() => requestConfirm('Dispute Result', 'Filing a dispute escalates to the resolver/admin. Continue?', handleDispute)}
-                    disabled={inProgress || isWrongChain}
+                    disabled={inProgress}
                     aria-label="Dispute the submitted result — escalate to resolver"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
@@ -545,7 +543,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                   />
                   <button
                     onClick={handleResolve}
-                    disabled={inProgress || isWrongChain}
+                    disabled={inProgress}
                     aria-label="Resolve the dispute and set the final outcome"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
@@ -562,7 +560,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                 appealWindowOpen && (
                   <button
                     onClick={handleAppeal}
-                    disabled={inProgress || isWrongChain}
+                    disabled={inProgress}
                     aria-label="Appeal the resolution — escalate to admin"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >
@@ -577,7 +575,7 @@ export function ChallengeDetailClient({ params }: { params: Promise<{ id: string
                 !challenge.claimed && (
                   <button
                     onClick={() => requestConfirm('Claim Winnings', 'Claim your winnings from this challenge?', handleClaim)}
-                    disabled={inProgress || isWrongChain}
+                    disabled={inProgress}
                     aria-label="Claim your winnings from this challenge"
                     className="w-full py-2.5 px-4 border rounded disabled:opacity-50"
                   >

@@ -9,7 +9,6 @@ import { useToast } from '@/contexts/ToastContext'
 import { ConnectWallet } from '@/components/ConnectWallet'
 import { useTokenBalance } from '@/lib/useTokenBalance'
 import { formatBalance, basescanUrl } from '@/lib/utils'
-import { useWrongChain } from '@/lib/useWrongChain'
 
 function validateStake(s: string): string | null {
   try {
@@ -23,7 +22,6 @@ function validateStake(s: string): string | null {
 
 export function CreateChallengeClient() {
   const { isConnected, address } = useAccount()
-  const isWrongChain = useWrongChain()
   const { addToast, updateToast } = useToast()
   const { data: balance, refetch: refetchBalance } = useTokenBalance()
   const approveToastId = useRef<string | null>(null)
@@ -270,7 +268,7 @@ export function CreateChallengeClient() {
     createToastId.current = null
   }
 
-  const isInputDisabled = !isConnected || formState !== 'idle' || isWrongChain
+  const isInputDisabled = !isConnected || formState !== 'idle'
   const isSubmitDisabled = isInputDisabled || isBalanceInsufficient
 
   const submitLabel =
@@ -329,7 +327,7 @@ export function CreateChallengeClient() {
               <button
                 type="button"
                 onClick={() => setStakeStr(formatUnits(balance as bigint, 6))}
-                disabled={!isConnected || formState !== 'idle' || isWrongChain}
+                disabled={!isConnected || formState !== 'idle'}
                 className="px-3 py-2 border rounded text-sm whitespace-nowrap disabled:opacity-50"
               >Max</button>
             )}

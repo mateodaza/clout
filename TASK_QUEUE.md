@@ -790,7 +790,7 @@ Mateo restructured the repo into a turborepo monorepo. **All paths have changed:
 - **Dependencies:** NC-031
 - **Constraints:** Use Next.js metadata API only. JSON-LD via `<script type="application/ld+json">` in a Server Component. Canonical URL from `NEXT_PUBLIC_APP_URL` env var.
 
-#### NC-048 [x] Add global notification for chain mismatch
+#### NC-048 [ ] Add global notification for chain mismatch
 - **What:** If the connected wallet is on the wrong chain (not Base Sepolia, chain ID 84532), show a persistent banner at the top of the page: "Wrong network — please switch to Base Sepolia" with a "Switch Network" button. The button calls `switchChain` from wagmi. Hide the banner when on the correct chain. All action buttons should be disabled when on wrong chain.
 - **Acceptance criteria:**
   - Banner shows when connected to wrong chain

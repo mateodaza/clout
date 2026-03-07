@@ -12,7 +12,6 @@ import { mockStablecoinAbi, TOKEN_ADDRESS } from '@/lib/contracts'
 import { parseRevertReason } from '@/lib/errors'
 import { useToast } from '@/contexts/ToastContext'
 import { ConnectWallet } from '@/components/ConnectWallet'
-import { useWrongChain } from '@/lib/useWrongChain'
 
 type FormState = 'idle' | 'pending' | 'done' | 'error'
 
@@ -22,7 +21,6 @@ export function FaucetClient() {
   const mintToastId = useRef<string | null>(null)
 
   const { address, isConnected } = useAccount()
-  const isWrongChain = useWrongChain()
   const { addToast, updateToast } = useToast()
 
   const { data: balance, refetch: refetchBalance } = useReadContract({
@@ -121,7 +119,7 @@ export function FaucetClient() {
     mintToastId.current = null
   }
 
-  const isDisabled = !isConnected || formState !== 'idle' || isWrongChain
+  const isDisabled = !isConnected || formState !== 'idle'
 
   const submitLabel =
     formState === 'idle'
